@@ -1,0 +1,355 @@
+# **ANKARA ÜNİVERSİTESİ** 
+
+**MÜHENDİSLİK FAKÜLTESİ**   
+**BİLGİSAYAR MÜHENDİSLİĞİ BÖLÜMÜ** 
+
+![][image1]
+
+**BLM4538 \- iOS İLE MOBİL UYGULAMA GELİŞTİRME II**
+
+**SplitSnap Projesi Tanıtım Raporu**
+
+ 
+
+**Bora KOCABIYIK**  
+**21290270**
+
+**Öğr. Gör. Enver BAĞCI**
+
+**09/03/2026**
+
+[**github.com/brckfrc/splitsnap**](http://github.com/brckfrc/splitsnap)
+
+## **1\. Proje Tanımı**
+
+Bu projede React Native kullanılarak iOS platformu için çalışan bir ortak harcama takip uygulaması geliştirilecektir. Uygulamanın temel amacı, arkadaş grupları, ev arkadaşları, gezi grupları veya kısa süreli ortak harcama yapılan ortamlarda yapılan masrafların tek bir grup altında toplanması, kullanıcılar tarafından kolayca eklenmesi ve grup içindeki borç-alacak durumunun düzenli şekilde görüntülenmesidir.
+
+Uygulama içerisinde kullanıcılar hesap oluşturabilecek, giriş yapabilecek, yeni bir grup kurabilecek veya mevcut bir gruba katılabilecektir. Grup içerisinde yapılan harcamalar sisteme eklenecek, kimin ödediği ve harcamanın kimler arasında paylaşılacağı belirlenecek, ardından sistem tarafından grup içi ödeme özeti üretilecektir.
+
+Projede ayrıca iOS tarafında cihaz üzerinde çalışan OCR desteği araştırılarak fiş görselinden bazı temel bilgilerin otomatik alınması hedeflenmektedir. Burada amaç, fişi ürün ürün eksiksiz okumak değil; toplam tutar, tarih ve işletme adı gibi temel alanları otomatik doldurarak kullanıcı deneyimini hızlandırmaktır. Kullanıcı isterse toplam tutarı otomatik olarak eşit böldürebilecek, isterse manuel olarak kişi bazında dağıtabilecektir.
+
+Bu proje yalnızca bir arayüz çalışması olmayacaktır. Aynı zamanda kimlik doğrulama, grup yapısı, veritabanı ilişkileri, yerel veri saklama, borç hesaplama mantığı ve native iOS desteğiyle React Native entegrasyonu gibi teknik konuları da içeren uygulamalı bir mobil yazılım geliştirme projesi olacaktır.
+
+---
+
+## **2\. Projenin Amacı**
+
+Bu projenin amacı, günlük hayatta sık karşılaşılan ortak ödeme ve masraf paylaşımı problemini mobil ortamda daha düzenli, kolay ve anlaşılır hale getirmektir. Özellikle birkaç kişinin birlikte yaptığı yemek, market, gezi veya ortak yaşam harcamalarında, kimin ne kadar ödediği ve sonunda kimin kime ne kadar borçlu olduğu karışabilmektedir. Bu uygulama, bu süreci tek bir sistem üzerinden takip edilebilir hale getirmeyi hedeflemektedir.
+
+Teknik açıdan proje şu alanlarda deneyim kazandırmayı amaçlamaktadır:
+
+* React Native ile iOS odaklı mobil uygulama geliştirme  
+* TypeScript ile veri modeli ve uygulama yapısı kurma  
+* Backend servisi ile kullanıcı kimlik doğrulama işlemleri yapma  
+* Grup, kullanıcı ve harcama ilişkilerini veritabanı üzerinde modelleme  
+* Yerel veri saklama ile kullanıcı deneyimini iyileştirme  
+* Borç/alacak hesaplama mantığını kodlama  
+* iOS üzerinde cihaz içi OCR kullanımı araştırma  
+* Gelecekte Android veya daha gelişmiş yapılarla büyütülebilecek modüler bir temel hazırlama
+
+---
+
+## **3\. Projenin Kapsamı**
+
+Bu projede ilk aşamada çalışan ve sunumda gösterilebilir bir iOS uygulaması geliştirilmesi hedeflenmektedir. Proje kapsamı güçlü fakat gerçekçi olacak şekilde belirlenmiştir.
+
+İlk sürümde yapılması planlanan temel özellikler şunlardır:
+
+* kullanıcı kaydı ve giriş sistemi  
+* kullanıcı oturumu yönetimi  
+* grup oluşturma  
+* mevcut bir gruba katılma  
+* grup üyelerini görüntüleme  
+* harcama ekleme  
+* harcama düzenleme ve silme  
+* harcamayı ödeyen kişiyi seçme  
+* harcamaya katılan kişileri belirleme  
+* toplam tutarı eşit bölüştürme  
+* toplam tutarı kişi bazında manuel dağıtma  
+* grup içi borç-alacak hesaplama  
+* grup özet ekranı  
+* fiş görseli ekleme  
+* iOS local OCR ile temel alanları otomatik doldurma  
+* verilerin kaybolmaması için yerel veri saklama desteği
+
+İlk sürüm kapsamında özellikle çalışan çekirdek sistem önceliklidir. Bu nedenle aşağıdaki özellikler sonraki aşama geliştirmeleri olarak düşünülmektedir:
+
+* Android desteği  
+* fişteki ürünleri kalem kalem otomatik ayrıştırma  
+* gelişmiş YZ destekli fiş analizi  
+* gerçek para transferi  
+* banka veya kart entegrasyonu  
+* tam App Store yayın süreci
+
+---
+
+## **4\. Kullanılacak Teknolojiler**
+
+Projede ana geliştirme teknolojisi olarak **React Native** kullanılacaktır. Kod tarafında daha düzenli, okunabilir ve sürdürülebilir bir yapı kurmak için **TypeScript** tercih edilecektir. Uygulama yalnızca iOS odaklı geliştirileceği için test ve build süreçlerinde **Xcode** ve **iOS Simulator** kullanılacaktır.
+
+Arayüz tasarımları başlangıçta **Figma** üzerinde hazırlanacak, ardından React Native bileşenlerine dönüştürülecektir. Sürüm kontrolü ve süreç takibi için **Git** ve **GitHub** kullanılacaktır.
+
+Backend tarafında **Supabase** kullanılması planlanmaktadır. Bu seçim, proje süresini gereksiz yere sunucu geliştirmeye ayırmadan gerçek kullanıcı hesabı ve grup mantığı kurulabilmesi için yapılmıştır.
+
+Supabase tarafında kullanılacak bileşenler:
+
+* **Supabase Auth:** kullanıcı kayıt ve giriş işlemleri  
+* **Supabase PostgreSQL Database:** kullanıcı, grup, üyelik ve harcama verileri  
+* **Supabase Storage:** fiş görsellerinin saklanması  
+* gerekirse erişim kuralları için **yetkilendirme yapısı**
+
+Yerel veri saklama için uygun bir çözüm kullanılarak bazı verilerin cihaz üzerinde tutulması planlanmaktadır. Bu yapı, uygulamanın daha hızlı açılmasına ve kullanıcı deneyiminin iyileşmesine katkı sağlayacaktır.
+
+OCR tarafında ise iOS üzerinde cihaz içi metin tanıma yaklaşımı değerlendirilecektir. Böylece harici ve maliyetli API’lere bağımlı olmadan temel fiş bilgileri otomatik alınabilecektir.
+
+---
+
+## **5\. Teknik Yaklaşım ve Mimari Plan**
+
+Proje teknik olarak modüler bir mimari ile geliştirilecektir. Amaç, tüm kodun tek bir yerde toplandığı dağınık bir yapı yerine; ekranların, servislerin, veri modellerinin ve tekrar kullanılabilir bileşenlerin ayrıldığı düzenli bir yapı oluşturmaktır.
+
+### **5.1. Arayüz Katmanı**
+
+Kullanıcının doğrudan etkileşimde bulunduğu ekranlar bu bölümde yer alacaktır. Giriş ekranı, kayıt ekranı, grup listesi, grup detay ekranı, harcama ekleme ekranı ve özet ekranı gibi yapılar bu katmanda bulunacaktır.
+
+### **5.2. Bileşen Katmanı**
+
+Butonlar, giriş alanları, kart yapıları, kullanıcı seçme alanları, harcama listesi öğeleri ve özet kutuları gibi tekrar kullanılabilir arayüz parçaları ayrı bileşenler halinde geliştirilecektir. Böylece hem kod tekrarı azalacak hem de tasarım bütünlüğü sağlanacaktır.
+
+### **5.3. Backend ve Kimlik Doğrulama**
+
+Projede backend servisi olarak **Supabase** kullanılacaktır. Kullanıcı kayıt ve giriş işlemleri **Supabase Auth** ile yapılacaktır. Kullanıcıların oluşturduğu gruplar, grup üyelikleri, harcamalar ve harcama paylaşım bilgileri ise **Supabase PostgreSQL Database** üzerinde saklanacaktır.
+
+Bu yapı sayesinde kullanıcı:
+
+* hesap oluşturabilecek  
+* giriş yapabilecek  
+* kendi gruplarını görebilecek  
+* grup oluşturabilecek  
+* mevcut bir gruba katılabilecek  
+* gruba ait harcamaları görüntüleyebilecek ve yönetebilecektir
+
+Bu çözüm, sıfırdan backend geliştirmeye göre daha hızlı ve güvenli bir başlangıç sağlayacaktır.
+
+### **5.4. Yerel Veri Saklama**
+
+Projede ana veri kaynağı backend olacaktır. Ancak kullanıcı oturumu, bazı grup bilgileri ve uygulamanın temel durumu yerel olarak da saklanacaktır. Bunun amacı:
+
+* uygulama kapatıldığında verinin tamamen kaybolmaması  
+* tekrar açılışta daha hızlı kullanım sağlanması  
+* kullanıcı deneyiminin daha akıcı hale gelmesi
+
+Yerel veri saklama, backend’in yerine geçmeyecek; onu destekleyen bir yapı olarak kullanılacaktır.
+
+### **5.5. Hesaplama Katmanı**
+
+Projenin temel mantıksal bölümü, grup içindeki borç ve alacak hesabıdır. Bu katmanda şu işlemler yapılacaktır:
+
+* toplam grup harcamalarını toplama  
+* bir kullanıcının ödediği miktarı hesaplama  
+* kişi başına düşmesi gereken payı belirleme  
+* kullanıcı bazlı borçlu ve alacaklı durumlarını çıkarma
+
+Bu nedenle proje sadece veri girişi yapan bir uygulama değil, aynı zamanda hesaplama yapan bir sistem olacaktır.
+
+### **5.6. OCR ve Fiş İşleme Yaklaşımı**
+
+Projede OCR özelliği, iOS üzerinde cihaz içinde çalışan bir yapı ile ele alınacaktır. Kullanıcı bir fiş fotoğrafı eklediğinde sistem, fişten bazı temel alanları otomatik olarak almaya çalışacaktır.
+
+İlk sürümde hedeflenen alanlar şunlardır:
+
+* işletme adı  
+* tarih  
+* toplam tutar
+
+İlk sürümde ürün bazlı tam ayrıştırma hedeflenmemektedir. Bunun yerine daha pratik bir ürün yaklaşımı seçilmiştir:
+
+* sistem fiş toplamını algılar  
+* varsayılan olarak eşit bölüşüm önerir  
+* kullanıcı isterse toplam tutarı kişi bazında manuel olarak dağıtır
+
+Bu yaklaşım hem teknik riski azaltmakta hem de kullanıcı deneyimini daha hızlı ve anlaşılır hale getirmektedir.
+
+### **5.7. Geleceğe Dönük Genişletilebilirlik**
+
+Proje başlangıçta iOS için geliştirilecek olsa da ileride büyütülebilecek şekilde düşünülmektedir. Bu nedenle uygulama yapısı mümkün olduğunca genişletilebilir kurulacaktır.
+
+İleride eklenebilecek özellikler arasında şunlar bulunmaktadır:
+
+* Android desteği  
+* kalem kalem ürün ayrıştırma  
+* yapay zekâ destekli gelişmiş fiş analizi  
+* daha detaylı istatistik ekranları  
+* gerçek zamanlı senkronizasyon geliştirmeleri
+
+---
+
+## **6\. Temel Veri Yapıları**
+
+Projede teknik yapının daha sağlam kurulabilmesi için bazı temel veri modelleri baştan planlanacaktır.
+
+### **User / Profile**
+
+* id  
+* ad / kullanıcı adı  
+* e-posta  
+* oluşturulma tarihi
+
+### **Group**
+
+* id  
+* grup adı  
+* açıklama  
+* oluşturulma tarihi  
+* grup sahibi
+
+### **GroupMember :** Her grup üyeliği için
+
+* id  
+* grup id  
+* kullanıcı id  
+* gruba katılım tarihi
+
+### 
+
+### 
+
+### 
+
+### **Expense :** Her harcama için
+
+* id  
+* grup id  
+* başlık  
+* açıklama  
+* tarih  
+* toplam tutar  
+* ödeyen kullanıcı  
+* paylaşım tipi  
+* fiş görseli bağlantısı  
+* OCR ile elde edilen öneri alanları
+
+### **ExpenseSplit :** Her harcamanın kullanıcı bazlı payı için
+
+* id  
+* harcama id  
+* kullanıcı id  
+* kullanıcıya düşen tutar
+
+### **SettlementSummary :** Özet görünüm tarafında hesaplanan bilgiler:
+
+* toplam harcama  
+* kullanıcı bazlı ödenen miktar  
+* kullanıcı bazlı düşen pay  
+* alacaklı kullanıcılar  
+* borçlu kullanıcılar
+
+---
+
+## **7\. Yol Haritası**
+
+### **1\. Hafta**
+
+* proje konusunun netleştirilmesi  
+* GitHub deposunun oluşturulması  
+* React Native \+ TypeScript proje kurulumunun yapılması  
+* temel klasör yapısının oluşturulması  
+* navigation yapısının ilk kurulumu  
+* Figma üzerinde ilk ekran taslaklarının hazırlanması  
+* açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması
+
+### **2\. Hafta**
+
+* Supabase projesinin oluşturulması  
+* Supabase Auth entegrasyonunun yapılması  
+* kullanıcı kayıt ve giriş akışının çalışır hale getirilmesi  
+* oturum yönetimi mantığının kurulması  
+* temel uygulama tema ve ortak bileşen yapısının oluşturulması  
+* grup listesi ekranının ilk sürümünün hazırlanması
+
+### **3\. Hafta**
+
+* veritabanı tablolarının planlanması  
+* user/profile, group ve group\_member yapılarının oluşturulması  
+* grup oluşturma ekranının yapılması  
+* gruba katılma mantığının tasarlanması  
+* kullanıcının dahil olduğu grupları listeleme
+
+### **4\. Hafta**
+
+* group ve membership akışlarının backend ile tam bağlanması  
+* grup detay ekranının yapılması  
+* grup üyelerinin görüntülenmesi  
+* harcama ekranları için veri modellerinin hazırlanması  
+* harcama ekleme ekranının ilk sürümünün yapılması
+
+### **5\. Hafta**
+
+* harcama ekleme işleminin tamamlanması  
+* harcama düzenleme ve silme işlemlerinin eklenmesi  
+* ödeyen kişi ve katılımcı seçme yapısının kurulması  
+* eşit bölüşüm mantığının ilk sürümünün eklenmesi
+
+### **6\. Hafta**
+
+* ExpenseSplit yapısının tamamlanması  
+* manuel kişi bazlı tutar dağıtım özelliğinin eklenmesi  
+* borç-alacak hesaplama mantığının yazılması  
+* grup özet ekranının yapılması
+
+### **7\. Hafta**
+
+* yerel veri saklama yapısının eklenmesi  
+* kullanıcı oturumu ve bazı temel verilerin cihaz üzerinde tutulması  
+* uygulama açılış performansının iyileştirilmesi  
+* form doğrulama ve hata kontrollerinin güçlendirilmesi
+
+### **8\. Hafta**
+
+* fiş görseli ekleme altyapısının hazırlanması  
+* Supabase Storage ile fiş görseli saklama yapısının kurulması  
+* iOS local OCR araştırmasının ve ilk entegrasyonunun yapılması  
+* OCR sonucu ile tarih, işletme adı ve toplam tutar alanlarının otomatik doldurulması
+
+### **9\. Hafta**
+
+* OCR akışının harcama oluşturma ekranına bağlanması  
+* fiş toplamı üzerinden otomatik eşit bölüşüm önerisinin yapılması  
+* manuel kişi bazlı paylaştırma ile OCR sonucunun birlikte çalışır hale getirilmesi  
+* arayüz iyileştirmeleri
+
+### **10\. Hafta**
+
+* genel hata düzeltmeleri  
+* kod temizliği ve klasör düzeninin son halinin verilmesi  
+* ekranların görsel olarak iyileştirilmesi  
+* GitHub üzerindeki açıklamaların toparlanması  
+* final gösterimine uygun stabil sürümün hazırlanması
+
+---
+
+## **8\. Teknik Değerlendirme ve Proje Sınırları**
+
+Bu projeyi teknik açıdan güçlü kılan birkaç temel nokta vardır. Projede kullanıcı, grup, harcama ve paylaşım yapıları birbiriyle ilişkili şekilde tasarlanacaktır. Uygulama yalnızca veri girişi yapan bir yapı olmayacak, aynı zamanda borç-alacak hesabı da yapacaktır.
+
+Ayrıca kullanıcı girişi ve grup katılımı gerçek bir backend servisi üzerinden yürütülecek, yerel veri saklama ile uygulama daha hızlı ve kullanışlı hale getirilecektir. iOS cihaz içi OCR ile fişten temel verilerin alınması ve toplam tutar üzerinden otomatik veya manuel paylaşım yapılabilmesi de projeyi teknik olarak daha güçlü hale getirmektedir.
+
+Projede en büyük risk, kapsamın gereğinden fazla büyümesidir. Kullanıcı girişi, grup yapısı, backend, OCR ve hesaplama mantığı bir arada bulunduğu için geliştirme sürecinin kontrollü ilerlemesi gerekmektedir.
+
+Bu nedenle bazı sınırlar bilinçli olarak belirlenmiştir. İlk sürümde fiş ürünlerinin kalem kalem ayrıştırılması yerine, fişten temel bilgilerin alınması ve toplam tutar üzerinden kullanıcı destekli paylaşım yapılması hedeflenmektedir.
+
+Ayrıca sıfırdan özel sunucu geliştirmek yerine Supabase kullanılarak geliştirme süresinin mobil uygulama mantığına ve kullanıcı deneyimine ayrılması planlanmaktadır. Gerçek para transferi, banka entegrasyonu ve tam App Store yayını ise ilk sürüm kapsamı dışında bırakılmıştır.
+
+---
+
+**9\. Sonuç**
+
+Bu projede React Native ile iOS platformuna yönelik çalışan bir ortak harcama takip uygulaması geliştirilecektir. Uygulama; kullanıcı kimlik doğrulama, grup oluşturma ve gruba katılma, harcama yönetimi, borç-alacak hesaplama, yerel veri saklama ve cihaz içi OCR ile fişten temel veri alma gibi özellikleri içerecektir.
+
+Proje, hem gerçek hayatta karşılığı olan bir probleme çözüm üretmekte, hem de teknik açıdan mobil uygulama mimarisi, veri modeli tasarımı, backend entegrasyonu, hesaplama mantığı ve iOS odaklı geliştirme konularında deneyim kazandırmaktadır.
+
+Bu nedenle proje, dönem kapsamında hem uygulanabilir hem de teknolojik açıdan yeterince güçlü bir çalışma olarak planlanmıştır. Temel hedef, düzenli geliştirilen, GitHub üzerinde takip edilen, teknik kararları bilinçli verilmiş ve çalışır durumda bir iOS uygulaması ortaya çıkarmaktır.
+
+---
+
+[image1]: <data:image/png;base64,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>
