@@ -4,7 +4,7 @@
 > Diğer tüm dokümantasyon dosyaları İngilizce yazılmıştır.
 >
 > **Kullanım kuralları:**
-> - Bu roadmap'teki maddeler `docs/SplitSnap Tanıtım Raporu.md` Bölüm 7 ile birebir aynıdır ve **değiştirilemez**.
+> - Bu roadmap'teki maddeler `docs/archive/SplitSnap Tanıtım Raporu.md` Bölüm 7 ile birebir aynıdır ve **değiştirilemez**.
 > - Tek yapılacak işlem tamamlanan maddelere `[x]` koymaktır.
 > - Planlananın dışında yapılan ek çalışmalar, ilgili haftanın altına **`### Ekstra`** başlığıyla eklenir.
 > - Böylece proje tesliminde orijinal plan değişmemiş, ekstra yapılanlar da görünür olmuş olur.
@@ -15,7 +15,7 @@ React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygu
 
 | Katman | Teknoloji |
 |--------|-----------|
-| Framework | React Native |
+| Framework | React Native (Expo SDK 55) |
 | Dil | TypeScript |
 | Platform | iOS (Xcode, iOS Simulator) |
 | Backend | Supabase (Auth, PostgreSQL, Storage) |
@@ -36,17 +36,25 @@ React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygu
 
 ## Hafta 1 — Proje Kurulumu ve Temel Yapı
 
-- [ ] Proje konusunun netleştirilmesi
-- [ ] GitHub deposunun oluşturulması
-- [ ] React Native + TypeScript proje kurulumunun yapılması
-- [ ] Temel klasör yapısının oluşturulması
-- [ ] Navigation yapısının ilk kurulumu
+- [x] Proje konusunun netleştirilmesi
+- [x] GitHub deposunun oluşturulması
+- [x] React Native + TypeScript proje kurulumunun yapılması
+- [x] Temel klasör yapısının oluşturulması
+- [x] Navigation yapısının ilk kurulumu
 - [ ] Figma üzerinde ilk ekran taslaklarının hazırlanması
 - [ ] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması
 
+### Ekstra
+
+- [x] Expo SDK 55 + `default@sdk-55` şablonu ile proje oluşturulması (Expo Router, `src/app/`)
+- [x] Supabase istemcisi için paketler ve ortam değişkenleri (`.env` / `.env.example`)
+- [x] Zustand, react-native-mmkv, react-native-nitro-modules, expo-secure-store, expo-image-picker kurulumu
+- [x] İlk iOS development build (`expo run:ios`) ve `expo-doctor` doğrulaması
+- [x] `README.md`, `docs/AGENTS.md`, `docs/PROGRESS.md` ve arşiv rapor yolu güncellemeleri
+
 ## Hafta 2 — Kimlik Doğrulama ve Tema
 
-- [ ] Supabase projesinin oluşturulması
+- [x] Supabase projesinin oluşturulması
 - [ ] Supabase Auth entegrasyonunun yapılması
 - [ ] Kullanıcı kayıt ve giriş akışının çalışır hale getirilmesi
 - [ ] Oturum yönetimi mantığının kurulması
