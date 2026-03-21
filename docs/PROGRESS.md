@@ -2,7 +2,7 @@
 
 Detailed development tracking for SplitSnap. This is the living document for recording what was done, decisions made, blockers encountered, and anything noteworthy during each week.
 
-`ROADMAP.md` stays frozen and only gets `[x]` marks. All detailed notes go here.
+`ROADMAP.md` stays frozen and only gets `[x]` marks **when the corresponding weekly deliverable is actually met** (not for mock-only or placeholder UIs — see `docs/AGENTS.md`). All nuance belongs here.
 
 ---
 
@@ -17,7 +17,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] Temel klasör yapısının oluşturulması — `src/app/`, `src/components/`, `assets/`, vb.
 - [x] Navigation yapısının ilk kurulumu — Expo Router (`src/app/`)
 - [x] Figma üzerinde ilk ekran taslaklarının hazırlanması — tasarım dosyası + `design/` referans projesi
-- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — `design/src/app/components/pages/LoginPage.tsx`, `RegisterPage.tsx`, `RootLayout` ile splash/akış referansı; üretim uygulamasında RN ekranları Hafta 2’de `src/app/(auth)/` altına taşınacak
+- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — `design/` prototipi; üretim RN akışı Hafta 2’de
 
 **Completed (detail):**
 - Expo app created with `npx create-expo-app@latest . --template default@sdk-55`
@@ -50,23 +50,25 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ## Week 2 — Authentication & Theme
 
-**Status:** In progress (1/6 roadmap items)
+**Status:** Roadmap Hafta 2 — **5/6** (`ROADMAP.md`): Auth + oturum + tema + ortak bileşenler tamam; **grup listesi ilk sürüm** maddesi kasıtlı olarak açık (aşağıdaki şablon, bu maddeyi karşılamıyor sayılır).
 
-**Roadmap (`ROADMAP.md` Hafta 2) — done:**
-- [x] Supabase projesinin oluşturulması — proje + Data API URL ve publishable key `.env` içinde
+**Tamamlanan (rapor maddeleriyle uyumlu):**
+- [x] Supabase projesi (önceden)
+- [x] Supabase Auth entegrasyonu — `src/lib/supabase.ts`, `src/services/auth.ts`
+- [x] Kayıt / giriş akışı — `src/app/(auth)/login`, `register`
+- [x] Oturum yönetimi — `src/contexts/auth-context.tsx`, `onAuthStateChange`, yönlendirme
+- [x] Tema + ortak bileşen iskeleti — `src/theme/tokens.ts`, `src/constants/theme.ts`, `src/components/ui/*`
 
-**Roadmap — still open:**
-- [ ] Supabase Auth entegrasyonunun yapılması
-- [ ] Kullanıcı kayıt ve giriş akışının çalışır hale getirilmesi
-- [ ] Oturum yönetimi mantığının kurulması
-- [ ] Temel uygulama tema ve ortak bileşen yapısının oluşturulması (SplitSnap teması / tasarım sistemi)
-- [ ] Grup listesi ekranının ilk sürümünün hazırlanması
+**Kasıtlı olarak ROADMAP’ta açık bırakılan:**
+- [ ] **Grup listesi ekranının ilk sürümü** — Expo tarafında `design/`’e benzer ekranlar ve **Zustand + mock seed** ile şablon var; bu, rapordaki “ilk sürüm” çıktısı olarak işaretlenmedi (veri katmanı Supabase değil, kapsam “taslak”).
 
-**Completed (detail):**
-- Supabase dashboard project created; client env vars documented in `.env.example`
+**Şablon / mock (PROGRESS’te kayıt; Hafta 3+ ROADMAP kapalı):**
+- `(app)` altında grup listesi, detay, harcama ekle/düzenle, settlement, profil gibi ekranlar **yerel mock** ile dolaşılabilir; DB tabloları, RLS ve raporun tanıdığı “tam” haftalık teslimler henüz yok.
+- `tsconfig.json` **excludes** `design/` — `npx tsc --noEmit` yalnızca Expo uygulamasını doğrular.
 
 **Notes:**
-- Next: `src/lib/supabase.ts`, AsyncStorage `auth.storage`, auth screens in `src/app/(auth)/`
+- Typed routes: `src/lib/href.ts` — dinamik path’ler için geçici cast.
+- Auth ekranlarında yardımcı metinler `__DEV__` ile sınırlı.
 
 **Blockers:**
 - (none)
@@ -75,61 +77,31 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ## Week 3 — Database & Group Structure
 
-**Status:** Not started
-
-**Completed:**
-- (none yet)
+**Status:** Not started (roadmap)
 
 **Notes:**
-- (none yet)
-
-**Blockers:**
-- (none)
+- Şablondaki grup UI’si mock; Supabase `group` / `group_member` şeması ve bağlama yapılınca bu hafta maddeleri `ROADMAP` üzerinden işaretlenecek.
 
 ---
 
 ## Week 4 — Group Detail & Expense Foundation
 
-**Status:** Not started
-
-**Completed:**
-- (none yet)
+**Status:** Not started (roadmap)
 
 **Notes:**
-- (none yet)
-
-**Blockers:**
-- (none)
+- Mock ekranlar var; “backend ile tam bağlanma” ve rapor tanımındaki temel çıktılar tamamlanınca `[x]`.
 
 ---
 
 ## Week 5 — Expense Management
 
-**Status:** Not started
-
-**Completed:**
-- (none yet)
-
-**Notes:**
-- (none yet)
-
-**Blockers:**
-- (none)
+**Status:** Not started (roadmap)
 
 ---
 
 ## Week 6 — Splitting & Calculation
 
-**Status:** Not started
-
-**Completed:**
-- (none yet)
-
-**Notes:**
-- (none yet)
-
-**Blockers:**
-- (none)
+**Status:** Not started (roadmap)
 
 ---
 
@@ -137,29 +109,14 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 **Status:** Not started
 
-**Completed:**
-- (none yet)
-
-**Notes:**
-- (none yet)
-
-**Blockers:**
-- (none)
-
 ---
 
-## Week 8 — Receipt & OCR Infrastructure
+## Week 8+ — Receipt / OCR / Storage
 
-**Status:** Not started
-
-**Completed:**
-- (none yet)
+**Status:** Not started (roadmap Hafta 8 maddeleri)
 
 **Notes:**
-- (none yet)
-
-**Blockers:**
-- (none)
+- Yerel görsel seçimi / placeholder kod varsa bile “fiş altyapısı” ROADMAP maddesi, Storage + ürün gereksinimleri karşılanana kadar `[x]` yapılmaz.
 
 ---
 
@@ -167,26 +124,15 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 **Status:** Not started
 
-**Completed:**
-- (none yet)
-
-**Notes:**
-- (none yet)
-
-**Blockers:**
-- (none)
-
 ---
 
-## Week 10 — Final Polish & Submission
+## Week 10 — Final Polish
 
 **Status:** Not started
 
-**Completed:**
-- (none yet)
+---
 
-**Notes:**
-- (none yet)
+### Ekstra
 
-**Blockers:**
-- (none)
+- [x] `design/` → Expo: `(auth)` / `(app)` dosya rotaları, token tabanlı UI bileşenleri, **mock** grup/harcama akışı (ROADMAP hafta 3+ ile karıştırılmamalı)
+- [x] `tsconfig` `design/` exclude — temiz `tsc`

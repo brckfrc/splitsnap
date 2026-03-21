@@ -52,14 +52,15 @@ React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygu
 - [x] İlk iOS development build (`expo run:ios`) ve `expo-doctor` doğrulaması
 - [x] `README.md`, `docs/AGENTS.md`, `docs/PROGRESS.md` ve arşiv rapor yolu güncellemeleri
 - [x] `design/` klasörü — Figma çıktısına uygun referans UI (Vite/React prototip: Login, Register, grup/harcama sayfaları, tema dosyaları)
+- Expo uygulamasında `design/`’e paralel **şablon / mock** ekranlar ve yerel (Zustand) veri — rapor maddeleri değil; `ROADMAP` yalnızca ilgili haftanın çıktısı **detaylı ve hedefe uygun** (ör. Supabase + tam akış) tamamlanınca işaretlenir (`docs/AGENTS.md`)
 
 ## Hafta 2 — Kimlik Doğrulama ve Tema
 
 - [x] Supabase projesinin oluşturulması
-- [ ] Supabase Auth entegrasyonunun yapılması
-- [ ] Kullanıcı kayıt ve giriş akışının çalışır hale getirilmesi
-- [ ] Oturum yönetimi mantığının kurulması
-- [ ] Temel uygulama tema ve ortak bileşen yapısının oluşturulması
+- [x] Supabase Auth entegrasyonunun yapılması
+- [x] Kullanıcı kayıt ve giriş akışının çalışır hale getirilmesi
+- [x] Oturum yönetimi mantığının kurulması
+- [x] Temel uygulama tema ve ortak bileşen yapısının oluşturulması
 - [ ] Grup listesi ekranının ilk sürümünün hazırlanması
 
 ## Hafta 3 — Veritabanı ve Grup Yapısı

@@ -31,7 +31,7 @@
 
 ## Validation Before Finishing
 
-- `npx tsc --noEmit` — must pass with zero TypeScript errors
+- `npx tsc --noEmit` — must pass with zero TypeScript errors (root `tsconfig.json` **excludes** `design/`; the Vite prototype is reference-only and uses its own toolchain)
 - `npx expo run:ios` — app must launch without crashes in iOS Simulator
 - Supabase RLS (Row Level Security) policies must be reviewed after every table change
 
@@ -63,6 +63,12 @@
 - Weekly items mirror the report and **must not be edited, reordered, or removed**.
 - Allowed: `- [ ]` → `- [x]` for completed items.
 - Beyond-plan work: add under `### Ekstra` under that week.
+
+### When not to tick `ROADMAP.md`
+
+- **Do not** mark a weekly item `[x]` based only on **mock data**, **placeholder UI**, or a **template/scaffold** that does not meet the milestone as written in the report (e.g. groups/expenses without Supabase-backed persistence and the intended flows).
+- **Do not** update `ROADMAP.md` to “catch up” appearances when the implementation is exploratory or incomplete relative to that week’s definition.
+- Record that work in **`docs/PROGRESS.md`** instead (what exists, what is mock, what is missing). Optional short note under the relevant week’s **`### Ekstra`** in `ROADMAP.md` is allowed if it helps reviewers (without ticking the formal checklist items).
 
 ## Change Safety Rules
 
