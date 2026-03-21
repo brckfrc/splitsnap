@@ -41,8 +41,8 @@ React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygu
 - [x] React Native + TypeScript proje kurulumunun yapılması
 - [x] Temel klasör yapısının oluşturulması
 - [x] Navigation yapısının ilk kurulumu
-- [ ] Figma üzerinde ilk ekran taslaklarının hazırlanması
-- [ ] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması
+- [x] Figma üzerinde ilk ekran taslaklarının hazırlanması
+- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması
 
 ### Ekstra
 
@@ -51,6 +51,7 @@ React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygu
 - [x] Zustand, react-native-mmkv, react-native-nitro-modules, expo-secure-store, expo-image-picker kurulumu
 - [x] İlk iOS development build (`expo run:ios`) ve `expo-doctor` doğrulaması
 - [x] `README.md`, `docs/AGENTS.md`, `docs/PROGRESS.md` ve arşiv rapor yolu güncellemeleri
+- [x] `design/` klasörü — Figma çıktısına uygun referans UI (Vite/React prototip: Login, Register, grup/harcama sayfaları, tema dosyaları)
 
 ## Hafta 2 — Kimlik Doğrulama ve Tema
 

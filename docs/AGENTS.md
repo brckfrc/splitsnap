@@ -52,6 +52,7 @@
 ## Important Locations
 
 - `ROADMAP.md` — 10-week checklist (**Turkish**, frozen tasks; only `[x]` and `### Ekstra`)
+- `design/` — Figma-aligned **reference UI** (Vite/React prototype; not the production app). Use for layout/tokens when implementing `src/app/`.
 - `docs/archive/SplitSnap Tanıtım Raporu.md` — original university report
 - `docs/PROGRESS.md` — detailed weekly log
 - `docs/OPTIMIZATION-PROMPT.md` — optimization audit prompt

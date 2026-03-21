@@ -43,6 +43,7 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
 - **Routes / screens:** [`src/app/`](src/app/) — Expo Router (file-based routing)
 - **UI components:** [`src/components/`](src/components/)
+- **Design reference (Figma export prototype):** [`design/`](design/) — Vite/React; use for visuals when building RN screens (not run in production)
 - **Supabase client (to add):** `src/lib/supabase.ts`
 - **Docs:** [`docs/`](docs/)
 

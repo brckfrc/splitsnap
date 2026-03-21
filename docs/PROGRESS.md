@@ -8,18 +8,16 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ## Week 1 — Project Setup & Foundation
 
-**Status:** In progress (5/7 roadmap items done — see **Pending**)
+**Status:** Complete (7/7 roadmap items)
 
-**Roadmap (`ROADMAP.md` Hafta 1) — done:**
+**Roadmap (`ROADMAP.md` Hafta 1) — all done:**
 - [x] Proje konusunun netleştirilmesi — tanıtım raporu + `docs/` ile net
 - [x] GitHub deposunun oluşturulması — `origin/main`, ilk commit hazırlığı
 - [x] React Native + TypeScript proje kurulumunun yapılması — Expo SDK 55, `default@sdk-55` şablonu
 - [x] Temel klasör yapısının oluşturulması — `src/app/`, `src/components/`, `assets/`, vb.
 - [x] Navigation yapısının ilk kurulumu — Expo Router (`src/app/`)
-
-**Roadmap — still open:**
-- [ ] Figma üzerinde ilk ekran taslaklarının hazırlanması
-- [ ] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — şablonda genel ekranlar var; SplitSnap giriş/kayıt henüz yok
+- [x] Figma üzerinde ilk ekran taslaklarının hazırlanması — tasarım dosyası + `design/` referans projesi
+- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — `design/src/app/components/pages/LoginPage.tsx`, `RegisterPage.tsx`, `RootLayout` ile splash/akış referansı; üretim uygulamasında RN ekranları Hafta 2’de `src/app/(auth)/` altına taşınacak
 
 **Completed (detail):**
 - Expo app created with `npx create-expo-app@latest . --template default@sdk-55`
@@ -28,6 +26,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - First **development build** succeeded: `npx expo run:ios` (Simulator)
 - `.env` / `.env.example` with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY`
 - Docs synced: `README.md`, `docs/AGENTS.md`, `ROADMAP.md` archive path, tech stack notes
+- **`design/`** — Figma-aligned reference UI (Vite + React + Tailwind): login, register, group list/detail, add expense, settlement, profile, modals; see `design/README.md` and `design/guidelines/`
 
 **Decisions:**
 - **Expo SDK 55** over bare React Native CLI — official path, faster setup, EAS option later.
