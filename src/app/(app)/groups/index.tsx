@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { ChevronRight, Users } from 'lucide-react-native';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,8 @@ import { useSplitDataStore } from '@/services/split-data';
 import type { Group } from '@/types';
 import { formatCurrencyTry } from '@/utils/format';
 
+const EMPTY_GROUPS: Group[] = [];
+
 export default function GroupsListScreen() {
   const t = useTheme();
   const { user } = useAuth();
@@ -28,17 +30,31 @@ export default function GroupsListScreen() {
   const [joinCode, setJoinCode] = useState('');
   const [joinError, setJoinError] = useState<string | undefined>();
 
-  const groups = useSplitDataStore((s) => (user ? s.listGroupsForUser(user.id) : []));
+  const allGroups = useSplitDataStore((s) => s.groups);
   const expenses = useSplitDataStore((s) => s.expenses);
   const groupMembers = useSplitDataStore((s) => s.groupMembers);
 
-  function totalForGroup(groupId: string) {
-    return expenses.filter((e) => e.groupId === groupId).reduce((sum, e) => sum + e.amount, 0);
-  }
+  const groups = useMemo(() => {
+    if (!user) return EMPTY_GROUPS;
+    const ids = new Set(groupMembers.filter((m) => m.userId === user.id).map((m) => m.groupId));
+    return allGroups.filter((g) => ids.has(g.id));
+  }, [user, allGroups, groupMembers]);
 
-  function memberCount(groupId: string) {
-    return groupMembers.filter((m) => m.groupId === groupId).length;
-  }
+  const groupTotals = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const e of expenses) {
+      map[e.groupId] = (map[e.groupId] ?? 0) + e.amount;
+    }
+    return map;
+  }, [expenses]);
+
+  const groupMemberCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const m of groupMembers) {
+      map[m.groupId] = (map[m.groupId] ?? 0) + 1;
+    }
+    return map;
+  }, [groupMembers]);
 
   function openCreate() {
     setNewName('');
@@ -136,15 +152,15 @@ export default function GroupsListScreen() {
                   ) : null}
                   <View style={styles.metaRow}>
                     <View style={styles.metaItem}>
-                      <Ionicons name="people-outline" size={16} color={t.mutedForeground} />
+                      <Users size={16} color={t.mutedForeground} />
                       <Text style={[styles.metaText, { color: t.mutedForeground }]}>
-                        {memberCount(group.id)} kişi
+                        {groupMemberCounts[group.id] ?? 0} kişi
                       </Text>
                     </View>
-                    <Text style={[styles.total, { color: t.primary }]}>{formatCurrencyTry(totalForGroup(group.id))}</Text>
+                    <Text style={[styles.total, { color: t.primary }]}>{formatCurrencyTry(groupTotals[group.id] ?? 0)}</Text>
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={t.mutedForeground} />
+                <ChevronRight size={20} color={t.mutedForeground} />
               </View>
             </PressableCard>
           ))

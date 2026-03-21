@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DevLoginBypassPanel } from '@/components/auth/dev-login-bypass-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
@@ -95,10 +96,13 @@ export default function LoginScreen() {
             {__DEV__ ? (
               <View style={[styles.demo, { borderColor: t.border, backgroundColor: t.accent }]}>
                 <Text style={[styles.demoText, { color: t.mutedForeground }]}>
-                  Geliştirici: Supabase Auth ile gerçek hesap kullanın; URL/anahtar .env içinde olmalı.
+                  Geliştirici: Production’da gerçek giriş zorunludur. Supabase URL/anahtar .env içinde olmalı;
+                  EXPO_PUBLIC_DEV_LOGIN_BYPASS=true yalnızca yerel UI gezintisi içindir (AGENTS.md).
                 </Text>
               </View>
             ) : null}
+
+            <DevLoginBypassPanel />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

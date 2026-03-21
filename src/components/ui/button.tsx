@@ -21,6 +21,8 @@ export type ButtonProps = PressableProps & {
   loading?: boolean;
   children: React.ReactNode;
   textStyle?: TextStyle;
+  /** Row layout helper (e.g. modal action buttons). */
+  flex?: number;
 };
 
 export function Button({
@@ -32,6 +34,7 @@ export function Button({
   style,
   textStyle,
   accessibilityLabel,
+  flex: flexGrow,
   ...rest
 }: ButtonProps) {
   const t = useTheme();
@@ -87,6 +90,7 @@ export function Button({
         variant === 'ghost' && state.pressed && { backgroundColor: t.accent },
         variant !== 'ghost' && state.pressed && { opacity: 0.92 },
         isDisabled && styles.disabled,
+        flexGrow != null && { flex: flexGrow },
         typeof style === 'function' ? style(state) : style,
       ]}
       {...rest}

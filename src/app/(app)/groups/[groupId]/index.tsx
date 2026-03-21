@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Receipt, TrendingUp } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,8 +9,9 @@ import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { href } from '@/lib/href';
+import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
-import { splitData, useSplitDataStore } from '@/services/split-data';
+import { splitData } from '@/services/split-data';
 import { formatCurrencyTry, formatShortDate } from '@/utils/format';
 import { userNetBalance } from '@/utils/settlement';
 
@@ -20,13 +21,7 @@ export default function GroupDetailScreen() {
   const { user } = useAuth();
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
 
-  const snapshot = useSplitDataStore((s) => ({
-    group: s.getGroup(gid),
-    members: s.getMembers(gid),
-    expenses: s.getExpenses(gid),
-  }));
-
-  const { group, members, expenses } = snapshot;
+  const { group, members, expenses } = useGroupAggregates(gid);
 
   if (!group) {
     return (
@@ -53,7 +48,7 @@ export default function GroupDetailScreen() {
             onPress={() => router.push(href('/groups'))}
             style={styles.backBtn}
           >
-            <Ionicons name="arrow-back" size={22} color={t.foreground} />
+            <ArrowLeft size={22} color={t.foreground} />
           </Pressable>
           <View style={styles.headerTitle}>
             <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header">
@@ -68,7 +63,7 @@ export default function GroupDetailScreen() {
         <View style={styles.statsRow}>
           <Card style={[styles.statCard, { borderColor: `${t.primary}33`, backgroundColor: `${t.primary}0D` }]}>
             <View style={styles.statLabelRow}>
-              <Ionicons name="receipt-outline" size={16} color={t.mutedForeground} />
+              <Receipt size={16} color={t.mutedForeground} />
               <Text style={[styles.statLabel, { color: t.mutedForeground }]}>Toplam Harcama</Text>
             </View>
             <Text style={[styles.statValue, { color: t.primary }]}>{formatCurrencyTry(total)}</Text>
@@ -81,7 +76,7 @@ export default function GroupDetailScreen() {
             ]}
           >
             <View style={styles.statLabelRow}>
-              <Ionicons name="trending-up-outline" size={16} color={t.mutedForeground} />
+              <TrendingUp size={16} color={t.mutedForeground} />
               <Text style={[styles.statLabel, { color: t.mutedForeground }]}>Durumunuz</Text>
             </View>
             <Text

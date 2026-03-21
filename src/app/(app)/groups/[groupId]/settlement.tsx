@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,8 +7,9 @@ import { Card } from '@/components/ui/card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
-import { splitData, useSplitDataStore } from '@/services/split-data';
+import { splitData } from '@/services/split-data';
 import { formatCurrencyTry } from '@/utils/format';
 import { calculateBalances, calculateSettlements } from '@/utils/settlement';
 
@@ -18,13 +19,7 @@ export default function SettlementScreen() {
   const t = useTheme();
   const { user } = useAuth();
 
-  const snapshot = useSplitDataStore((s) => ({
-    group: s.getGroup(gid),
-    members: s.getMembers(gid),
-    expenses: s.getExpenses(gid),
-  }));
-
-  const { group, members, expenses } = snapshot;
+  const { group, members, expenses } = useGroupAggregates(gid);
 
   if (!group) {
     return (
@@ -43,7 +38,7 @@ export default function SettlementScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
       <View style={[styles.topBar, { borderBottomColor: t.border }]}>
         <Pressable accessibilityLabel="Geri" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={22} color={t.foreground} />
+          <ArrowLeft size={22} color={t.foreground} />
         </Pressable>
         <Text style={[styles.topTitle, { color: t.foreground }]} accessibilityRole="header">
           Ödeme Özeti
@@ -101,7 +96,7 @@ export default function SettlementScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.foreground, fontWeight: '700' }}>{s.from.name}</Text>
                     <View style={styles.arrowRow}>
-                      <Ionicons name="arrow-forward" size={16} color={t.mutedForeground} />
+                      <ArrowRight size={16} color={t.mutedForeground} />
                       <Text style={{ color: t.mutedForeground }}>{s.to.name}</Text>
                     </View>
                   </View>

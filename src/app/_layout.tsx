@@ -1,29 +1,54 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import React from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { TamaguiProvider, Theme } from 'tamagui';
 
-import { AuthProvider } from '@/contexts/auth-context';
+import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { tamaguiConfig } from '../../tamagui.config';
 
-function NavigationTheme({ children }: { children: React.ReactNode }) {
-  const colorScheme = useColorScheme();
-  const navTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
-  return <ThemeProvider value={navTheme}>{children}</ThemeProvider>;
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function SplashGate() {
+  const { initializing } = useAuth();
+
+  useEffect(() => {
+    if (!initializing) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [initializing]);
+
+  return null;
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
+    InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
+  });
+
+  const scheme = useColorScheme();
+  const themeName = scheme === 'dark' ? 'dark' : 'light';
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationTheme>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(app)" />
-          </Stack>
-        </NavigationTheme>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <TamaguiProvider config={tamaguiConfig} defaultTheme={themeName}>
+      <Theme name={themeName}>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <SplashGate />
+            <NavigationThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <Stack screenOptions={{ headerShown: false }} />
+            </NavigationThemeProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </Theme>
+    </TamaguiProvider>
   );
 }

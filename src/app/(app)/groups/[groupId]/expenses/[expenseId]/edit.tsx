@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
+import { useExpenseShares } from '@/hooks/use-expense-shares';
 import { useTheme } from '@/hooks/use-theme';
 import { href } from '@/lib/href';
 import { splitData, useSplitDataStore } from '@/services/split-data';
@@ -21,7 +22,7 @@ export default function EditExpenseScreen() {
   const t = useTheme();
 
   const expense = useSplitDataStore((s) => s.expenses.find((e) => e.id === eid));
-  const shares = useSplitDataStore((s) => s.getShares(eid));
+  const shares = useExpenseShares(eid);
 
   const [title, setTitle] = useState(expense?.title ?? '');
   const [description, setDescription] = useState(expense?.description ?? '');
@@ -75,13 +76,13 @@ export default function EditExpenseScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
       <View style={[styles.topBar, { borderBottomColor: t.border }]}>
         <Pressable accessibilityLabel="Geri" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={22} color={t.foreground} />
+          <ArrowLeft size={22} color={t.foreground} />
         </Pressable>
         <Text style={[styles.topTitle, { color: t.foreground, flex: 1 }]} accessibilityRole="header">
           Harcama Detayı
         </Text>
         <Pressable accessibilityLabel="Harcamayı sil" accessibilityRole="button" onPress={remove} style={styles.iconBtn}>
-          <Ionicons name="trash-outline" size={22} color={t.destructive} />
+          <Trash2 size={22} color={t.destructive} />
         </Pressable>
       </View>
 

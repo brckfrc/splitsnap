@@ -1,6 +1,6 @@
 # SplitSnap
 
-Shared expense tracking for groups (friends, roommates, trips). **iOS-first** app built with **Expo SDK 55**, **React Native**, **TypeScript**, **Expo Router**, and **Supabase**.
+Shared expense tracking for groups (friends, roommates, trips). **iOS-first** app built with **Expo SDK 55**, **React Native**, **TypeScript**, **Expo Router**, **Tamagui** (provider, themes, bottom sheets), and **Supabase**.
 
 > Project roadmap and university scope: [`ROADMAP.md`](ROADMAP.md) (Turkish). Agent / workflow rules: [`docs/AGENTS.md`](docs/AGENTS.md).
 
@@ -37,14 +37,14 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
    Or: `npx expo run:ios`
 
-   First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone).
+   First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone). The same flow works on a **physical iPhone** (USB or network) with a dev client — not Expo Go.
 
 ## Project layout
 
 - **Routes / screens:** [`src/app/`](src/app/) — Expo Router (file-based routing)
 - **UI components:** [`src/components/`](src/components/)
 - **Design reference (Figma export prototype):** [`design/`](design/) — Vite/React; use for visuals when building RN screens (not run in production)
-- **Supabase client (to add):** `src/lib/supabase.ts`
+- **Supabase client:** [`src/lib/supabase.ts`](src/lib/supabase.ts) — factory + env (`EXPO_PUBLIC_*`); data access still goes through `src/services/`
 - **Docs:** [`docs/`](docs/)
 
 ## Scripts
@@ -53,7 +53,10 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 |--------|-------------|
 | `npm start` | Start Metro (use with dev build on simulator/device) |
 | `npm run ios` | Build and run iOS dev client |
+| `npm run check` | **Typecheck + lint** — run before commits / PRs |
+| `npm run typecheck` | `tsc --noEmit` (strict TS) |
 | `npm run lint` | ESLint via Expo |
+| `npm run lint:fix` | ESLint with auto-fix |
 | `npm run reset-project` | Template helper — moves starter to `app-example` (use with care) |
 
 ## Learn more

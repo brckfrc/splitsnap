@@ -136,3 +136,18 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 - [x] `design/` → Expo: `(auth)` / `(app)` dosya rotaları, token tabanlı UI bileşenleri, **mock** grup/harcama akışı (ROADMAP hafta 3+ ile karıştırılmamalı)
 - [x] `tsconfig` `design/` exclude — temiz `tsc`
+- [x] `useTheme()` — Tamagui `useTheme` + `getVariableValue` ile token’ları **string**’e çözme (Lucide / native SVG `[object Object]` renk uyarılarını önler); önceki `useMemo` tabanlı optimizasyon korunur
+- [x] `GroupsListScreen` inline `totalForGroup` / `memberCount` → pre-computed `useMemo` Map'ler ile O(1) erişim
+- [x] **Tamagui** — `tamagui.config.ts`, kök `babel.config.js` (`@tamagui/babel-plugin` + Reanimated sırası), `TamaguiProvider` / `Theme` / Inter fontlar `src/app/_layout.tsx`; Sheet tabanlı grup modalları; çeşitli ekranlar Tamagui + mevcut token’larla hizalı
+- [x] **Tamagui Sheet / portal** — `package.json`’da doğrudan `@tamagui/portal` + `overrides`; tek fiziksel kopya (nested `@tamagui/sheet` kopyası `PortalDispatchContext` hatasına yol açıyordu)
+- [x] **Zustand + React 19** — `useGroupAggregates` / `useExpenseShares` (`src/hooks/`): kök slice + `useMemo`; `getMembers` / `getExpenses` / `getShares` doğrudan selector olarak kullanılmıyor (sonsuz `getSnapshot` döngüsü önlendi)
+- [x] **Kalite script’leri** — `npm run typecheck`, `lint:fix`, `check` (`README` + `AGENTS` validation)
+- [x] **Dev login bypass** — `EXPO_PUBLIC_DEV_LOGIN_BYPASS` + `dev-auth-bypass` / `auth-context` / auth ekranları paneli (`__DEV__`); production’da kullanılmamalı
+
+### Gelecek İyileştirmeler (Backlog)
+
+- [ ] **Client-side input validation:** email format kontrolü, password strength (min 6 karakter vb.), expense amount üst limiti
+- [ ] **`global.css` temizliği:** `src/constants/theme.ts` içindeki `import '@/global.css'` iOS-only projede gereksiz (zararsız ama temizlik maddesi)
+- [ ] **Supabase geçişinde RLS policy review** zorunlu — tüm tablo değişikliklerinde
+- [ ] **`expo-secure-store` ile hardened auth adapter** — AsyncStorage yerine Supabase session storage
+- [ ] **Auth rate limiting UX:** çok fazla başarısız deneme için client-side feedback / cooldown

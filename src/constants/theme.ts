@@ -21,7 +21,7 @@ export type AppThemeColors = TokenScheme & {
   backgroundSelected: string;
 };
 
-function extendLegacy(tokens: TokenScheme): AppThemeColors {
+export function extendLegacy(tokens: TokenScheme): AppThemeColors {
   return {
     ...tokens,
     text: tokens.foreground,

@@ -63,6 +63,15 @@ React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygu
 - [x] Temel uygulama tema ve ortak bileşen yapısının oluşturulması
 - [ ] Grup listesi ekranının ilk sürümünün hazırlanması
 
+### Ekstra
+
+- [x] **Tamagui** tabanlı UI (provider, tema birleşimi, Inter font, Sheet modalları); kök `babel.config.js` ve `tamagui.config.ts`
+- [x] **Sheet / portal:** `@tamagui/portal` tekilleştirme (`package.json` + overrides) — çift kopya `PortalDispatchContext` hatasını giderir
+- [x] **`useTheme` + `getVariableValue`** — Lucide / native SVG için renk string çözümü
+- [x] **Zustand + React 19:** `useGroupAggregates` / `useExpenseShares` ile stabil snapshot (sonsuz render döngüsü önlemi)
+- [x] **Geliştirme ortamı:** `EXPO_PUBLIC_DEV_LOGIN_BYPASS` ile isteğe bağlı mock giriş paneli (`__DEV__`); production’da kullanılmaz
+- [x] **Kalite komutları:** `npm run typecheck`, `lint:fix`, `check` (CI / commit öncesi)
+
 ## Hafta 3 — Veritabanı ve Grup Yapısı
 
 - [ ] Veritabanı tablolarının planlanması

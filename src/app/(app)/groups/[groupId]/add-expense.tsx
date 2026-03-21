@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowLeft, Camera } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
 import { href } from '@/lib/href';
-import { splitData, useSplitDataStore } from '@/services/split-data';
+import { splitData } from '@/services/split-data';
 
 export default function AddExpenseScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -21,8 +22,7 @@ export default function AddExpenseScreen() {
   const t = useTheme();
   const { user } = useAuth();
 
-  const members = useSplitDataStore((s) => s.getMembers(gid));
-  const group = useSplitDataStore((s) => s.getGroup(gid));
+  const { members, group } = useGroupAggregates(gid);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -131,7 +131,7 @@ export default function AddExpenseScreen() {
           onPress={() => router.back()}
           style={styles.iconBtn}
         >
-          <Ionicons name="arrow-back" size={22} color={t.foreground} />
+          <ArrowLeft size={22} color={t.foreground} />
         </Pressable>
         <Text style={[styles.topTitle, { color: t.foreground }]} accessibilityRole="header">
           Yeni Harcama
@@ -158,7 +158,7 @@ export default function AddExpenseScreen() {
               accessibilityRole="button"
               accessibilityLabel="Fiş fotoğrafı seç"
             >
-              <Ionicons name="camera-outline" size={32} color={t.mutedForeground} />
+              <Camera size={32} color={t.mutedForeground} />
               <Text style={{ color: t.foreground, fontWeight: '600' }}>Fotoğraf Seç</Text>
               <Text style={{ color: t.mutedForeground, fontSize: 12, textAlign: 'center' }}>
                 Gerçek OCR ve depolama sonraki sprintte

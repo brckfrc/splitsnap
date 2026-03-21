@@ -1,15 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
+import { LogOut, User, Users } from 'lucide-react-native';
 import { router, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
-import { href } from '@/lib/href';
 import { useTheme } from '@/hooks/use-theme';
+import { href } from '@/lib/href';
 
 const items = [
-  { key: 'groups', label: 'Gruplar', href: '/groups' as const, icon: 'people-outline' as const, iconActive: 'people' as const },
-  { key: 'profile', label: 'Profil', href: '/profile' as const, icon: 'person-outline' as const, iconActive: 'person' as const },
+  { key: 'groups', label: 'Gruplar', href: '/groups' as const, Icon: Users },
+  { key: 'profile', label: 'Profil', href: '/profile' as const, Icon: User },
 ];
 
 type AppBottomBarProps = {
@@ -21,9 +21,9 @@ export function AppBottomBar({ onLogout }: AppBottomBarProps) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
 
-  const isActive = (href: string) => {
-    if (href === '/groups') return pathname === '/groups' || pathname.startsWith('/groups/');
-    return pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = (path: string) => {
+    if (path === '/groups') return pathname === '/groups' || pathname.startsWith('/groups/');
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
   return (
@@ -39,6 +39,8 @@ export function AppBottomBar({ onLogout }: AppBottomBarProps) {
     >
       {items.map((item) => {
         const active = isActive(item.href);
+        const color = active ? t.primary : t.mutedForeground;
+        const Icon = item.Icon;
         return (
           <Pressable
             key={item.key}
@@ -48,8 +50,8 @@ export function AppBottomBar({ onLogout }: AppBottomBarProps) {
             onPress={() => router.push(href(item.href))}
             style={styles.item}
           >
-            <Ionicons name={active ? item.iconActive : item.icon} size={22} color={active ? t.primary : t.mutedForeground} />
-            <Text style={[styles.label, { color: active ? t.primary : t.mutedForeground }]}>{item.label}</Text>
+            <Icon size={22} color={color} />
+            <Text style={[styles.label, { color }]}>{item.label}</Text>
           </Pressable>
         );
       })}
@@ -59,7 +61,7 @@ export function AppBottomBar({ onLogout }: AppBottomBarProps) {
         onPress={onLogout}
         style={styles.item}
       >
-        <Ionicons name="log-out-outline" size={22} color={t.destructive} />
+        <LogOut size={22} color={t.destructive} />
         <Text style={[styles.label, { color: t.destructive }]}>Çıkış</Text>
       </Pressable>
     </View>

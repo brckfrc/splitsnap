@@ -7,17 +7,14 @@ export function Separator() {
   const t = useTheme();
   return (
     <View
-      style={[styles.line, { backgroundColor: t.border }]}
+      style={{
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: t.border,
+        marginVertical: Spacing.two,
+        alignSelf: 'stretch',
+      }}
       accessibilityRole="none"
       importantForAccessibility="no"
     />
   );
 }
-
-const styles = StyleSheet.create({
-  line: {
-    height: StyleSheet.hairlineWidth,
-    marginVertical: Spacing.two,
-    alignSelf: 'stretch',
-  },
-});
