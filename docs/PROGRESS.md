@@ -2,7 +2,7 @@
 
 Detailed development tracking for SplitSnap. This is the living document for recording what was done, decisions made, blockers encountered, and anything noteworthy during each week.
 
-`ROADMAP.md` stays frozen and only gets `[x]` marks. All detailed notes go here.
+`ROADMAP.md` stays aligned with the archive report: weekly checklist lines only toggle `[x]`, extra work under `### Ekstra`, and **instructor-facing** weekly notes, video links, and screenshot references under `### Haftalık Notlar` / `### Video Linki` / `### Ekran Görselleri` (filled by the student). This file is an optional **technical** dev log; use it for implementation detail if you want it separate from the roadmap.
 
 ---
 
@@ -16,8 +16,8 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] React Native + TypeScript proje kurulumunun yapılması — Expo SDK 55, `default@sdk-55` şablonu
 - [x] Temel klasör yapısının oluşturulması — `src/app/`, `src/components/`, `assets/`, vb.
 - [x] Navigation yapısının ilk kurulumu — Expo Router (`src/app/`)
-- [x] Figma üzerinde ilk ekran taslaklarının hazırlanması — tasarım dosyası + `design/` referans projesi
-- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — `design/src/app/components/pages/LoginPage.tsx`, `RegisterPage.tsx`, `RootLayout` ile splash/akış referansı; üretim uygulamasında RN ekranları Hafta 2’de `src/app/(auth)/` altına taşınacak
+- [x] Figma üzerinde ilk ekran taslaklarının hazırlanması — tasarım dosyası + `design/figma_template/` referans projesi (`design/figma_screenshots/`)
+- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — `design/figma_template/src/app/components/pages/LoginPage.tsx`, `RegisterPage.tsx`, `RootLayout` ile splash/akış referansı; üretim uygulamasında RN ekranları Hafta 2’de `src/app/(auth)/` altına taşınacak
 
 **Completed (detail):**
 - Expo app created with `npx create-expo-app@latest . --template default@sdk-55`
@@ -26,7 +26,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - First **development build** succeeded: `npx expo run:ios` (Simulator)
 - `.env` / `.env.example` with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY`
 - Docs synced: `README.md`, `docs/AGENTS.md`, `ROADMAP.md` archive path, tech stack notes
-- **`design/`** — Figma-aligned reference UI (Vite + React + Tailwind): login, register, group list/detail, add expense, settlement, profile, modals; see `design/README.md` and `design/guidelines/`
+- **`design/figma_template/`** — Figma-aligned reference UI (Vite + React + Tailwind): login, register, group list/detail, add expense, settlement, profile, modals; see `design/figma_template/README.md` and `design/figma_template/guidelines/`; static shots in `design/figma_screenshots/`
 
 **Decisions:**
 - **Expo SDK 55** over bare React Native CLI — official path, faster setup, EAS option later.
@@ -41,6 +41,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 **Notes:**
 - Native folders `ios/` / `android/` are gitignored; regenerate with `expo prebuild` / `expo run:ios` on clone.
+- `design/figma_template/` and `design/figma_screenshots/` are tracked in git as design reference (not in `.gitignore`).
 - `ROADMAP.md` usage note now points to `docs/archive/SplitSnap Tanıtım Raporu.md` for Section 7 alignment.
 
 **Blockers:**
