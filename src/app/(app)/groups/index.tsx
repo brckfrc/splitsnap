@@ -63,7 +63,7 @@ export default function GroupsListScreen() {
   }
 
   function submitCreate() {
-    if (!user) return;
+    if (!user || !newName.trim()) return;
     const owner = { id: user.id, name: user.name, email: user.email, avatar: '👤' };
     groupsService.create({
       name: newName,

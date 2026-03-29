@@ -46,7 +46,7 @@
 - [x] Kullanıcı kayıt ve giriş akışının çalışır hale getirilmesi
 - [x] Oturum yönetimi mantığının kurulması
 - [x] Temel uygulama tema ve ortak bileşen yapısının oluşturulması
-- [ ] Grup listesi ekranının ilk sürümünün hazırlanması
+- [x] Grup listesi ekranının ilk sürümünün hazırlanması
 
 ### Ekstra
 

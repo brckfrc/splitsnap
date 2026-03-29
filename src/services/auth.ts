@@ -36,13 +36,17 @@ export async function signIn(email: string, password: string): Promise<{ user: A
   return { user: mapUser(data.user), error };
 }
 
-export async function signUp(email: string, password: string, fullName: string): Promise<{ user: AppAuthUser | null; error: AuthError | null }> {
+export async function signUp(
+  email: string,
+  password: string,
+  fullName: string,
+): Promise<{ user: AppAuthUser | null; session: Session | null; error: AuthError | null }> {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: fullName } },
   });
-  return { user: mapUser(data.user), error };
+  return { user: mapUser(data.user), session: data.session ?? null, error };
 }
 
 export async function signOut(): Promise<{ error: AuthError | null }> {

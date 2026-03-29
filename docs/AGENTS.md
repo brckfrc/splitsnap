@@ -30,7 +30,7 @@
 | Navigation | Expo Router | File-based routing under **`src/app/`** |
 | Backend | @supabase/supabase-js | Auth, PostgreSQL, Storage |
 | Auth session storage | @react-native-async-storage/async-storage | Default `auth.storage` for Supabase (official Expo tutorial pattern) |
-| State Management | Zustand | Client state (package installed; add `src/stores/` and usage when implementing features) |
+| State Management | Zustand | Client state; store’lar **`src/stores/`** altında (ör. [`split-data-store.ts`](../src/stores/split-data-store.ts)); yeni özellikler için aynı düzeni izle |
 | Local Storage | react-native-mmkv + react-native-nitro-modules | Fast key-value; Zustand persist backend |
 | Secure Storage | expo-secure-store | Optional: extra-sensitive non-Supabase secrets, or future hardened auth adapter |
 | OCR (Week 8+) | expo-doc-vision (to add) | On-device text recognition — install when implementing OCR |
@@ -58,7 +58,8 @@
 - Babel: root [`babel.config.js`](../../babel.config.js) must keep **`react-native-reanimated/plugin` last** and include `@tamagui/babel-plugin` pointing at `tamagui.config.ts`.
 - Supabase API calls: wrap in `src/services/` — screens must not import the raw client for data access
 - Types: `src/types/`
-- Zustand stores: `src/stores/`
+- Zustand stores: `src/stores/` (ör. `split-data-store.ts`); yeni slice’lar burada
+- **Localization:** Şu an UI string’leri **Türkçe** sabit; **en / tr** i18n planı `docs/PROGRESS.md` backlog’unda — yeni ekranlarda çeviri katmanı yoksa Türkçe ile devam et veya i18n eklendiğinde anahtarları ortak sözlüğe taşı
 - **Zustand + React 19:** `useSyncExternalStore` requires stable snapshots. Do **not** use `useSplitDataStore((s) => ({ ... }))` or selectors that call `getMembers` / `getExpenses` / `getShares` (they `.filter()` → new array every read → infinite loop / “getSnapshot should be cached”). Use root slices + `useMemo`, or [`useGroupAggregates`](../src/hooks/use-group-aggregates.ts) and [`useExpenseShares`](../src/hooks/use-expense-shares.ts). For multi-field objects with stable inner refs, `useShallow` from `zustand/react/shallow` is also valid.
 - Utils: `src/utils/`
 - Supabase client factory: `src/lib/supabase.ts` (read env from `process.env.EXPO_PUBLIC_*`)

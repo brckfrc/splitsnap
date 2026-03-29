@@ -25,13 +25,13 @@ export default function RegisterScreen() {
     setInfo(null);
     setLoading(true);
     try {
-      const { user, error: err } = await signUp(email.trim(), password, name.trim());
+      const { error: err, session } = await signUp(email.trim(), password, name.trim());
       if (err) {
         setError(err.message);
         return;
       }
-      if (!user) {
-        setInfo('Kayıt alındı. E-posta doğrulaması gerekiyorsa gelen kutunuzu kontrol edin.');
+      if (!session) {
+        setInfo('Kaydınız alındı. Hesabınızı tamamlamak için e-postanızdaki doğrulama bağlantısına tıklayın.');
         return;
       }
       router.replace(href('/groups'));

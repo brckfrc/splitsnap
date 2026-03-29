@@ -17,7 +17,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] Temel klasör yapısının oluşturulması — `src/app/`, `src/components/`, `assets/`, vb.
 - [x] Navigation yapısının ilk kurulumu — Expo Router (`src/app/`)
 - [x] Figma üzerinde ilk ekran taslaklarının hazırlanması — tasarım dosyası + `design/figma_template/` referans projesi (`design/figma_screenshots/`)
-- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — `design/figma_template/src/app/components/pages/LoginPage.tsx`, `RegisterPage.tsx`, `RootLayout` ile splash/akış referansı; üretim uygulamasında RN ekranları Hafta 2’de `src/app/(auth)/` altına taşınacak
+- [x] Açılış, giriş ve kayıt ekranlarının ilk sürümünün yapılması — `design/figma_template/.../LoginPage.tsx`, `RegisterPage.tsx`, `RootLayout` referansı; üretim uygulamasında karşılıkları `src/app/(auth)/login.tsx`, `register.tsx` ve kök `_layout` akışında
 
 **Completed (detail):**
 - Expo app created with `npx create-expo-app@latest . --template default@sdk-55`
@@ -51,7 +51,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ## Week 2 — Authentication & Theme
 
-**Status:** Roadmap Hafta 2 — **5/6** (`ROADMAP.md`): Auth + oturum + tema + ortak bileşenler tamam; **grup listesi ilk sürüm** maddesi kasıtlı olarak açık (aşağıdaki şablon, bu maddeyi karşılamıyor sayılır).
+**Status:** Roadmap Hafta 2 — **6/6** (`ROADMAP.md`): tüm maddeler tamamlandı.
 
 **Tamamlanan (rapor maddeleriyle uyumlu):**
 - [x] Supabase projesi (önceden)
@@ -60,16 +60,16 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] Oturum yönetimi — `src/contexts/auth-context.tsx`, `onAuthStateChange`, yönlendirme
 - [x] Tema + ortak bileşen iskeleti — `src/theme/tokens.ts`, `src/constants/theme.ts`, `src/components/ui/*`
 
-**Kasıtlı olarak ROADMAP’ta açık bırakılan:**
-- [ ] **Grup listesi ekranının ilk sürümü** — Expo tarafında `design/`’e benzer ekranlar ve **Zustand + mock seed** ile şablon var; bu, rapordaki “ilk sürüm” çıktısı olarak işaretlenmedi (veri katmanı Supabase değil, kapsam “taslak”).
+- [x] Grup listesi ekranının ilk sürümü — `src/app/(app)/groups/index.tsx`: header, boş durum, grup kartları (sahip rozeti, üye sayısı, toplam tutar), `CreateGroupModal` / `JoinGroupModal` (Tamagui Sheet); veri katmanı mock/Zustand (Supabase tablolarına bağlama Hafta 3)
 
 **Şablon / mock (PROGRESS’te kayıt; Hafta 3+ ROADMAP kapalı):**
-- `(app)` altında grup listesi, detay, harcama ekle/düzenle, settlement, profil gibi ekranlar **yerel mock** ile dolaşılabilir; DB tabloları, RLS ve raporun tanıdığı “tam” haftalık teslimler henüz yok.
+- `(app)` altında grup detay, harcama ekle/düzenle, settlement, profil gibi ekranlar **yerel mock** ile dolaşılabilir; DB tabloları, RLS ve raporun tanıdığı “tam” haftalık teslimler henüz yok.
 - `tsconfig.json` **excludes** `design/` — `npx tsc --noEmit` yalnızca Expo uygulamasını doğrular.
 
 **Notes:**
 - Typed routes: `src/lib/href.ts` — dinamik path’ler için geçici cast.
 - Auth ekranlarında yardımcı metinler `__DEV__` ile sınırlı.
+- Kayıt: e-posta onayı açıkken `signUp` sonrası `session === null` ise kullanıcıya doğrulama e-postası hatırlatması (`register.tsx`); ileride Callout bileşeni için backlog’a bakın.
 
 **Blockers:**
 - (none)
@@ -147,6 +147,8 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ### Gelecek İyileştirmeler (Backlog)
 
+- [ ] **Çoklu dil (en / tr):** Uygulama metinleri şu an yalnızca Türkçe; ileride `expo-localization` + i18n katmanı (ör. `i18next` veya benzeri) ile **İngilizce / Türkçe** seçeneği veya cihaz diline göre çeviri
+- [ ] **Kayıt sonrası e-posta doğrulama bildirimi (UI):** `register.tsx` şu an bilgi metnini gösteriyor (Supabase `session === null` iken); ileride tema ile hizalı ortak bir `Callout` / `Notice` bileşeni (ikon, arka plan, erişilebilirlik) ile güçlendirilebilir
 - [ ] **Client-side input validation:** email format kontrolü, password strength (min 6 karakter vb.), expense amount üst limiti
 - [ ] **`global.css` temizliği:** `src/constants/theme.ts` içindeki `import '@/global.css'` iOS-only projede gereksiz (zararsız ama temizlik maddesi)
 - [ ] **Supabase geçişinde RLS policy review** zorunlu — tüm tablo değişikliklerinde
