@@ -39,6 +39,10 @@
 
 ### Ekran Görselleri
 
+**Expo / geliştirme ortamı**
+
+![Expo — geliştirme ortamı](docs/roadmap-screenshots/week-01/expo.png)
+
 ## Hafta 2 — Kimlik Doğrulama ve Tema
 
 - [x] Supabase projesinin oluşturulması
@@ -67,6 +71,30 @@
 [Hafta 2 — 29-03-2026](https://youtu.be/ErOGMI0s7SE)
 
 ### Ekran Görselleri
+
+**Giriş ekranı**
+
+![Giriş ekranı](docs/roadmap-screenshots/week-02/login.png)
+
+**Gruplar listesi (ana ekran)**
+
+![Gruplar listesi](docs/roadmap-screenshots/week-02/dashboard-groups.png)
+
+**Yeni grup oluşturma (alt sayfa / Sheet)**
+
+![Yeni grup oluşturma](docs/roadmap-screenshots/week-02/new-group.png)
+
+**Örnek harcama / grup akışı**
+
+![Örnek harcama ekranı](docs/roadmap-screenshots/week-02/expense-example.png)
+
+**Supabase — Authentication kullanıcıları**
+
+![Supabase kullanıcı listesi](docs/roadmap-screenshots/week-02/supabase-user.png)
+
+**Supabase — e-posta doğrulama**
+
+![Supabase e-posta doğrulama](docs/roadmap-screenshots/week-02/supabase-confirm.png)
 
 ## Hafta 3 — Veritabanı ve Grup Yapısı
 
