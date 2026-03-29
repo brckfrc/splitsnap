@@ -2,7 +2,17 @@
 
 Shared expense tracking for groups (friends, roommates, trips). **iOS-first** app built with **Expo SDK 55**, **React Native**, **TypeScript**, **Expo Router**, **Tamagui** (provider, themes, bottom sheets), and **Supabase**.
 
-> Project roadmap and university scope: [`ROADMAP.md`](ROADMAP.md) (Turkish). Agent / workflow rules: [`docs/AGENTS.md`](docs/AGENTS.md).
+## Project Tracking
+
+**Primary tracking document:** [`ROADMAP.md`](ROADMAP.md) — weekly progress, notes, screenshots, and video links
+
+## Weekly Progress Videos
+
+**Playlist (all weeks):** [YouTube playlist](https://youtube.com/playlist?list=PLfh_d_SOW477Ie0rM6Yj5QWix_al3jvDc&si=DfWwp8XzHfQsel_b)
+
+| Week | Video |
+|------|-------|
+| 1 | [Week 1 Video](https://youtu.be/uZ3RfGsreec?si=huxHxwlchSmuWuN4) |
 
 ## Requirements
 
@@ -43,8 +53,8 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
 - **Routes / screens:** [`src/app/`](src/app/) — Expo Router (file-based routing)
 - **UI components:** [`src/components/`](src/components/)
-- **Design reference (Figma export prototype):** [`design/`](design/) — Vite/React; use for visuals when building RN screens (not run in production)
-- **Supabase client:** [`src/lib/supabase.ts`](src/lib/supabase.ts) — factory + env (`EXPO_PUBLIC_*`); data access still goes through `src/services/`
+- **Design reference (Figma export prototype):** [`design/figma_template/`](design/figma_template/) — Vite/React bundle; [`design/figma_screenshots/`](design/figma_screenshots/) for PNGs. Use for visuals when building RN screens (not run in production).
+- **Supabase client:** [`src/lib/supabase.ts`](src/lib/supabase.ts) — factory + env (`EXPO_PUBLIC_*`); data access through `src/services/` (see [`docs/AGENTS.md`](docs/AGENTS.md) for `src/stores/` and the rest of the target layout).
 - **Docs:** [`docs/`](docs/)
 
 ## Scripts
@@ -58,6 +68,8 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 | `npm run lint` | ESLint via Expo |
 | `npm run lint:fix` | ESLint with auto-fix |
 | `npm run reset-project` | Template helper — moves starter to `app-example` (use with care) |
+| `npm run android` | Expo template — **not** a supported product target (iOS-only scope; see `docs/AGENTS.md`) |
+| `npm run web` | Expo web — optional preview only; not the production target |
 
 ## Learn more
 
