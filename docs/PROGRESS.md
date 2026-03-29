@@ -53,6 +53,8 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 **Status:** Roadmap Hafta 2 — **6/6** (`ROADMAP.md`): tüm maddeler tamamlandı.
 
+**Haftalık video:** [Hafta 2 — 29-03-2026](https://youtu.be/ErOGMI0s7SE) (`ROADMAP.md` ile aynı)
+
 **Tamamlanan (rapor maddeleriyle uyumlu):**
 - [x] Supabase projesi (önceden)
 - [x] Supabase Auth entegrasyonu — `src/lib/supabase.ts`, `src/services/auth.ts`

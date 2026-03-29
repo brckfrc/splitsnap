@@ -64,7 +64,7 @@
 
 ### Video Linki
 
-
+[Hafta 2 — 29-03-2026](https://youtu.be/ErOGMI0s7SE)
 
 ### Ekran Görselleri
 
