@@ -382,7 +382,7 @@ $$;
 
 | İşlem | Politika |
 |-------|---------|
-| **SELECT** | `is_group_participant(id)` — aktif ve **ayrılmış** üye grubu görebilir (P5). |
+| **SELECT** | `owner_id = auth.uid() OR is_group_participant(id)` — grup sahibi her zaman görebilir; diğer üyeler `is_group_participant` ile (aktif ve ayrılmış, P5). PostgreSQL 17'de `INSERT … RETURNING` sırasında SELECT politikası da değerlendirildiğinden, AFTER trigger henüz `group_members`'a satır eklemeden önce owner kontrolü gereklidir. |
 | **INSERT** | `owner_id = auth.uid()` |
 | **UPDATE** | `owner_id = auth.uid()` |
 | **DELETE** | Kullanılmaz — soft delete; `UPDATE` ile `deleted_at` set edilir, `owner_id = auth.uid()` |
@@ -390,14 +390,14 @@ $$;
 Eşdeğer SELECT ifadesi:
 
 ```sql
-public.is_group_participant(groups.id)
+owner_id = (select auth.uid()) OR public.is_group_participant(groups.id)
 ```
 
 ### 5.4 `group_members`
 
 | İşlem | Politika |
 |-------|---------|
-| **SELECT** | Aynı `group_id`'de kayıtlı olma (aktif veya ayrılmış — üyeler birbirini görür) |
+| **SELECT** | `is_group_participant(group_id)` — SECURITY DEFINER fonksiyon üzerinden (self-referencing subquery yerine; doğrudan kendi tablosunu sorgulayan politika PostgreSQL'de sonsuz döngüye neden olur) |
 | **INSERT** | `join_group_by_invite()` RPC fonksiyonu üzerinden (§5.6'ya bkz.); doğrudan insert politikası: yalnızca trigger (owner ekleme) |
 | **UPDATE** | `left_at` set etme: `user_id = auth.uid()` (kendi ayrılması) veya grup `owner_id = auth.uid()` (admin çıkarma). `role` güncellemesi: yalnızca `owner_id`. |
 | **DELETE** | Kullanılmaz — `left_at` ile soft ayrılma |

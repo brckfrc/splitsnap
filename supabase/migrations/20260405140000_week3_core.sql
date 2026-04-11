@@ -475,11 +475,17 @@ create policy friend_requests_delete_sender_pending
   );
 
 -- groups
+-- SELECT: owner can always see their own group; required because PostgreSQL 17
+-- evaluates the SELECT policy during INSERT+RETURNING before the AFTER trigger
+-- has added the owner to group_members.
 create policy groups_select_participant
   on public.groups
   for select
   to authenticated
-  using (public.is_group_participant(id));
+  using (
+    owner_id = (select auth.uid())
+    or public.is_group_participant(id)
+  );
 
 create policy groups_insert_owner_self
   on public.groups
@@ -495,17 +501,15 @@ create policy groups_update_owner
   with check (owner_id = (select auth.uid()));
 
 -- group_members
+-- Uses SECURITY DEFINER function instead of a self-referencing subquery;
+-- querying the same table directly inside its own policy causes infinite
+-- recursion in PostgreSQL.
 create policy group_members_select_same_group
   on public.group_members
   for select
   to authenticated
   using (
-    exists (
-      select 1
-      from public.group_members m
-      where m.group_id = group_members.group_id
-        and m.user_id = (select auth.uid())
-    )
+    public.is_group_participant(group_id)
   );
 
 create policy group_members_update_leave_or_owner

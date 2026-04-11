@@ -155,9 +155,10 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 ### Gelecek İyileştirmeler (Backlog)
 
 - [ ] **Çoklu dil (en / tr):** Uygulama metinleri şu an yalnızca Türkçe; ileride `expo-localization` + i18n katmanı (ör. `i18next` veya benzeri) ile **İngilizce / Türkçe** seçeneği veya cihaz diline göre çeviri
-- [ ] **Kayıt sonrası e-posta doğrulama bildirimi (UI):** `register.tsx` şu an bilgi metnini gösteriyor (Supabase `session === null` iken); ileride tema ile hizalı ortak bir `Callout` / `Notice` bileşeni (ikon, arka plan, erişilebilirlik) ile güçlendirilebilir
+- [x] **Kayıt sonrası bildirim (toast + login yönlendirme):** `register.tsx` artık `react-native-toast-message` ile kısa bildirim gösterip login'e yönlendiriyor; eski kalıcı `info` metni kaldırıldı. `AppToast` bileşeni kök `_layout.tsx`'te render ediliyor.
 - [ ] **Client-side input validation:** email format kontrolü, password strength (min 6 karakter vb.), expense amount üst limiti
 - [ ] **`global.css` temizliği:** `src/constants/theme.ts` içindeki `import '@/global.css'` iOS-only projede gereksiz (zararsız ama temizlik maddesi)
+- [x] **Hosted Supabase RLS düzeltmesi (PostgreSQL 17):** `groups` SELECT politikasına `owner_id = auth.uid()` eklendi (INSERT+RETURNING sırasında SELECT politikası da değerlendirildiği için gerekli); `group_members` SELECT politikasındaki self-referencing subquery `is_group_participant()` SECURITY DEFINER fonksiyonuna yönlendirildi (sonsuz döngü önlemi). Migration + DATABASE.md güncellendi.
 - [ ] **Supabase geçişinde RLS policy review** zorunlu — tüm tablo değişikliklerinde
 - [ ] **`expo-secure-store` ile hardened auth adapter** — AsyncStorage yerine Supabase session storage
 - [ ] **Auth rate limiting UX:** çok fazla başarısız deneme için client-side feedback / cooldown
