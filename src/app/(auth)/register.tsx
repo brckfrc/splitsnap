@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DevLoginBypassPanel } from '@/components/auth/dev-login-bypass-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spacing } from '@/constants/theme';
@@ -94,13 +93,10 @@ export default function RegisterScreen() {
             {__DEV__ ? (
               <View style={[styles.demo, { borderColor: t.border, backgroundColor: t.accent }]}>
                 <Text style={[styles.demoText, { color: t.mutedForeground }]}>
-                  Geliştirici: Production’da gerçek kayıt/giriş kullanılacak. E-posta onayı açıksa oturum hemen
-                  oluşmayabilir. Yerel önizleme için EXPO_PUBLIC_DEV_LOGIN_BYPASS — ayrıntı AGENTS.md.
+                  Geliştirici: E-posta onayı açıksa oturum hemen oluşmayabilir; doğrulama sonrası giriş yapın.
                 </Text>
               </View>
             ) : null}
-
-            <DevLoginBypassPanel />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

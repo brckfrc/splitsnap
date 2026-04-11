@@ -38,7 +38,17 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
    Never commit `.env`.
 
-3. **Run on iOS (development build)**
+3. **Supabase database (optional but required for real groups/friends)**
+
+   If you use the linked Supabase project and [CLI](https://supabase.com/docs/guides/cli):
+
+   ```bash
+   supabase db push
+   ```
+
+   Migrations live under [`supabase/migrations/`](supabase/migrations/). See [`supabase/README.md`](supabase/README.md) for archive/`pg_cron` notes and RPC summary. Schema reference: [`docs/DATABASE.md`](docs/DATABASE.md).
+
+4. **Run on iOS (development build)**
 
    This project uses **native modules** (e.g. MMKV). Use a **development build**, not Expo Go:
 
@@ -56,6 +66,7 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 - **UI components:** [`src/components/`](src/components/)
 - **Design reference (Figma export prototype):** [`design/figma_template/`](design/figma_template/) — Vite/React bundle; [`design/figma_screenshots/`](design/figma_screenshots/) for PNGs. Use for visuals when building RN screens (not run in production).
 - **Supabase client:** [`src/lib/supabase.ts`](src/lib/supabase.ts) — factory + env (`EXPO_PUBLIC_*`); data access through `src/services/` (see [`docs/AGENTS.md`](docs/AGENTS.md) for `src/stores/` and the rest of the target layout).
+- **Supabase SQL:** [`supabase/migrations/`](supabase/migrations/) — apply with `supabase db push` ([`supabase/README.md`](supabase/README.md))
 - **Docs:** [`docs/`](docs/)
 
 ## Scripts

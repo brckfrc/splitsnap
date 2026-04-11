@@ -12,9 +12,18 @@ type Props = {
   onClose: () => void;
   onSubmit: () => void;
   error?: string;
+  submitting?: boolean;
 };
 
-export function JoinGroupModal({ visible, code, onChangeCode, onClose, onSubmit, error }: Props) {
+export function JoinGroupModal({
+  visible,
+  code,
+  onChangeCode,
+  onClose,
+  onSubmit,
+  error,
+  submitting = false,
+}: Props) {
   const t = useTheme();
 
   return (
@@ -45,21 +54,21 @@ export function JoinGroupModal({ visible, code, onChangeCode, onClose, onSubmit,
           Gruba Katıl
         </Text>
         <Text style={[styles.hint, { color: t.mutedForeground }]}>
-          Paylaşılan grup ID&apos;sini girin (ör. yeni oluşturulan grupların kimliği).
+          Grup sahibinin paylaştığı davet kodunu girin (büyük harf, harf ve rakam).
         </Text>
         <Input
-          label="Grup ID"
+          label="Davet kodu"
           value={code}
           onChangeText={onChangeCode}
-          placeholder="g-xxxxx"
-          autoCapitalize="none"
+          placeholder="Örn. A1B2C3"
+          autoCapitalize="characters"
           error={error}
         />
         <XStack gap="$3" mt="$2">
-          <Button variant="secondary" flex={1} onPress={onClose}>
+          <Button variant="secondary" flex={1} onPress={onClose} disabled={submitting}>
             İptal
           </Button>
-          <Button flex={1} onPress={onSubmit} disabled={!code.trim()}>
+          <Button flex={1} loading={submitting} onPress={onSubmit} disabled={!code.trim() || submitting}>
             Katıl
           </Button>
         </XStack>

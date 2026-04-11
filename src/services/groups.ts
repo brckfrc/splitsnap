@@ -1,15 +1,23 @@
 /**
- * Group operations. UI should depend on this module; implementation is mock-backed
- * via splitData until Supabase `groups` / `group_members` tables + RLS are wired.
+ * Group operations for UI. Persisted via Supabase (`groups-supabase`).
  */
 
-import { splitData } from '@/services/split-data';
-import type { Group, User } from '@/types';
+import { createGroupRemote, joinGroupByInviteCodeRemote, loadGroupsFromSupabase } from '@/services/groups-supabase';
+import type { Group } from '@/types';
 
 export const groupsService = {
-  listForUser: (userId: string): Group[] => splitData.listGroupsForUser(userId),
-  get: (groupId: string) => splitData.getGroup(groupId),
-  create: (input: { name: string; description?: string; ownerId: string; owner: User }) =>
-    splitData.createGroup(input),
-  join: (input: { groupId: string; user: User }) => splitData.joinGroup(input),
+  async create(input: { name: string; description?: string; ownerId: string }): Promise<Group> {
+    const group = await createGroupRemote(input);
+    await loadGroupsFromSupabase();
+    return group;
+  },
+
+  async joinByInviteCode(inviteCode: string): Promise<void> {
+    await joinGroupByInviteCodeRemote(inviteCode);
+    await loadGroupsFromSupabase();
+  },
+
+  async refresh(): Promise<void> {
+    await loadGroupsFromSupabase();
+  },
 };

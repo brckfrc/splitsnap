@@ -13,6 +13,8 @@ type Props = {
   onChangeDescription: (v: string) => void;
   onClose: () => void;
   onSubmit: () => void;
+  submitting?: boolean;
+  error?: string;
 };
 
 export function CreateGroupModal({
@@ -23,6 +25,8 @@ export function CreateGroupModal({
   onChangeDescription,
   onClose,
   onSubmit,
+  submitting = false,
+  error,
 }: Props) {
   const t = useTheme();
 
@@ -61,11 +65,16 @@ export function CreateGroupModal({
           placeholder="Kısa not"
           multiline
         />
+        {error ? (
+          <Text style={{ color: t.destructive }} accessibilityRole="alert">
+            {error}
+          </Text>
+        ) : null}
         <XStack gap="$3" mt="$2">
-          <Button variant="secondary" flex={1} onPress={onClose}>
+          <Button variant="secondary" flex={1} onPress={onClose} disabled={submitting}>
             İptal
           </Button>
-          <Button flex={1} onPress={onSubmit} disabled={!name.trim()}>
+          <Button flex={1} loading={submitting} onPress={onSubmit} disabled={!name.trim() || submitting}>
             Oluştur
           </Button>
         </XStack>

@@ -29,6 +29,9 @@ export default function GroupsListScreen() {
   const [newDesc, setNewDesc] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [joinError, setJoinError] = useState<string | undefined>();
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [createError, setCreateError] = useState<string | undefined>();
+  const [joinSubmitting, setJoinSubmitting] = useState(false);
 
   const allGroups = useSplitDataStore((s) => s.groups);
   const expenses = useSplitDataStore((s) => s.expenses);
@@ -36,7 +39,9 @@ export default function GroupsListScreen() {
 
   const groups = useMemo(() => {
     if (!user) return EMPTY_GROUPS;
-    const ids = new Set(groupMembers.filter((m) => m.userId === user.id).map((m) => m.groupId));
+    const ids = new Set(
+      groupMembers.filter((m) => m.userId === user.id && !m.leftAt).map((m) => m.groupId),
+    );
     return allGroups.filter((g) => ids.has(g.id));
   }, [user, allGroups, groupMembers]);
 
@@ -51,6 +56,7 @@ export default function GroupsListScreen() {
   const groupMemberCounts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const m of groupMembers) {
+      if (m.leftAt) continue;
       map[m.groupId] = (map[m.groupId] ?? 0) + 1;
     }
     return map;
@@ -59,32 +65,41 @@ export default function GroupsListScreen() {
   function openCreate() {
     setNewName('');
     setNewDesc('');
+    setCreateError(undefined);
     setCreateOpen(true);
   }
 
-  function submitCreate() {
+  async function submitCreate() {
     if (!user || !newName.trim()) return;
-    const owner = { id: user.id, name: user.name, email: user.email, avatar: '👤' };
-    groupsService.create({
-      name: newName,
-      description: newDesc,
-      ownerId: user.id,
-      owner,
-    });
-    setCreateOpen(false);
+    setCreateError(undefined);
+    setCreateSubmitting(true);
+    try {
+      await groupsService.create({
+        name: newName,
+        description: newDesc,
+        ownerId: user.id,
+      });
+      setCreateOpen(false);
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : 'Grup oluşturulamadı.');
+    } finally {
+      setCreateSubmitting(false);
+    }
   }
 
-  function submitJoin() {
+  async function submitJoin() {
     if (!user) return;
     setJoinError(undefined);
-    const u = { id: user.id, name: user.name, email: user.email, avatar: '👤' };
-    const ok = groupsService.join({ groupId: joinCode.trim(), user: u });
-    if (!ok) {
-      setJoinError('Grup bulunamadı veya zaten üyesiniz.');
-      return;
+    setJoinSubmitting(true);
+    try {
+      await groupsService.joinByInviteCode(joinCode.trim());
+      setJoinOpen(false);
+      setJoinCode('');
+    } catch (e) {
+      setJoinError(e instanceof Error ? e.message : 'Gruba katılınamadı.');
+    } finally {
+      setJoinSubmitting(false);
     }
-    setJoinOpen(false);
-    setJoinCode('');
   }
 
   const firstName = user?.name.split(' ')[0] ?? '';
@@ -173,8 +188,13 @@ export default function GroupsListScreen() {
         description={newDesc}
         onChangeName={setNewName}
         onChangeDescription={setNewDesc}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => {
+          setCreateOpen(false);
+          setCreateError(undefined);
+        }}
         onSubmit={submitCreate}
+        submitting={createSubmitting}
+        error={createError}
       />
       <JoinGroupModal
         visible={joinOpen}
@@ -186,6 +206,7 @@ export default function GroupsListScreen() {
         }}
         onSubmit={submitJoin}
         error={joinError}
+        submitting={joinSubmitting}
       />
     </SafeAreaView>
   );

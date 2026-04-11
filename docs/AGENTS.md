@@ -5,7 +5,7 @@
 - This project **ships for iOS only**. Do not add Android-specific features, dependencies, or branching logic for Android as a supported target. The Expo template may still include `android` / `web` blocks in `app.json` and scripts like `npm run android` / `npm run web` — treat those as **template defaults**, not product requirements (see `README.md`).
 - Framework: **Expo SDK 55** (React Native 0.83) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
 - Backend: **Supabase** (`@supabase/supabase-js`). Do not write custom backend or server code. All Auth, DB, and Storage operations must go through the Supabase client.
-- Database schema changes require a migration plan in `docs/` before implementation.
+- Database schema changes require a migration plan in [`docs/DATABASE.md`](./DATABASE.md) (or an update to that file) before implementation.
 - Receipt OCR must be **on-device** (no cloud OCR APIs). Planned package: **`expo-doc-vision`** in Week 8+ — **not installed in the baseline app**; add it when implementing OCR.
 - Never commit `.env` files or Supabase keys. Commit **`.env.example`** only (placeholders). Use **`EXPO_PUBLIC_`** prefixed vars in `.env` for client-safe values.
 
@@ -14,13 +14,6 @@
 - `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL (Data API).
 - `EXPO_PUBLIC_SUPABASE_KEY` — Supabase **publishable** key (or legacy anon key); same role as in [Supabase + Expo docs](https://supabase.com/docs/guides/getting-started/tutorials/with-expo-react-native).
 - Do **not** put the database **direct connection string** in the app.
-- `EXPO_PUBLIC_DEV_LOGIN_BYPASS` — Optional. Only `true` or `1` has an effect, and **only when `__DEV__` is true** (Metro / simulator dev). Shows a **login + register** shortcut that sets a **local mock user** without a Supabase JWT; `onAuthStateChange` null events are ignored until sign-out. **Do not enable** in release builds, EAS production env, or store submissions. Remove reliance on this once normal Supabase login is enough for day-to-day dev.
-
-### Dev login bypass (implementation map)
-
-- Flag + mock user: [`src/lib/dev-auth-bypass.ts`](../src/lib/dev-auth-bypass.ts)
-- Session / listener handling: [`src/contexts/auth-context.tsx`](../src/contexts/auth-context.tsx)
-- UI (auth screens only): [`src/components/auth/dev-login-bypass-panel.tsx`](../src/components/auth/dev-login-bypass-panel.tsx)
 
 ## Tech Stack
 
@@ -56,7 +49,7 @@
   - Root layout: `src/app/_layout.tsx` — wraps the tree with **TamaguiProvider** + **Theme** (system light/dark) and loads **Inter** fonts before hiding the splash screen.
 - Reusable UI: `src/components/` — shared primitives under `ui/`; `useTheme()` in [`src/hooks/use-theme.ts`](../src/hooks/use-theme.ts) reads Tamagui theme values (with fallbacks to [`src/theme/tokens.ts`](../src/theme/tokens.ts)).
 - Babel: root [`babel.config.js`](../../babel.config.js) must keep **`react-native-reanimated/plugin` last** and include `@tamagui/babel-plugin` pointing at `tamagui.config.ts`.
-- Supabase API calls: wrap in `src/services/` — screens must not import the raw client for data access
+- Supabase API calls: wrap in `src/services/` — screens must not import the raw client for data access (groups: [`groups-supabase.ts`](../src/services/groups-supabase.ts), sync: [`groups-sync.ts`](../src/services/groups-sync.ts))
 - Types: `src/types/`
 - Zustand stores: `src/stores/` (ör. `split-data-store.ts`); yeni slice’lar burada
 - **Localization:** Şu an UI string’leri **Türkçe** sabit; **en / tr** i18n planı `docs/PROGRESS.md` backlog’unda — yeni ekranlarda çeviri katmanı yoksa Türkçe ile devam et veya i18n eklendiğinde anahtarları ortak sözlüğe taşı
@@ -70,6 +63,7 @@
 - `ROADMAP.md` — 10-week checklist (**Turkish**). Agents: only `[x]` on weekly items and additions under `### Ekstra`. **Do not** edit content under `### Haftalık Notlar`, `### Video Linki`, or `### Ekran Görselleri` (student / instructor only).
 - `design/figma_template/` — Figma-aligned **reference UI** (Vite/React prototype; not the production app). Use for layout/tokens when implementing `src/app/`. Screenshots: `design/figma_screenshots/`.
 - `docs/archive/SplitSnap Tanıtım Raporu.md` — original university report
+- `docs/DATABASE.md` — PostgreSQL / Supabase ER diyagramı, tablolar, RLS stratejisi ve backend planı (tek kaynak)
 - `docs/PROGRESS.md` — detailed weekly log
 - `docs/OPTIMIZATION-PROMPT.md` — optimization audit prompt
 - `docs/SECURITY-PROMPT.md` — security audit prompt
@@ -96,7 +90,6 @@
 ## Known Gotchas
 
 - **Tamagui portals / Sheet:** `TamaguiProvider` already wraps `PortalProvider` (`shouldAddRootHost`). If Metro still throws `PortalDispatchContext cannot be null`, the usual cause is **two physical copies** of `@tamagui/portal` under `node_modules` (e.g. nested under `@tamagui/sheet`). Fix: direct dep + `overrides` in [`package.json`](../../package.json) so only **one** `@tamagui/portal` exists at the repo root. Never add a **second** `PortalProvider` in `_layout`. For **Lucide** / native SVG, `useTheme()` must resolve Tamagui variables to strings — [`use-theme.ts`](../src/hooks/use-theme.ts) uses `getVariableValue` so `color={t.primary}` is never an object.
-- **Dev login bypass** (`EXPO_PUBLIC_DEV_LOGIN_BYPASS`): mock user only; no RLS-backed identity. Turn off when testing real auth flows; never ship with this flag set in production env profiles.
 - **Expo Go** does not load this project reliably — **MMKV / Nitro** need a **development build**. Use `npm run ios` or `npx expo run:ios`.
 - **Storage roles:** AsyncStorage = Supabase auth session (tutorial default). MMKV = app/Zustand persistence. Do not store the same session in two backends without an explicit migration plan.
 - **`expo-doc-vision`:** not in `package.json` until Week 8; iOS 13+ and dev client when added.

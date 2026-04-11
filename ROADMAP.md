@@ -58,7 +58,7 @@
 - [x] **Sheet / portal:** `@tamagui/portal` tekilleştirme (`package.json` + overrides) — çift kopya `PortalDispatchContext` hatasını giderir
 - [x] **`useTheme` + `getVariableValue`** — Lucide / native SVG için renk string çözümü
 - [x] **Zustand + React 19:** `useGroupAggregates` / `useExpenseShares` ile stabil snapshot (sonsuz render döngüsü önlemi)
-- [x] **Geliştirme ortamı:** `EXPO_PUBLIC_DEV_LOGIN_BYPASS` ile isteğe bağlı mock giriş paneli (`__DEV__`); production’da kullanılmaz
+- [x] **Geliştirme ortamı:** Hafta 2’de `EXPO_PUBLIC_DEV_LOGIN_BYPASS` + mock giriş paneli vardı; **Hafta 3’te kaldırıldı** — artık yalnızca Supabase Auth
 - [x] **Kalite komutları:** `npm run typecheck`, `lint:fix`, `check` (CI / commit öncesi)
 - Expo uygulamasında `design/`’e paralel şablon/mock ekranlar ve yerel (Zustand) veri — haftalık rapor maddeleri değil; resmi maddeler yalnızca hedefe uygun tamamlandığında `[x]` (`docs/AGENTS.md`)
 
@@ -98,11 +98,16 @@
 
 ## Hafta 3 — Veritabanı ve Grup Yapısı
 
-- [ ] Veritabanı tablolarının planlanması
-- [ ] user/profile, group ve group_member yapılarının oluşturulması
-- [ ] Grup oluşturma ekranının yapılması
-- [ ] Gruba katılma mantığının tasarlanması
-- [ ] Kullanıcının dahil olduğu grupları listeleme
+- [x] Veritabanı tablolarının planlanması
+- [x] user/profile, group ve group_member yapılarının oluşturulması
+- [x] Grup oluşturma ekranının yapılması
+- [x] Gruba katılma mantığının tasarlanması
+- [x] Kullanıcının dahil olduğu grupları listeleme
+
+### Ekstra
+
+- [x] **Supabase istemci:** `groups-supabase` (liste, oluştur, `join_group_by_invite` RPC), `groups-sync` (hibrit: tam yükleme + `groups` / `group_members` Realtime + AppState ile refetch sigortası)
+- [x] **Dev login bypass kaldırıldı** — `EXPO_PUBLIC_DEV_LOGIN_BYPASS` / mock önizleme akışı yok; simülatörde de gerçek kayıt/giriş
 
 ### Haftalık Notlar
 

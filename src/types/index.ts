@@ -18,6 +18,8 @@ export interface GroupMember {
   userId: string;
   user: User;
   joinedAt: string;
+  /** Present when synced from Supabase; omitted in local-only mock flows. */
+  leftAt?: string | null;
 }
 
 export interface Expense {

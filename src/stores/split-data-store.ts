@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { buildInitialSplitStateForUser } from '@/data/mock-split-seed';
+import { buildEmptySplitStateForUser } from '@/data/mock-split-seed';
 import type { Expense, ExpenseShare, Group, GroupMember, User } from '@/types';
 
 function newEntityId(prefix: string) {
@@ -15,13 +15,13 @@ type SplitState = {
   expenseShares: ExpenseShare[];
   sessionUserId: string | null;
   resetForUser: (user: User) => void;
+  clearSessionData: () => void;
+  replaceGroupsAndMembers: (groups: Group[], groupMembers: GroupMember[]) => void;
   listGroupsForUser: (userId: string) => Group[];
   getGroup: (groupId: string) => Group | undefined;
   getMembers: (groupId: string) => GroupMember[];
   getExpenses: (groupId: string) => Expense[];
   getShares: (expenseId: string) => ExpenseShare[];
-  createGroup: (input: { name: string; description?: string; ownerId: string; owner: User }) => Group;
-  joinGroup: (input: { groupId: string; user: User }) => boolean;
   addExpense: (input: {
     groupId: string;
     title: string;
@@ -57,16 +57,55 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
   sessionUserId: null,
 
   resetForUser: (user) => {
-    const next = buildInitialSplitStateForUser(user);
+    const next = buildEmptySplitStateForUser(user);
     set({
       ...next,
       sessionUserId: user.id,
     });
   },
 
+  clearSessionData: () => {
+    set({
+      users: [],
+      groups: [],
+      groupMembers: [],
+      expenses: [],
+      expenseShares: [],
+      sessionUserId: null,
+    });
+  },
+
+  replaceGroupsAndMembers: (groups, groupMembers) => {
+    const prev = get();
+    const userMap = new Map<string, User>();
+    for (const u of prev.users) {
+      userMap.set(u.id, u);
+    }
+    for (const m of groupMembers) {
+      userMap.set(m.userId, m.user);
+    }
+    for (const e of prev.expenses) {
+      if (e.paidByUser) userMap.set(e.paidBy, e.paidByUser);
+    }
+    for (const sh of prev.expenseShares) {
+      if (sh.user) userMap.set(sh.userId, sh.user);
+    }
+    if (prev.sessionUserId) {
+      const self = prev.users.find((u) => u.id === prev.sessionUserId);
+      if (self) userMap.set(self.id, self);
+    }
+    set({
+      groups,
+      groupMembers,
+      users: Array.from(userMap.values()),
+    });
+  },
+
   listGroupsForUser: (userId) => {
     const { groups, groupMembers } = get();
-    const ids = new Set(groupMembers.filter((m) => m.userId === userId).map((m) => m.groupId));
+    const ids = new Set(
+      groupMembers.filter((m) => m.userId === userId && !m.leftAt).map((m) => m.groupId),
+    );
     return groups.filter((g) => ids.has(g.id));
   },
 
@@ -77,46 +116,6 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
   getExpenses: (groupId) => get().expenses.filter((e) => e.groupId === groupId),
 
   getShares: (expenseId) => get().expenseShares.filter((s) => s.expenseId === expenseId),
-
-  createGroup: ({ name, description, ownerId, owner }) => {
-    const id = newEntityId('g');
-    const group: Group = {
-      id,
-      name: name.trim(),
-      description: description?.trim(),
-      createdAt: new Date().toISOString(),
-      ownerId,
-    };
-    const member: GroupMember = {
-      groupId: id,
-      userId: ownerId,
-      user: owner,
-      joinedAt: new Date().toISOString(),
-    };
-    set((s) => ({
-      groups: [...s.groups, group],
-      groupMembers: [...s.groupMembers, member],
-      users: s.users.some((u) => u.id === owner.id) ? s.users : [...s.users, owner],
-    }));
-    return group;
-  },
-
-  joinGroup: ({ groupId, user }) => {
-    const state = get();
-    if (!state.groups.some((g) => g.id === groupId)) return false;
-    if (state.groupMembers.some((m) => m.groupId === groupId && m.userId === user.id)) return true;
-    const member: GroupMember = {
-      groupId,
-      userId: user.id,
-      user,
-      joinedAt: new Date().toISOString(),
-    };
-    set((s) => ({
-      groupMembers: [...s.groupMembers, member],
-      users: s.users.some((u) => u.id === user.id) ? s.users : [...s.users, user],
-    }));
-    return true;
-  },
 
   addExpense: ({
     groupId,

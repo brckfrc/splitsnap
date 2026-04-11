@@ -62,10 +62,11 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] Oturum yönetimi — `src/contexts/auth-context.tsx`, `onAuthStateChange`, yönlendirme
 - [x] Tema + ortak bileşen iskeleti — `src/theme/tokens.ts`, `src/constants/theme.ts`, `src/components/ui/*`
 
-- [x] Grup listesi ekranının ilk sürümü — `src/app/(app)/groups/index.tsx`: header, boş durum, grup kartları (sahip rozeti, üye sayısı, toplam tutar), `CreateGroupModal` / `JoinGroupModal` (Tamagui Sheet); veri katmanı mock/Zustand (Supabase tablolarına bağlama Hafta 3)
+- [x] Grup listesi ekranının ilk sürümü — `src/app/(app)/groups/index.tsx`: header, boş durum, grup kartları (sahip rozeti, üye sayısı, toplam tutar), `CreateGroupModal` / `JoinGroupModal` (Tamagui Sheet). Hafta 2 tesliminde liste **mock/Zustand** idi; **Hafta 3**’te aynı ekran Supabase’e bağlandı (`groups-supabase`, `groups-sync`).
 
-**Şablon / mock (PROGRESS’te kayıt; Hafta 3+ ROADMAP kapalı):**
-- `(app)` altında grup detay, harcama ekle/düzenle, settlement, profil gibi ekranlar **yerel mock** ile dolaşılabilir; DB tabloları, RLS ve raporun tanıdığı “tam” haftalık teslimler henüz yok.
+**Şablon / mock (PROGRESS’te kayıt; ROADMAP ile karıştırılmamalı):**
+- **Gruplar ve üyelik (liste, oluştur, davet kodu):** Hafta 3’ten itibaren **Supabase** (RLS + Realtime). Zustand burada önbellek / UI state.
+- **Harcamalar, paylar, settlement özeti:** hâlâ **yerel Zustand**; `(app)` altında grup detay, harcama ekle/düzenle, settlement, profil ekranları bu veriyle dolaşılabilir. DB’de `expenses` vb. yok (Hafta 4+ migration).
 - `tsconfig.json` **excludes** `design/` — `npx tsc --noEmit` yalnızca Expo uygulamasını doğrular.
 
 **Notes:**
@@ -80,10 +81,13 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ## Week 3 — Database & Group Structure
 
-**Status:** Not started (roadmap)
+**Status:** Complete (roadmap Hafta 3 maddeleri + Ekstra)
 
-**Notes:**
-- Şablondaki grup UI’si mock; Supabase `group` / `group_member` şeması ve bağlama yapılınca bu hafta maddeleri `ROADMAP` üzerinden işaretlenecek.
+**Implemented:**
+- SQL şema ve RLS: repo’daki `supabase/migrations/20260405140000_week3_core.sql` + `docs/DATABASE.md`
+- Uygulama: `src/services/groups-supabase.ts` (fetch, insert `groups`, RPC `join_group_by_invite`), `groups-sync.ts` (Realtime + foreground refetch), `groups.ts` facade; Zustand `replaceGroupsAndMembers` + boş başlangıç `buildEmptySplitStateForUser`
+- Auth: dev login bypass kaldırıldı (`dev-auth-bypass`, panel, `EXPO_PUBLIC_DEV_LOGIN_BYPASS` dokümantasyonu)
+- Harcamalar hâlâ yerel Zustand (Hafta 4 migration ile DB bağlanacak)
 
 ---
 
@@ -92,7 +96,8 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 **Status:** Not started (roadmap)
 
 **Notes:**
-- Mock ekranlar var; “backend ile tam bağlanma” ve rapor tanımındaki temel çıktılar tamamlanınca `[x]`.
+- Grup **kimliği ve üyelik** Hafta 3’te sunucuda; grup detay ekranı bu UUID ile açılır. **Harcama satırları ve toplamlar** hâlâ yerel mock — `ROADMAP.md` Hafta 4’teki “backend ile tam bağlanma” özellikle harcama modelleri + kalıcı veri anlamında `[ ]` kalmalı.
+- Ekranlar mevcut; veri katmanının harcama tarafını Supabase’e taşıma ve raporun istediği “temel çıktılar” tamamlanınca ilgili maddeler `[x]`.
 
 ---
 
@@ -137,7 +142,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ### Ekstra
 
-- [x] `design/` → Expo: `(auth)` / `(app)` dosya rotaları, token tabanlı UI bileşenleri, **mock** grup/harcama akışı (ROADMAP hafta 3+ ile karıştırılmamalı)
+- [x] `design/` → Expo: `(auth)` / `(app)` dosya rotaları, token tabanlı UI bileşenleri; **harcama / settlement** akışı uzun süre yerel mock ile ilerledi. **Gruplar** Hafta 3’ten sonra Supabase — “hepsi mock” sanılmasın (`ROADMAP` / `PROGRESS` hafta satırlarıyla karıştırılmamalı)
 - [x] `tsconfig` `design/` exclude — temiz `tsc`
 - [x] `useTheme()` — Tamagui `useTheme` + `getVariableValue` ile token’ları **string**’e çözme (Lucide / native SVG `[object Object]` renk uyarılarını önler); önceki `useMemo` tabanlı optimizasyon korunur
 - [x] `GroupsListScreen` inline `totalForGroup` / `memberCount` → pre-computed `useMemo` Map'ler ile O(1) erişim
@@ -145,7 +150,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] **Tamagui Sheet / portal** — `package.json`’da doğrudan `@tamagui/portal` + `overrides`; tek fiziksel kopya (nested `@tamagui/sheet` kopyası `PortalDispatchContext` hatasına yol açıyordu)
 - [x] **Zustand + React 19** — `useGroupAggregates` / `useExpenseShares` (`src/hooks/`): kök slice + `useMemo`; `getMembers` / `getExpenses` / `getShares` doğrudan selector olarak kullanılmıyor (sonsuz `getSnapshot` döngüsü önlendi)
 - [x] **Kalite script’leri** — `npm run typecheck`, `lint:fix`, `check` (`README` + `AGENTS` validation)
-- [x] **Dev login bypass** — `EXPO_PUBLIC_DEV_LOGIN_BYPASS` + `dev-auth-bypass` / `auth-context` / auth ekranları paneli (`__DEV__`); production’da kullanılmamalı
+- [x] **Dev login bypass** — Hafta 2’de eklenmişti; Hafta 3’te kaldırıldı (yalnızca Supabase Auth)
 
 ### Gelecek İyileştirmeler (Backlog)
 
