@@ -29,6 +29,7 @@ export default function RegisterScreen() {
         return;
       }
       if (!session) {
+        setPassword('');
         Toast.show({
           type: 'success',
           text1: 'Kaydınız alındı',
@@ -39,6 +40,7 @@ export default function RegisterScreen() {
         router.replace(href('/login'));
         return;
       }
+      setPassword('');
       router.replace(href('/groups'));
     } finally {
       setLoading(false);

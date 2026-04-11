@@ -115,7 +115,7 @@
 
 ### Video Linki
 
-
+[Hafta 3 — 11-04-2026](https://youtu.be/WzUGQyE3S0g)
 
 ### Ekran Görselleri
 
