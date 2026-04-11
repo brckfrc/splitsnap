@@ -1,6 +1,7 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -16,12 +17,10 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
     setError(null);
-    setInfo(null);
     setLoading(true);
     try {
       const { error: err, session } = await signUp(email.trim(), password, name.trim());
@@ -30,7 +29,14 @@ export default function RegisterScreen() {
         return;
       }
       if (!session) {
-        setInfo('Kaydınız alındı. Hesabınızı tamamlamak için e-postanızdaki doğrulama bağlantısına tıklayın.');
+        Toast.show({
+          type: 'success',
+          text1: 'Kaydınız alındı',
+          text2: 'E-postanızdaki doğrulama bağlantısına tıklayın; ardından buradan giriş yapın.',
+          visibilityTime: 5000,
+          position: 'bottom',
+        });
+        router.replace(href('/login'));
         return;
       }
       router.replace(href('/groups'));
@@ -69,11 +75,6 @@ export default function RegisterScreen() {
               {error ? (
                 <Text style={{ color: t.destructive }} accessibilityRole="alert">
                   {error}
-                </Text>
-              ) : null}
-              {info ? (
-                <Text style={{ color: t.mutedForeground }} accessibilityRole="text">
-                  {info}
                 </Text>
               ) : null}
               <Button size="lg" loading={loading} onPress={onSubmit} accessibilityLabel="Kayıt ol">

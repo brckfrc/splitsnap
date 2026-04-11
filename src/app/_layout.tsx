@@ -7,6 +7,7 @@ import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider, Theme } from 'tamagui';
 
+import { AppToast } from '@/components/app-toast';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { tamaguiConfig } from '../../tamagui.config';
 
@@ -45,6 +46,7 @@ export default function RootLayout() {
             <SplashGate />
             <NavigationThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
               <Stack screenOptions={{ headerShown: false }} />
+              <AppToast />
             </NavigationThemeProvider>
           </AuthProvider>
         </SafeAreaProvider>
