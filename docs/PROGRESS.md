@@ -161,3 +161,4 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [ ] **Supabase geçişinde RLS policy review** zorunlu — tüm tablo değişikliklerinde
 - [ ] **`expo-secure-store` ile hardened auth adapter** — AsyncStorage yerine Supabase session storage
 - [ ] **Auth rate limiting UX:** çok fazla başarısız deneme için client-side feedback / cooldown
+- [ ] **Üretim Auth e-postası: custom domain + SMTP (hosted Supabase)** — Zorunlu değil; MVP’de built-in gönderici veya e-posta onayı kapalı test yeterli. Ürün büyüyünce veya `429: email rate limit exceeded` (built-in ~2 e-posta/saat) sorununda: ürün subdomain’i veya kök domain (`splitsnap.borak.dev`, ileride ayrı alan adı) için DNS, Dashboard’da **Custom SMTP** (Resend, SendGrid, Postmark vb.), redirect / site URL ve e-posta şablonlarındaki linklerin aynı domainle uyumu
