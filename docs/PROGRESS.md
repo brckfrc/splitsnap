@@ -71,7 +71,6 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 **Notes:**
 - Typed routes: `src/lib/href.ts` — dinamik path’ler için geçici cast.
-- Auth ekranlarında yardımcı metinler `__DEV__` ile sınırlı.
 - Kayıt: e-posta onayı açıkken `signUp` sonrası `session === null` ise kullanıcıya doğrulama e-postası hatırlatması (`register.tsx`); ileride Callout bileşeni için backlog’a bakın.
 
 **Blockers:**

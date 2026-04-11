@@ -92,14 +92,6 @@ export default function RegisterScreen() {
                 </Pressable>
               </Link>
             </View>
-
-            {__DEV__ ? (
-              <View style={[styles.demo, { borderColor: t.border, backgroundColor: t.accent }]}>
-                <Text style={[styles.demoText, { color: t.mutedForeground }]}>
-                  Geliştirici: E-posta onayı açıksa oturum hemen oluşmayabilir; doğrulama sonrası giriş yapın.
-                </Text>
-              </View>
-            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -144,16 +136,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-  },
-  demo: {
-    marginTop: Spacing.five,
-    padding: Spacing.four,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  demoText: {
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 18,
   },
 });

@@ -91,15 +91,6 @@ export default function LoginScreen() {
                 </Pressable>
               </Link>
             </View>
-
-            {__DEV__ ? (
-              <View style={[styles.demo, { borderColor: t.border, backgroundColor: t.accent }]}>
-                <Text style={[styles.demoText, { color: t.mutedForeground }]}>
-                  Geliştirici: Supabase URL ve publishable key `.env` içinde olmalı; giriş gerçek Auth oturumu
-                  açar.
-                </Text>
-              </View>
-            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -146,16 +137,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     marginTop: Spacing.two,
-  },
-  demo: {
-    marginTop: Spacing.five,
-    padding: Spacing.four,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  demoText: {
-    fontSize: 12,
-    textAlign: 'center',
-    lineHeight: 18,
   },
 });
