@@ -11,6 +11,9 @@ export interface Group {
   description?: string;
   createdAt: string;
   ownerId: string;
+  inviteCode?: string;
+  currency?: string;
+  deletedAt?: string | null;
 }
 
 export interface GroupMember {
@@ -31,6 +34,7 @@ export interface Expense {
   date: string;
   paidBy: string;
   paidByUser?: User;
+  createdBy?: string;
   splitType: 'equal' | 'manual';
   receiptImageUrl?: string;
   ocrSuggestions?: {
@@ -38,6 +42,8 @@ export interface Expense {
     date?: string;
     total?: number;
   };
+  updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface ExpenseShare {
@@ -47,8 +53,23 @@ export interface ExpenseShare {
   amount: number;
 }
 
-export interface Settlement {
+/** Computed "who should pay whom" suggestion from calculateSettlements(). */
+export interface SettlementSuggestion {
   from: User;
   to: User;
   amount: number;
+}
+
+/** DB-backed payment record (settlements table). */
+export interface Settlement {
+  id: string;
+  groupId: string;
+  fromUserId: string;
+  toUserId: string;
+  fromUser?: User;
+  toUser?: User;
+  amount: number;
+  note?: string;
+  createdAt: string;
+  deletedAt?: string | null;
 }

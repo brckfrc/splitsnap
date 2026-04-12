@@ -666,4 +666,6 @@ Detaylar fiş özelliği işlenirken bu dosyaya eklenir.
 | 2026-04-05 | v4: P1 arkadaş = `user_invite_code` + `friend_requests` + RPC; profil RLS daraltıldı; P3 v1 tek grup kodu; P6 arşiv = `pg_cron` + `activity_log_archive`; global benzersiz kod; Realtime `friend_requests`; §5 yeniden numaralandı (borç §5.9); §13 kaldırıldı |
 | 2026-04-05 | Hafta 3 migration uygulandı: [`supabase/migrations/20260405140000_week3_core.sql`](../supabase/migrations/20260405140000_week3_core.sql) — tablolar, RLS, RPC, `auth.users` → `profiles`, Realtime; arşiv cron: [`supabase/README.md`](../supabase/README.md) |
 
+| 2026-04-12 | Hafta 4 migration uygulandı: [`supabase/migrations/20260412140000_week4_expenses.sql`](../supabase/migrations/20260412140000_week4_expenses.sql) — `expenses`, `expense_shares`, `settlements` tabloları, indeksler, RLS politikaları, `set_updated_at` trigger, Realtime |
+
 Yeni migration veya politika eklendiğinde bu tabloya bir satır ekleyin.

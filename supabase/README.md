@@ -4,8 +4,8 @@
 
 ## Migrations
 
-- Hafta 3 çekirdek şema: [`migrations/20260405140000_week3_core.sql`](migrations/20260405140000_week3_core.sql) (`profiles`, `friend_requests`, `groups`, `group_members`, `activity_log`, `activity_log_archive`, RLS, RPC’ler, Realtime).
-- Harcama / settlement tabloları sonraki migration’larda eklenecek (Hafta 4–6).
+- Hafta 3 çekirdek şema: [`migrations/20260405140000_week3_core.sql`](migrations/20260405140000_week3_core.sql) (`profiles`, `friend_requests`, `groups`, `group_members`, `activity_log`, `activity_log_archive`, RLS, RPC'ler, Realtime).
+- Hafta 4 harcama / settlement şeması: [`migrations/20260412140000_week4_expenses.sql`](migrations/20260412140000_week4_expenses.sql) (`expenses`, `expense_shares`, `settlements`, RLS, Realtime).
 
 Bağlı projeye uygulamak:
 
@@ -24,7 +24,7 @@ supabase db reset
 
 [`docs/DATABASE.md`](../docs/DATABASE.md) P6: eski satırları `activity_log_archive` tablosuna taşıma. `pg_cron` her Supabase planda aynı şekilde açılmaz; bu yüzden **ayrı migration olarak zorunlu koyulmadı**.
 
-**Dashboard’ta:** Database → Extensions → `pg_cron` etkinleştir (mümkünse). Ardından SQL Editor’da örnek job (tarih eşiğini ihtiyaca göre değiştir):
+**Dashboard'ta:** Database → Extensions → `pg_cron` etkinleştir (mümkünse). Ardından SQL Editor'da örnek job (tarih eşiğini ihtiyaca göre değiştir):
 
 ```sql
 -- Örnek: 90 günden eski kayıtları arşive taşı (tek transaction)
@@ -47,9 +47,9 @@ select cron.schedule(
 );
 ```
 
-Cron kullanılamıyorsa aynı `INSERT … SELECT` + `DELETE` bloğunu periyodik olarak SQL Editor’dan çalıştırın.
+Cron kullanılamıyorsa aynı `INSERT … SELECT` + `DELETE` bloğunu periyodik olarak SQL Editor'dan çalıştırın.
 
-## RPC’ler (istemci)
+## RPC'ler (istemci)
 
 | Fonksiyon | Amaç |
 |-----------|------|
@@ -57,4 +57,4 @@ Cron kullanılamıyorsa aynı `INSERT … SELECT` + `DELETE` bloğunu periyodik 
 | `lookup_user_by_friend_code(code)` | Arkadaş `user_invite_code` ile profil özeti |
 | `send_friend_request_by_code(code)` | İstek oluştur |
 
-`authenticated` rolüne `EXECUTE` verilmiştir; doğrudan tablo `INSERT` politikaları kapalıdır (grup üyeliği / arkadaşlık RPC ve trigger’lar üzerinden).
+`authenticated` rolüne `EXECUTE` verilmiştir; doğrudan tablo `INSERT` politikaları kapalıdır (grup üyeliği / arkadaşlık RPC ve trigger'lar üzerinden).

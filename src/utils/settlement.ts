@@ -1,4 +1,4 @@
-import type { Expense, ExpenseShare, GroupMember, Settlement } from '@/types';
+import type { Expense, ExpenseShare, GroupMember, SettlementSuggestion } from '@/types';
 
 export function calculateBalances(
   members: GroupMember[],
@@ -28,8 +28,8 @@ export function calculateBalances(
 export function calculateSettlements(
   members: GroupMember[],
   balances: Record<string, number>,
-): Settlement[] {
-  const settlements: Settlement[] = [];
+): SettlementSuggestion[] {
+  const settlements: SettlementSuggestion[] = [];
 
   const creditors = members
     .filter((m) => balances[m.userId] > 0)
