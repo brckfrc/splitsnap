@@ -4,7 +4,9 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
 ## Project Tracking
 
-**Primary tracking document:** [`ROADMAP.md`](ROADMAP.md) — weekly progress, notes, screenshots, and video links
+**Primary tracking document:** [`ROADMAP.md`](ROADMAP.md) — weekly progress, notes, embedded screenshots, and video links
+
+**Screenshots:** PNGs are organized by week under [`docs/roadmap-screenshots/`](docs/roadmap-screenshots/) (same images as in the roadmap; useful for quick browsing in the repo or on GitHub).
 
 ## Weekly Progress Videos
 

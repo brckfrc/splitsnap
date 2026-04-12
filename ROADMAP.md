@@ -119,6 +119,22 @@
 
 ### Ekran Görselleri
 
+**Gruplar listesi**
+
+![Gruplar listesi](docs/roadmap-screenshots/week-03/groups-list.png)
+
+**Yeni grup oluşturma (Sheet)**
+
+![Yeni grup oluşturma](docs/roadmap-screenshots/week-03/create-group-modal.png)
+
+**Gruba katılma (Sheet)**
+
+![Gruba katılma](docs/roadmap-screenshots/week-03/join-group-modal.png)
+
+**Supabase — groups tablosu**
+
+![Supabase groups](docs/roadmap-screenshots/week-03/supabase-groups-view.png)
+
 ## Hafta 4 — Grup Detay ve Harcama Temeli
 
 - [x] Group ve membership akışlarının backend ile tam bağlanması
@@ -144,6 +160,26 @@
 [Hafta 4 — 12-04-2026](https://youtu.be/bfmGb2MThas)
 
 ### Ekran Görselleri
+
+**Grup detay — harcamalar listesi**
+
+![Harcamalar listesi](docs/roadmap-screenshots/week-04/expenses-view.png)
+
+**Yeni harcama formu (üst kısım)**
+
+![Yeni harcama formu üst](docs/roadmap-screenshots/week-04/new-expense-top.png)
+
+**Yeni harcama — eşit bölüşüm**
+
+![Eşit bölüşüm](docs/roadmap-screenshots/week-04/new-expense-bottom-equal.png)
+
+**Yeni harcama — manuel bölüşüm**
+
+![Manuel bölüşüm](docs/roadmap-screenshots/week-04/new-expense-manual-split.png)
+
+**Supabase — expenses tablosu**
+
+![Supabase expenses](docs/roadmap-screenshots/week-04/supabase-expenses-view.png)
 
 ## Hafta 5 — Harcama Yönetimi
 
