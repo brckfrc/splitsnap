@@ -66,7 +66,8 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 **Şablon / mock (PROGRESS’te kayıt; ROADMAP ile karıştırılmamalı):**
 - **Gruplar ve üyelik (liste, oluştur, davet kodu):** Hafta 3’ten itibaren **Supabase** (RLS + Realtime). Zustand burada önbellek / UI state.
-- **Harcamalar, paylar, settlement özeti:** hâlâ **yerel Zustand**; `(app)` altında grup detay, harcama ekle/düzenle, settlement, profil ekranları bu veriyle dolaşılabilir. DB’de `expenses` vb. yok (Hafta 4+ migration).
+- **Harcamalar ve paylar:** Hafta 4’ten itibaren **Supabase** (`expenses`, `expense_shares`, `expenses-supabase`, `expenses-sync`, grup segmentinde sync). Zustand önbellek + UI; grup detayda liste, ekleme ve düzenleme akışları uzaktan veriyle çalışır.
+- **Settlement / ödeme özeti ekranı:** borç-alacak görünümü ve Hafta 6’daki tam “splitting” ürün hedefi `ROADMAP.md` ile hizalanır; hesaplama çoğunlukla mevcut store + yardımcı fonksiyonlar üzerinden.
 - `tsconfig.json` **excludes** `design/` — `npx tsc --noEmit` yalnızca Expo uygulamasını doğrular.
 
 **Notes:**
@@ -86,23 +87,35 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - SQL şema ve RLS: repo’daki `supabase/migrations/20260405140000_week3_core.sql` + `docs/DATABASE.md`
 - Uygulama: `src/services/groups-supabase.ts` (fetch, insert `groups`, RPC `join_group_by_invite`), `groups-sync.ts` (Realtime + foreground refetch), `groups.ts` facade; Zustand `replaceGroupsAndMembers` + boş başlangıç `buildEmptySplitStateForUser`
 - Auth: dev login bypass kaldırıldı (`dev-auth-bypass`, panel, `EXPO_PUBLIC_DEV_LOGIN_BYPASS` dokümantasyonu)
-- Harcamalar hâlâ yerel Zustand (Hafta 4 migration ile DB bağlanacak)
+- Harcamalar Hafta 4’te Supabase’e taşındı (`expenses-supabase`, `expenses-sync`)
 
 ---
 
 ## Week 4 — Group Detail & Expense Foundation
 
-**Status:** Not started (roadmap)
+**Status:** Roadmap Hafta 4 maddeleri tamamlandı (`ROADMAP.md` `[x]`).
 
-**Notes:**
-- Grup **kimliği ve üyelik** Hafta 3’te sunucuda; grup detay ekranı bu UUID ile açılır. **Harcama satırları ve toplamlar** hâlâ yerel mock — `ROADMAP.md` Hafta 4’teki “backend ile tam bağlanma” özellikle harcama modelleri + kalıcı veri anlamında `[ ]` kalmalı.
-- Ekranlar mevcut; veri katmanının harcama tarafını Supabase’e taşıma ve raporun istediği “temel çıktılar” tamamlanınca ilgili maddeler `[x]`.
+**Implemented:**
+- `src/services/expenses-supabase.ts` — `fetchExpensesForGroupPayload`, `createExpenseRemote`, `updateExpenseRemote` (eşit bölüşümde tutar değişince pay yenileme), `softDeleteExpenseRemote`; `profiles` ile ödeyen adı; fiş alanı DB’ye yazılmıyor (Hafta 8).
+- `src/services/expenses-sync.ts` — `expenses` Realtime (`group_id=eq.{id}`) + AppState refetch; `syncExpensesForGroup` / `stopExpensesBackgroundSync`.
+- `src/app/(app)/groups/[groupId]/_layout.tsx` — grup segmentinde expense sync yaşam döngüsü.
+- `auth-context.tsx` — çıkışta `stopExpensesBackgroundSync`.
+- `split-data-store.ts` + `split-data.ts` — `replaceExpensesAndSharesForGroup`, async `addExpense` / `updateExpense` / `deleteExpense`, `loadExpensesForGroup`.
+- `add-expense.tsx`, `edit.tsx` — Supabase; `createdBy`; yükleme durumu.
+- `groups-supabase.ts` — `invite_code`, `deleted_at`, üye `role`; grup detayda davet (`Share.share`), yönetici / ayrıldı rozetleri.
+- `groups/[groupId]/index.tsx` — üst istatistik kartları ile aynı iki sütun ızgarasında aksiyon butonları (`flexBasis: 0` + hücre sarmalayıcı); solda Ödeme Özeti, sağda + Harcama Ekle; sahip için `#` davet satırı + `UserPlus` paylaşımı; başlık/davet için tek `Text` bloğu ve paylaşım ikonu yokken gereksiz sağ boşluk yok.
+
+**Ek (Nisan 2026 — grup listesi + harcama formu):**
+- **Gruplar listesi toplam tutar:** Harcamalar yalnızca grup detay segmentinde sync edildiği için liste ilk açılışta store’da expense yoktu → kartlarda ₺0,00. `groups-sync` artık `loadGroupsFromSupabase` sonrası tüm `group.id` değerleri için `fetchExpensesForGroupsPayload` (tek `expenses` + pay sorguları); `split-data-store` `replaceAllExpensesAndShares`; `split-data.ts` `loadExpensesForAllGroups`. Realtime grup yenilemesinde aynı akış.
+- **`DatePickerModal` + `edit.tsx` / `add-expense.tsx`:** Tarih alanı metin yerine iOS/Android native tarih sheet’i (`@react-native-community/datetimepicker`, spinner + sheet düzeni).
+- **`add-expense.tsx` UX:** Manuel bölüşümde `Input` `suffix` ile sağda “Kalan: ₺…” (dolu alanda gizlenir); yalnız sayısal giriş ve kişi başı üst sınır (tutarı aşmama); “Kim ödedi?” tek seçili satır + açılır diğer üyeler; kart sırası **önce Harcama Bilgileri**, **altında Fiş Fotoğrafı** (isteğe bağlı).
+- **`src/components/ui/input.tsx`:** `suffix` / `onSuffixPress` ile satır içi sağ metin (manuel kalan + dokununca doldurma).
 
 ---
 
 ## Week 5 — Expense Management
 
-**Status:** Not started (roadmap)
+**Status:** Roadmap Hafta 5 maddeleri `ROADMAP.md` üzerinde hâlâ `[ ]` (resmi teslim için bu liste esas). Kodda Hafta 4 ile örtüşen işler var: uzaktan harcama güncelleme, `splitData.deleteExpense` → `softDeleteExpenseRemote`, `add-expense` / `edit` üzerinde ödeyen ve katılımcı seçimi ile eşit veya manuel bölüşüm UI’si. Hafta 5’in tamamının “tamamlandı” sayılması için `ROADMAP` maddeleri ve `docs/AGENTS.md` milestone tanımı ayrıca doğrulanmalı.
 
 ---
 
@@ -150,6 +163,10 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] **Zustand + React 19** — `useGroupAggregates` / `useExpenseShares` (`src/hooks/`): kök slice + `useMemo`; `getMembers` / `getExpenses` / `getShares` doğrudan selector olarak kullanılmıyor (sonsuz `getSnapshot` döngüsü önlendi)
 - [x] **Kalite script’leri** — `npm run typecheck`, `lint:fix`, `check` (`README` + `AGENTS` validation)
 - [x] **Dev login bypass** — Hafta 2’de eklenmişti; Hafta 3’te kaldırıldı (yalnızca Supabase Auth)
+- [x] **Gruplar listesi — harcama toplamları:** `groups-sync` + batch `fetchExpensesForGroupsPayload` + `replaceAllExpensesAndShares`; liste ekranı ilk girişte doğru toplam (detaya girmeden önce veri).
+- [x] **Yeni / düzenle harcama — tarih:** `DatePickerModal` + `add-expense` / `edit` tarih alanı.
+- [x] **Yeni harcama — manuel bölüşüm + ödeyen + sıra:** `Input` suffix (kalan), sayısal clamp; tek satır ödeyen + seçici; önce bilgi kartı, altında fiş kartı.
+- [x] **`AppToast`:** Ortak `makeToastRenderer` + `displayName` (ESLint `react/display-name`).
 
 ### Gelecek İyileştirmeler (Backlog)
 
@@ -160,5 +177,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [x] **Hosted Supabase RLS düzeltmesi (PostgreSQL 17):** `groups` SELECT politikasına `owner_id = auth.uid()` eklendi (INSERT+RETURNING sırasında SELECT politikası da değerlendirildiği için gerekli); `group_members` SELECT politikasındaki self-referencing subquery `is_group_participant()` SECURITY DEFINER fonksiyonuna yönlendirildi (sonsuz döngü önlemi). Migration + DATABASE.md güncellendi.
 - [ ] **Supabase geçişinde RLS policy review** zorunlu — tüm tablo değişikliklerinde
 - [ ] **`expo-secure-store` ile hardened auth adapter** — AsyncStorage yerine Supabase session storage
+- [ ] **Çoklu ödeyen desteği (split payer):** Şu an bir harcamayı yalnızca tek kişi ödeyebilir (`paidBy: string`). İleride bir ödemeyi birden fazla kişinin karşılaması (ör. A ₺60, B ₺40 ödedi) — `paidBy` → `paidByShares: { userId, amount }[]` dönüşümü, DB şema değişikliği, settlement hesaplama güncellenmesi gerekir.
 - [ ] **Auth rate limiting UX:** çok fazla başarısız deneme için client-side feedback / cooldown
 - [ ] **Üretim Auth e-postası: custom domain + SMTP (hosted Supabase)** — Zorunlu değil; MVP’de built-in gönderici veya e-posta onayı kapalı test yeterli. Ürün büyüyünce veya `429: email rate limit exceeded` (built-in ~2 e-posta/saat) sorununda: ürün subdomain’i veya kök domain (`splitsnap.borak.dev`, ileride ayrı alan adı) için DNS, Dashboard’da **Custom SMTP** (Resend, SendGrid, Postmark vb.), redirect / site URL ve e-posta şablonlarındaki linklerin aynı domainle uyumu
+- [ ] **Davet kodu + tıklanabilir davet linki (grup sahibi paylaşımı):** Şu an `UserPlus` → `Share.share` ile düz metin + `#KOD`. Backend / ürün tarafında **custom domain** (ve istenirse **Universal Links / App Links**) oturduktan sonra: paylaşılan içerikte güvenilir bir **HTTPS join URL**’si (`https://<domain>/join?…` veya benzeri); ikon tıklanınca sheet veya paylaşım sheet’inde link + kod birlikte; link tıklanınca uygulama / web’de gruba katılım akışı. Domain yokken kısa `app.supabase.co` veya rastgele deep link güven vermez; bu yüzden özellik custom domain sonrasına ertelendi.

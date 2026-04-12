@@ -9,6 +9,8 @@ type GroupRow = {
   owner_id: string;
   created_at: string;
   currency: string;
+  invite_code: string;
+  deleted_at: string | null;
 };
 
 type ProfileRow = {
@@ -20,6 +22,7 @@ type ProfileRow = {
 type MemberRow = {
   group_id: string;
   user_id: string;
+  role: string;
   joined_at: string;
   left_at: string | null;
   profiles: ProfileRow | ProfileRow[] | null;
@@ -44,6 +47,9 @@ function mapGroupRow(row: GroupRow): Group {
     description: row.description ?? undefined,
     createdAt: row.created_at,
     ownerId: row.owner_id,
+    inviteCode: row.invite_code,
+    currency: row.currency,
+    deletedAt: row.deleted_at,
   };
 }
 
@@ -55,7 +61,7 @@ function unwrapProfile(profiles: MemberRow['profiles']): ProfileRow | null {
 export async function fetchMyGroupsPayload(): Promise<{ groups: Group[]; groupMembers: GroupMember[] }> {
   const { data: groupRows, error: gErr } = await supabase
     .from('groups')
-    .select('id, name, description, owner_id, created_at, currency')
+    .select('id, name, description, owner_id, created_at, currency, invite_code, deleted_at')
     .order('created_at', { ascending: false });
 
   if (gErr) throw new Error(gErr.message);
@@ -70,7 +76,9 @@ export async function fetchMyGroupsPayload(): Promise<{ groups: Group[]; groupMe
   const ids = rows.map((r) => r.id);
   const { data: memberRows, error: mErr } = await supabase
     .from('group_members')
-    .select('group_id, user_id, joined_at, left_at, profiles:user_id (display_name, email, avatar_url)')
+    .select(
+      'group_id, user_id, role, joined_at, left_at, profiles:user_id (display_name, email, avatar_url)',
+    )
     .in('group_id', ids);
 
   if (mErr) throw new Error(mErr.message);
@@ -78,12 +86,14 @@ export async function fetchMyGroupsPayload(): Promise<{ groups: Group[]; groupMe
   const groupMembers: GroupMember[] = ((memberRows ?? []) as MemberRow[]).map((m) => {
     const prof = unwrapProfile(m.profiles);
     const user = mapProfileToUser(m.user_id, prof);
+    const role = m.role === 'admin' ? 'admin' : 'member';
     return {
       groupId: m.group_id,
       userId: m.user_id,
       user,
       joinedAt: m.joined_at,
       leftAt: m.left_at,
+      role,
     };
   });
 
@@ -110,7 +120,7 @@ export async function createGroupRemote(input: {
       description: input.description?.trim() || null,
       owner_id: input.ownerId,
     })
-    .select('id, name, description, owner_id, created_at, currency')
+    .select('id, name, description, owner_id, created_at, currency, invite_code, deleted_at')
     .single();
 
   if (error) throw new Error(error.message);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 
 import { Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -7,9 +7,13 @@ import { useTheme } from '@/hooks/use-theme';
 export type InputProps = TextInputProps & {
   label?: string;
   error?: string;
+  /** Text shown inside the input on the right, styled like a placeholder. */
+  suffix?: string;
+  /** Called when the suffix text is pressed. */
+  onSuffixPress?: () => void;
 };
 
-export function Input({ label, error, style, accessibilityLabel, ...rest }: InputProps) {
+export function Input({ label, error, suffix, onSuffixPress, style, accessibilityLabel, ...rest }: InputProps) {
   const t = useTheme();
 
   return (
@@ -19,20 +23,33 @@ export function Input({ label, error, style, accessibilityLabel, ...rest }: Inpu
           {label}
         </Text>
       ) : null}
-      <TextInput
-        placeholderTextColor={t.mutedForeground}
-        accessibilityLabel={accessibilityLabel ?? label}
+      <View
         style={[
-          styles.input,
+          styles.inputRow,
           {
-            color: t.foreground,
             backgroundColor: t.inputBackground,
             borderColor: error ? t.destructive : 'transparent',
           },
-          style,
         ]}
-        {...rest}
-      />
+      >
+        <TextInput
+          placeholderTextColor={t.mutedForeground}
+          accessibilityLabel={accessibilityLabel ?? label}
+          style={[styles.input, { color: t.foreground }, style]}
+          {...rest}
+        />
+        {suffix ? (
+          <Pressable
+            onPress={onSuffixPress}
+            disabled={!onSuffixPress}
+            hitSlop={8}
+            accessibilityRole={onSuffixPress ? 'button' : 'text'}
+            accessibilityLabel={suffix}
+          >
+            <Text style={[styles.suffix, { color: t.mutedForeground }]}>{suffix}</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {error ? (
         <Text style={[styles.error, { color: t.destructive }]} accessibilityRole="alert">
           {error}
@@ -50,13 +67,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  input: {
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderRadius: Radii.lg,
+    minHeight: 48,
+  },
+  input: {
+    flex: 1,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
     fontSize: 16,
-    minHeight: 48,
+  },
+  suffix: {
+    fontSize: 14,
+    paddingRight: Spacing.four,
   },
   error: {
     fontSize: 13,

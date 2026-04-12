@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera } from 'lucide-react-native';
+import { ArrowLeft, Camera, ChevronDown } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { DatePickerModal } from '@/components/ui/date-picker-modal';
 import { Input } from '@/components/ui/input';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
@@ -23,26 +24,50 @@ export default function AddExpenseScreen() {
   const { user } = useAuth();
 
   const { members, group } = useGroupAggregates(gid);
+  const activeMembers = useMemo(() => members.filter((m) => !m.leftAt), [members]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dateObj, setDateObj] = useState(() => new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const date = dateObj.toISOString().slice(0, 10);
   const [paidBy, setPaidBy] = useState('');
   const [splitType, setSplitType] = useState<'equal' | 'manual'>('equal');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [manual, setManual] = useState<Record<string, string>>({});
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
+  const [showPayerPicker, setShowPayerPicker] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
 
   const defaultPayer = useMemo(() => {
-    if (user && members.some((m) => m.userId === user.id)) return user.id;
-    return members[0]?.userId ?? '';
-  }, [user, members]);
+    if (user && activeMembers.some((m) => m.userId === user.id)) return user.id;
+    return activeMembers[0]?.userId ?? '';
+  }, [user, activeMembers]);
 
   useEffect(() => {
     setPaidBy((p) => p || defaultPayer);
-    setSelected(new Set(members.map((m) => m.userId)));
-  }, [members, defaultPayer]);
+    setSelected(new Set(activeMembers.map((m) => m.userId)));
+  }, [activeMembers, defaultPayer]);
+
+  function handleManualInput(userId: string, raw: string) {
+    const sanitized = raw.replace(/[^0-9.,]/g, '');
+    const parsed = parseFloat((sanitized || '0').replace(',', '.'));
+    if (!Number.isNaN(parsed) && validTotal > 0) {
+      const othersTotal = Array.from(selected).reduce((sum, id) => {
+        if (id === userId) return sum;
+        const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+        return sum + (Number.isNaN(v) ? 0 : v);
+      }, 0);
+      const maxForThis = Math.max(0, validTotal - othersTotal);
+      if (parsed > maxForThis) {
+        setManual((prev) => ({ ...prev, [userId]: maxForThis.toFixed(2) }));
+        return;
+      }
+    }
+    setManual((prev) => ({ ...prev, [userId]: sanitized }));
+  }
 
   function toggleParticipant(id: string) {
     setSelected((prev) => {
@@ -65,8 +90,12 @@ export default function AddExpenseScreen() {
     }
   }
 
-  function submit() {
+  async function submit() {
     const num = parseFloat(amount.replace(',', '.'));
+    if (!user) {
+      Alert.alert('Oturum', 'Giriş yapmanız gerekir.');
+      return;
+    }
     if (!title.trim() || !paidBy || Number.isNaN(num) || num <= 0) {
       Alert.alert('Eksik bilgi', 'Başlık, tutar ve ödeyen gerekli.');
       return;
@@ -93,20 +122,45 @@ export default function AddExpenseScreen() {
       }
     }
 
-    splitData.addExpense({
-      groupId: gid,
-      title,
-      description,
-      amount: num,
-      date,
-      paidBy,
-      splitType,
-      participantIds,
-      manualAmounts,
-      receiptImageUrl: receiptUri ?? undefined,
-    });
-    router.replace(href(`/groups/${gid}`));
+    setSubmitting(true);
+    try {
+      await splitData.addExpense({
+        groupId: gid,
+        title,
+        description,
+        amount: num,
+        date,
+        paidBy,
+        createdBy: user.id,
+        splitType,
+        participantIds,
+        manualAmounts,
+      });
+      router.replace(href(`/groups/${gid}`));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Harcama kaydedilemedi.';
+      Alert.alert('Hata', msg);
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const amountNum = parseFloat(amount.replace(',', '.'));
+  const validTotal = !Number.isNaN(amountNum) && amountNum > 0 ? amountNum : 0;
+
+  const perEqual =
+    splitType === 'equal' && selected.size > 0 && validTotal > 0
+      ? validTotal / selected.size
+      : 0;
+
+  const manualTotal = useMemo(() => {
+    let sum = 0;
+    for (const id of selected) {
+      const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+      if (!Number.isNaN(v) && v > 0) sum += v;
+    }
+    return sum;
+  }, [manual, selected]);
 
   if (!group) {
     return (
@@ -115,12 +169,6 @@ export default function AddExpenseScreen() {
       </SafeAreaView>
     );
   }
-
-  const amountNum = parseFloat(amount.replace(',', '.'));
-  const perEqual =
-    splitType === 'equal' && selected.size > 0 && !Number.isNaN(amountNum)
-      ? amountNum / selected.size
-      : 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
@@ -142,6 +190,50 @@ export default function AddExpenseScreen() {
         contentContainerStyle={[styles.form, { paddingBottom: APP_TAB_BAR_CONTENT_INSET + Spacing.five }]}
         keyboardShouldPersistTaps="handled"
       >
+        <Card style={{ gap: Spacing.four }}>
+          <Text style={[styles.cardTitle, { color: t.foreground }]}>Harcama Bilgileri</Text>
+          <Input label="Başlık" value={title} onChangeText={setTitle} placeholder="örn. Akşam Yemeği" />
+          <View style={{ gap: Spacing.two }}>
+            <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Açıklama (İsteğe bağlı)</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Detaylar..."
+              placeholderTextColor={t.mutedForeground}
+              multiline
+              style={[
+                styles.textArea,
+                { color: t.foreground, backgroundColor: t.inputBackground, borderColor: 'transparent' },
+              ]}
+            />
+          </View>
+          <View style={styles.row2}>
+            <View style={{ flex: 1 }}>
+              <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Tarih</Text>
+              <Pressable
+                onPress={() => setShowDatePicker(true)}
+                style={[styles.dateBtn, { backgroundColor: t.inputBackground }]}
+                accessibilityRole="button"
+                accessibilityLabel="Tarih seç"
+              >
+                <Text style={{ color: t.foreground, fontSize: 16 }}>
+                  {dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </Text>
+              </Pressable>
+              <DatePickerModal
+                visible={showDatePicker}
+                value={dateObj}
+                maximumDate={new Date()}
+                onConfirm={(d) => { setDateObj(d); setShowDatePicker(false); }}
+                onCancel={() => setShowDatePicker(false)}
+              />
+            </View>
+          </View>
+        </Card>
+
         <Card>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Fiş Fotoğrafı (İsteğe bağlı)</Text>
           {receiptUri ? (
@@ -167,60 +259,55 @@ export default function AddExpenseScreen() {
           )}
         </Card>
 
-        <Card style={{ gap: Spacing.four }}>
-          <Text style={[styles.cardTitle, { color: t.foreground }]}>Harcama Bilgileri</Text>
-          <Input label="Başlık" value={title} onChangeText={setTitle} placeholder="örn. Akşam Yemeği" />
-          <View style={{ gap: Spacing.two }}>
-            <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Açıklama (İsteğe bağlı)</Text>
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Detaylar..."
-              placeholderTextColor={t.mutedForeground}
-              multiline
-              style={[
-                styles.textArea,
-                { color: t.foreground, backgroundColor: t.inputBackground, borderColor: 'transparent' },
-              ]}
-            />
-          </View>
-          <View style={styles.row2}>
-            <View style={{ flex: 1 }}>
-              <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Input label="Tarih (YYYY-AA-GG)" value={date} onChangeText={setDate} placeholder="2026-03-19" />
-            </View>
-          </View>
-        </Card>
-
         <Card>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Kim Ödedi?</Text>
-          <View style={{ gap: Spacing.two }}>
-            {members.map((m) => {
-              const active = paidBy === m.userId;
-              return (
+          {(() => {
+            const payer = activeMembers.find((m) => m.userId === paidBy) ?? activeMembers[0];
+            if (!payer) return null;
+            return (
+              <>
                 <Pressable
-                  key={m.userId}
-                  onPress={() => setPaidBy(m.userId)}
+                  onPress={() => setShowPayerPicker((p) => !p)}
                   style={[
                     styles.choice,
-                    {
-                      borderColor: active ? t.primary : 'transparent',
-                      backgroundColor: active ? `${t.primary}12` : t.inputBackground,
-                    },
+                    { borderColor: t.primary, backgroundColor: `${t.primary}12` },
                   ]}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: active }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ödeyen kişiyi değiştir"
                 >
                   <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                    <Text>{m.user.avatar ?? '👤'}</Text>
+                    <Text>{payer.user.avatar ?? '👤'}</Text>
                   </View>
-                  <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                  <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{payer.user.name}</Text>
+                  <ChevronDown
+                    size={18}
+                    color={t.mutedForeground}
+                    style={{ transform: [{ rotate: showPayerPicker ? '180deg' : '0deg' }] }}
+                  />
                 </Pressable>
-              );
-            })}
-          </View>
+                {showPayerPicker ? (
+                  <View style={{ gap: Spacing.two, marginTop: Spacing.two }}>
+                    {activeMembers
+                      .filter((m) => m.userId !== paidBy)
+                      .map((m) => (
+                        <Pressable
+                          key={m.userId}
+                          onPress={() => { setPaidBy(m.userId); setShowPayerPicker(false); }}
+                          style={[styles.choice, { borderColor: 'transparent', backgroundColor: t.inputBackground }]}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: false }}
+                        >
+                          <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                            <Text>{m.user.avatar ?? '👤'}</Text>
+                          </View>
+                          <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                        </Pressable>
+                      ))}
+                  </View>
+                ) : null}
+              </>
+            );
+          })()}
         </Card>
 
         <Card style={{ gap: Spacing.four }}>
@@ -260,7 +347,7 @@ export default function AddExpenseScreen() {
 
           <Text style={{ color: t.mutedForeground, fontSize: 13, fontWeight: '600' }}>Katılımcılar</Text>
           <View style={{ gap: Spacing.two }}>
-            {members.map((m) => {
+            {activeMembers.map((m) => {
               const on = selected.has(m.userId);
               return (
                 <View key={m.userId} style={{ gap: Spacing.two }}>
@@ -285,13 +372,28 @@ export default function AddExpenseScreen() {
                     ) : null}
                   </Pressable>
                   {on && splitType === 'manual' ? (
-                    <Input
-                      label={`Pay — ${m.user.name}`}
-                      value={manual[m.userId] ?? ''}
-                      onChangeText={(v) => setManual((prev) => ({ ...prev, [m.userId]: v }))}
-                      keyboardType="decimal-pad"
-                      placeholder="0"
-                    />
+                    (() => {
+                      const raw = manual[m.userId] ?? '';
+                      const memberVal = parseFloat((raw || '0').replace(',', '.'));
+                      const remaining = validTotal - (manualTotal - (Number.isNaN(memberVal) ? 0 : memberVal));
+                      const hasValue = raw.length > 0;
+                      const showSuffix = validTotal > 0 && !hasValue;
+                      return (
+                        <Input
+                          label={`Pay — ${m.user.name}`}
+                          value={raw}
+                          onChangeText={(v) => handleManualInput(m.userId, v)}
+                          keyboardType="decimal-pad"
+                          placeholder="0"
+                          suffix={showSuffix ? `Kalan: ₺${remaining.toFixed(2)}` : undefined}
+                          onSuffixPress={
+                            showSuffix && remaining > 0
+                              ? () => setManual((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))
+                              : undefined
+                          }
+                        />
+                      );
+                    })()
                   ) : null}
                 </View>
               );
@@ -303,7 +405,7 @@ export default function AddExpenseScreen() {
           <Button variant="secondary" style={{ flex: 1 }} onPress={() => router.back()}>
             İptal
           </Button>
-          <Button style={{ flex: 1 }} onPress={submit}>
+          <Button style={{ flex: 1 }} onPress={() => void submit()} loading={submitting} disabled={submitting}>
             Kaydet
           </Button>
         </View>
@@ -343,6 +445,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   row2: { flexDirection: 'row', gap: Spacing.three },
+  dateBtn: {
+    borderRadius: 12,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    minHeight: 48,
+    justifyContent: 'center',
+    marginTop: Spacing.two,
+  },
   choice: {
     flexDirection: 'row',
     alignItems: 'center',

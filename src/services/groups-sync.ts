@@ -1,6 +1,8 @@
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+import { loadExpensesForAllGroups } from '@/services/split-data';
+import { useSplitDataStore } from '@/stores/split-data-store';
 import type { User } from '@/types';
 
 import { loadGroupsFromSupabase } from './groups-supabase';
@@ -18,8 +20,14 @@ function teardownChannel() {
   }
 }
 
+async function reloadGroupsAndExpenses() {
+  await loadGroupsFromSupabase();
+  const groupIds = useSplitDataStore.getState().groups.map((g) => g.id);
+  await loadExpensesForAllGroups(groupIds);
+}
+
 function scheduleReload() {
-  void loadGroupsFromSupabase().catch(() => {});
+  void reloadGroupsAndExpenses().catch(() => {});
 }
 
 export function stopGroupsBackgroundSync() {
@@ -38,9 +46,9 @@ export async function syncGroupsForSessionUser(_profile: User): Promise<void> {
   lastAppState = AppState.currentState;
 
   try {
-    await loadGroupsFromSupabase();
+    await reloadGroupsAndExpenses();
   } catch {
-    /* empty store on failure */
+    /* keep previous store data on failure */
   }
 
   channel = supabase

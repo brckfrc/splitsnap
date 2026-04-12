@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { DatePickerModal } from '@/components/ui/date-picker-modal';
 import { Input } from '@/components/ui/input';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
@@ -27,9 +28,12 @@ export default function EditExpenseScreen() {
   const [title, setTitle] = useState(expense?.title ?? '');
   const [description, setDescription] = useState(expense?.description ?? '');
   const [amount, setAmount] = useState(expense ? String(expense.amount) : '');
-  const [date, setDate] = useState(
-    expense ? new Date(expense.date).toISOString().slice(0, 10) : '',
+  const [dateObj, setDateObj] = useState(() =>
+    expense ? new Date(expense.date) : new Date(),
   );
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const date = dateObj.toISOString().slice(0, 10);
+  const [saving, setSaving] = useState(false);
 
   if (!expense) {
     return (
@@ -42,20 +46,29 @@ export default function EditExpenseScreen() {
     );
   }
 
-  function save() {
+  async function save() {
     const num = parseFloat(amount.replace(',', '.'));
     if (!title.trim() || Number.isNaN(num) || num <= 0) {
       Alert.alert('Hata', 'Geçerli başlık ve tutar girin.');
       return;
     }
-    splitData.updateExpense({
-      expenseId: eid,
-      title,
-      description,
-      amount: num,
-      date,
-    });
-    router.replace(href(`/groups/${gid}`));
+    setSaving(true);
+    try {
+      await splitData.updateExpense({
+        expenseId: eid,
+        groupId: gid,
+        title,
+        description,
+        amount: num,
+        date,
+      });
+      router.replace(href(`/groups/${gid}`));
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Kaydedilemedi.';
+      Alert.alert('Hata', msg);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function remove() {
@@ -65,8 +78,15 @@ export default function EditExpenseScreen() {
         text: 'Sil',
         style: 'destructive',
         onPress: () => {
-          splitData.deleteExpense(eid);
-          router.replace(href(`/groups/${gid}`));
+          void (async () => {
+            try {
+              await splitData.deleteExpense(eid, gid);
+              router.replace(href(`/groups/${gid}`));
+            } catch (e) {
+              const msg = e instanceof Error ? e.message : 'Silinemedi.';
+              Alert.alert('Hata', msg);
+            }
+          })();
         },
       },
     ]);
@@ -105,7 +125,24 @@ export default function EditExpenseScreen() {
               <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
             </View>
             <View style={{ flex: 1 }}>
-              <Input label="Tarih" value={date} onChangeText={setDate} />
+              <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Tarih</Text>
+              <Pressable
+                onPress={() => setShowDatePicker(true)}
+                style={[styles.dateBtn, { backgroundColor: t.inputBackground }]}
+                accessibilityRole="button"
+                accessibilityLabel="Tarih seç"
+              >
+                <Text style={{ color: t.foreground, fontSize: 16 }}>
+                  {dateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </Text>
+              </Pressable>
+              <DatePickerModal
+                visible={showDatePicker}
+                value={dateObj}
+                maximumDate={new Date()}
+                onConfirm={(d) => { setDateObj(d); setShowDatePicker(false); }}
+                onCancel={() => setShowDatePicker(false)}
+              />
             </View>
           </View>
         </Card>
@@ -124,7 +161,7 @@ export default function EditExpenseScreen() {
           <Button variant="secondary" style={{ flex: 1 }} onPress={() => router.back()}>
             İptal
           </Button>
-          <Button style={{ flex: 1 }} onPress={save}>
+          <Button style={{ flex: 1 }} onPress={() => void save()} loading={saving} disabled={saving}>
             Kaydet
           </Button>
         </View>
@@ -149,6 +186,14 @@ const styles = StyleSheet.create({
   body: { padding: Spacing.five, gap: Spacing.five },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: Spacing.two },
   row2: { flexDirection: 'row', gap: Spacing.three },
+  dateBtn: {
+    borderRadius: 12,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    minHeight: 48,
+    justifyContent: 'center',
+    marginTop: Spacing.two,
+  },
   shareRow: {
     flexDirection: 'row',
     alignItems: 'center',

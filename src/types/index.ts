@@ -23,6 +23,8 @@ export interface GroupMember {
   joinedAt: string;
   /** Present when synced from Supabase; omitted in local-only mock flows. */
   leftAt?: string | null;
+  /** Group role from Supabase (`admin` | `member`). */
+  role?: 'admin' | 'member';
 }
 
 export interface Expense {

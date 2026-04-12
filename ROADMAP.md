@@ -121,11 +121,19 @@
 
 ## Hafta 4 — Grup Detay ve Harcama Temeli
 
-- [ ] Group ve membership akışlarının backend ile tam bağlanması
-- [ ] Grup detay ekranının yapılması
-- [ ] Grup üyelerinin görüntülenmesi
-- [ ] Harcama ekranları için veri modellerinin hazırlanması
-- [ ] Harcama ekleme ekranının ilk sürümünün yapılması
+- [x] Group ve membership akışlarının backend ile tam bağlanması
+- [x] Grup detay ekranının yapılması
+- [x] Grup üyelerinin görüntülenmesi
+- [x] Harcama ekranları için veri modellerinin hazırlanması
+- [x] Harcama ekleme ekranının ilk sürümünün yapılması
+
+### Ekstra
+
+- [x] Grup detay üst bölümü: Toplam Harcama / Durumunuz kartlarıyla aynı iki sütun ızgarasında aksiyon butonları; solda Ödeme Özeti, sağda + Harcama Ekle
+- [x] Grup sahibi için `#` ile davet kodu satırı ve `UserPlus` ile `Share.share` paylaşımı (üyelerde boş davet alanı yok)
+- [x] **Gruplar listesi — toplam harcama:** Grup sync sonrası tüm grupların harcamalarının batch yüklenmesi; liste kartında ilk açılışta yanlış ₺0,00 kalmıyor (`groups-sync`, `fetchExpensesForGroupsPayload`, `replaceAllExpensesAndShares`)
+- [x] **Yeni harcama formu (UX):** OS tarih seçici modal (`DatePickerModal`); manuel bölüşümde input içi “Kalan” ve tutar üst sınırı; ödeyen tek satır + değiştir; **önce** harcama bilgileri **altında** isteğe bağlı fiş fotoğrafı alanı
+- [x] **Harcama düzenleme:** Tarih alanı için aynı OS tarih modalı (`edit` ekranı)
 
 ### Haftalık Notlar
 

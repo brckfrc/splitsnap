@@ -1,6 +1,6 @@
-import { ArrowLeft, Receipt, TrendingUp } from 'lucide-react-native';
+import { ArrowLeft, Receipt, TrendingUp, UserPlus } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,21 @@ export default function GroupDetailScreen() {
   const balance =
     user ? userNetBalance(user.id, expenses, (eid) => splitData.getShares(eid)) : 0;
 
+  const isOwner = Boolean(user && user.id === group.ownerId);
+  const inviteCode = group.inviteCode;
+  const groupName = group.name;
+
+  async function shareInviteCode() {
+    if (!inviteCode) return;
+    try {
+      await Share.share({
+        message: `SplitSnap — "${groupName}" grubuna katılmak için davet kodu: #${inviteCode}`,
+      });
+    } catch {
+      /* kullanıcı iptal */
+    }
+  }
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
       <View style={[styles.header, { borderBottomColor: t.border }]}>
@@ -50,12 +65,45 @@ export default function GroupDetailScreen() {
           >
             <ArrowLeft size={22} color={t.foreground} />
           </Pressable>
-          <View style={styles.headerTitle}>
-            <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header">
-              {group.name}
+          <View style={styles.headerTitleRow}>
+            <Text
+              style={[
+                styles.headerTitleText,
+                isOwner && inviteCode ? styles.headerTitleTextBesideShare : null,
+              ]}
+              selectable={Boolean(isOwner && inviteCode)}
+              accessibilityLabel={
+                isOwner && inviteCode ? `Grup ${group.name}, davet kodu ${inviteCode}` : undefined
+              }
+            >
+              <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header" numberOfLines={1}>
+                {group.name}
+              </Text>
+              {isOwner && inviteCode ? (
+                <>
+                  {'\n'}
+                  <Text style={[styles.inviteHint, { color: t.mutedForeground }]}>#{inviteCode.toUpperCase()}</Text>
+                </>
+              ) : null}
+              {group.description ? (
+                <>
+                  {'\n'}
+                  <Text style={[styles.sub, { color: t.mutedForeground }]}>{group.description}</Text>
+                </>
+              ) : null}
             </Text>
-            {group.description ? (
-              <Text style={[styles.sub, { color: t.mutedForeground }]}>{group.description}</Text>
+            {isOwner && inviteCode ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Davet kodunu paylaş"
+                onPress={() => void shareInviteCode()}
+                style={({ pressed }) => [
+                  styles.inviteIconBtn,
+                  { backgroundColor: pressed ? `${t.primary}22` : 'transparent' },
+                ]}
+              >
+                <UserPlus size={22} color={t.primary} />
+              </Pressable>
             ) : null}
           </View>
         </View>
@@ -91,12 +139,24 @@ export default function GroupDetailScreen() {
         </View>
 
         <View style={styles.actions}>
-          <Button onPress={() => router.push(href(`/groups/${gid}/add-expense`))} accessibilityLabel="Yeni harcama">
-            + Harcama Ekle
-          </Button>
-          <Button variant="secondary" onPress={() => router.push(href(`/groups/${gid}/settlement`))}>
-            Ödeme Özeti
-          </Button>
+          <View style={styles.actionCell}>
+            <Button
+              style={styles.actionButtonFill}
+              variant="secondary"
+              onPress={() => router.push(href(`/groups/${gid}/settlement`))}
+            >
+              Ödeme Özeti
+            </Button>
+          </View>
+          <View style={styles.actionCell}>
+            <Button
+              style={styles.actionButtonFill}
+              onPress={() => router.push(href(`/groups/${gid}/add-expense`))}
+              accessibilityLabel="Yeni harcama"
+            >
+              + Harcama Ekle
+            </Button>
+          </View>
         </View>
       </View>
 
@@ -106,14 +166,31 @@ export default function GroupDetailScreen() {
       >
         <Text style={[styles.sectionTitle, { color: t.foreground }]}>Üyeler</Text>
         <Card style={{ gap: Spacing.three }}>
-          {members.map((m) => (
-            <View key={m.userId} style={styles.memberRow}>
-              <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                <Text style={{ fontSize: 18 }}>{m.user.avatar ?? '👤'}</Text>
+          {members.map((m) => {
+            const isAdmin = m.role === 'admin' || m.userId === group.ownerId;
+            const left = Boolean(m.leftAt);
+            return (
+              <View
+                key={m.userId}
+                style={[styles.memberRow, left && { opacity: 0.55 }]}
+              >
+                <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                  <Text style={{ fontSize: 18 }}>{m.user.avatar ?? '👤'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.memberName, { color: t.foreground }]}>{m.user.name}</Text>
+                  <View style={styles.memberMeta}>
+                    {isAdmin ? (
+                      <Text style={[styles.badge, { color: t.primary, borderColor: `${t.primary}55` }]}>Yönetici</Text>
+                    ) : null}
+                    {left ? (
+                      <Text style={[styles.badge, { color: t.mutedForeground, borderColor: t.border }]}>Ayrıldı</Text>
+                    ) : null}
+                  </View>
+                </View>
               </View>
-              <Text style={[styles.memberName, { color: t.foreground }]}>{m.user.name}</Text>
-            </View>
-          ))}
+            );
+          })}
         </Card>
 
         <Text style={[styles.sectionTitle, { color: t.foreground, marginTop: Spacing.five }]}>Harcamalar</Text>
@@ -157,17 +234,51 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.four,
     gap: Spacing.four,
   },
-  headerTop: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one },
   backBtn: { padding: Spacing.two, marginLeft: -Spacing.two, marginTop: 2 },
-  headerTitle: { flex: 1 },
-  title: { fontSize: 20, fontWeight: '700' },
-  sub: { fontSize: 14, marginTop: Spacing.one },
-  statsRow: { flexDirection: 'row', gap: Spacing.three },
-  statCard: { flex: 1, padding: Spacing.three },
+  headerTitleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    minWidth: 0,
+    gap: 0,
+  },
+  headerTitleText: {
+    flex: 1,
+    minWidth: 0,
+    textAlign: 'left',
+  },
+  headerTitleTextBesideShare: { marginRight: Spacing.two },
+  inviteIconBtn: {
+    padding: Spacing.two,
+    marginTop: 2,
+    marginLeft: 'auto',
+    marginRight: -Spacing.two,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    includeFontPadding: false,
+    marginLeft: -2,
+  },
+  inviteHint: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    marginTop: 4,
+    includeFontPadding: false,
+  },
+  sub: { fontSize: 14, marginTop: Spacing.one, includeFontPadding: false },
+  statsRow: { flexDirection: 'row', gap: Spacing.three, alignSelf: 'stretch' },
+  statCard: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, padding: Spacing.three },
   statLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.one },
   statLabel: { fontSize: 13 },
   statValue: { fontSize: 18, fontWeight: '700' },
-  actions: { flexDirection: 'row', gap: Spacing.three, flexWrap: 'wrap' },
+  actions: { flexDirection: 'row', gap: Spacing.three, alignSelf: 'stretch' },
+  actionCell: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0 },
+  actionButtonFill: { alignSelf: 'stretch', width: '100%' },
   body: { paddingHorizontal: Spacing.five, paddingTop: Spacing.five, gap: Spacing.three },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: Spacing.two },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
@@ -183,4 +294,14 @@ const styles = StyleSheet.create({
   expTitle: { fontSize: 16, fontWeight: '600' },
   expMeta: { fontSize: 13, marginTop: 4 },
   expAmount: { fontSize: 16, fontWeight: '700' },
+  memberMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: 4 },
+  badge: {
+    fontSize: 11,
+    fontWeight: '700',
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
 });

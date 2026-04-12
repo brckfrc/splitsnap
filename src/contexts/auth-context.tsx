@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 import { getSession, mapUser, signOut as authSignOut, subscribeAuth } from '@/services/auth';
 import type { AppAuthUser } from '@/services/auth';
+import { stopExpensesBackgroundSync } from '@/services/expenses-sync';
 import { stopGroupsBackgroundSync, syncGroupsForSessionUser } from '@/services/groups-sync';
 import { clearSplitSessionData, ensureSplitDataForUser } from '@/services/split-data';
 
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void syncGroupsForSessionUser(profile);
     } else {
       stopGroupsBackgroundSync();
+      stopExpensesBackgroundSync();
       clearSplitSessionData();
       setUser(null);
     }
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       stopGroupsBackgroundSync();
+      stopExpensesBackgroundSync();
       clearSplitSessionData();
       setUser(null);
     });
@@ -68,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOutApp = useCallback(async () => {
     stopGroupsBackgroundSync();
+    stopExpensesBackgroundSync();
     clearSplitSessionData();
     await authSignOut();
     setUser(null);
