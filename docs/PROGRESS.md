@@ -115,7 +115,27 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 
 ## Week 5 — Expense Management
 
-**Status:** Roadmap Hafta 5 maddeleri `ROADMAP.md` üzerinde hâlâ `[ ]` (resmi teslim için bu liste esas). Kodda Hafta 4 ile örtüşen işler var: uzaktan harcama güncelleme, `splitData.deleteExpense` → `softDeleteExpenseRemote`, `add-expense` / `edit` üzerinde ödeyen ve katılımcı seçimi ile eşit veya manuel bölüşüm UI’si. Hafta 5’in tamamının “tamamlandı” sayılması için `ROADMAP` maddeleri ve `docs/AGENTS.md` milestone tanımı ayrıca doğrulanmalı.
+**Status:** Complete (4/4 roadmap items)
+
+**Implemented (Hafta 4 commit'leriyle birlikte):**
+- Harcama ekleme: `add-expense.tsx` → `splitData.addExpense` → `createExpenseRemote` (Supabase). Form validasyonu (başlık, tutar, katılımcı kontrolü).
+- Harcama düzenleme: `edit.tsx` → `splitData.updateExpense` → `updateExpenseRemote`. Başlık, tutar, tarih güncelleme.
+- Harcama silme: `edit.tsx` → onay dialog'u + `splitData.deleteExpense` → `softDeleteExpenseRemote` (soft-delete).
+- Ödeyen kişi seçimi: `add-expense.tsx` — tek satır seçili ödeyen + dropdown ile değiştir.
+- Katılımcı seçimi: `add-expense.tsx` — `toggleParticipant`, checkbox UI, `selected` Set.
+- Eşit bölüşüm: `splitType === 'equal'` → `perEqual` otomatik hesaplama, katılımcı yanında pay gösterimi.
+- Manuel bölüşüm: `splitType === 'manual'` → kişi başı input, `suffix` ile kalan miktar, tutar üst sınırı, sayısal giriş kısıtlaması.
+
+**Yapılabilecek ekstralar (Hafta 5):**
+- [ ] Pull-to-refresh (grup listesi + grup detay)
+- [ ] Harcama silme sonrası toast bildirimi
+- [ ] Client-side input validation (login/register + harcama formu inline hatalar)
+- [ ] Harcama düzenlemede manuel pay güncelleme (`edit.tsx` — bölüşüm payları)
+- [ ] Boş durum iyileştirmeleri (grup detayda harcama yokken CTA)
+- [ ] Harcama kartlarına kategori/emoji
+- [x] Durumunuz kartı açıklama satırı: bakiye altına "Alacaklısınız" / "Borçlusunuz" / "Eşitsiniz" metni
+
+**Not:** Roadmap maddeleri Hafta 4 commit'leri (`eeb39a8`, `419099d`) kapsamında tamamlandı; Hafta 5 roadmap maddeleri `[x]` olarak işaretlendi.
 
 ---
 

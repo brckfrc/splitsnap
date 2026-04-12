@@ -135,6 +135,9 @@ export default function GroupDetailScreen() {
             >
               {formatCurrencyTry(balance)}
             </Text>
+            <Text style={[styles.statHint, { color: t.mutedForeground }]}>
+              {balance > 0.01 ? 'Alacaklısınız' : balance < -0.01 ? 'Borçlusunuz' : 'Eşitsiniz'}
+            </Text>
           </Card>
         </View>
 
@@ -276,6 +279,7 @@ const styles = StyleSheet.create({
   statLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.one },
   statLabel: { fontSize: 13 },
   statValue: { fontSize: 18, fontWeight: '700' },
+  statHint: { fontSize: 11, marginTop: 2 },
   actions: { flexDirection: 'row', gap: Spacing.three, alignSelf: 'stretch' },
   actionCell: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0 },
   actionButtonFill: { alignSelf: 'stretch', width: '100%' },

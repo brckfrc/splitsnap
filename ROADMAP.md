@@ -141,16 +141,26 @@
 
 ### Video Linki
 
-
+[Hafta 4 — 12-04-2026](https://youtu.be/bfmGb2MThas)
 
 ### Ekran Görselleri
 
 ## Hafta 5 — Harcama Yönetimi
 
-- [ ] Harcama ekleme işleminin tamamlanması
-- [ ] Harcama düzenleme ve silme işlemlerinin eklenmesi
-- [ ] Ödeyen kişi ve katılımcı seçme yapısının kurulması
-- [ ] Eşit bölüşüm mantığının ilk sürümünün eklenmesi
+- [x] Harcama ekleme işleminin tamamlanması
+- [x] Harcama düzenleme ve silme işlemlerinin eklenmesi
+- [x] Ödeyen kişi ve katılımcı seçme yapısının kurulması
+- [x] Eşit bölüşüm mantığının ilk sürümünün eklenmesi
+
+### Ekstra
+
+- [ ] **Pull-to-refresh:** Grup listesi ve grup detayda `RefreshControl` ile aşağı çekerek veri yenileme
+- [ ] **Harcama silme sonrası toast bildirimi:** Silme sonrası `AppToast` ile kısa bildirim ("Harcama silindi")
+- [ ] **Client-side input validation:** Login/register'da email format, password min uzunluk; harcama formunda inline hata mesajları
+- [ ] **Harcama düzenlemede manuel pay güncelleme:** `edit.tsx`'te bölüşüm paylarının da düzenlenebilmesi (şu an yalnızca başlık/tutar/tarih değişiyor)
+- [ ] **Boş durum (empty state) iyileştirmeleri:** Grup detayında harcama yokken ikon + mesaj + CTA
+- [ ] **Harcama kartlarına kategori/emoji:** Görsel ayrım için basit kategori seçici (yemek, ulaşım, market vb.)
+- [x] **Durumunuz kartı açıklama satırı:** Grup detayda bakiye tutarının altına "Alacaklısınız" / "Borçlusunuz" / "Eşitsiniz" metni eklendi
 
 ### Haftalık Notlar
 
