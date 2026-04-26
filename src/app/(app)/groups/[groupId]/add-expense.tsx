@@ -2,20 +2,22 @@ import { ArrowLeft, Camera, ChevronDown } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DatePickerModal } from '@/components/ui/date-picker-modal';
-import { Input } from '@/components/ui/input';
+import { Input, KeyboardDoneToolbar, KEYBOARD_ACCESSORY_ID } from '@/components/ui/input';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
-import { href } from '@/lib/href';
 import { splitData } from '@/services/split-data';
+import { guessCategoryEmoji } from '@/utils/format';
+
+const EMOJI_LIST = ['📝', '🍔', '🛒', '🚕', '🏠', '🎮', '🏥', '👕', '🐾', '🍻', '🎁', '✈️', '☕️', '🍿', '🎬'];
 
 export default function AddExpenseScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -29,6 +31,8 @@ export default function AddExpenseScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
   const [dateObj, setDateObj] = useState(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const date = dateObj.toISOString().slice(0, 10);
@@ -38,6 +42,10 @@ export default function AddExpenseScreen() {
   const [manual, setManual] = useState<Record<string, string>>({});
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
   const [showPayerPicker, setShowPayerPicker] = useState(false);
+  const [manualIcon, setManualIcon] = useState<string | null>(null);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+
+  const displayIcon = manualIcon ?? guessCategoryEmoji(title);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -91,15 +99,29 @@ export default function AddExpenseScreen() {
   }
 
   async function submit() {
+    setTitleError(null);
+    setAmountError(null);
     const num = parseFloat(amount.replace(',', '.'));
     if (!user) {
       Alert.alert('Oturum', 'Giriş yapmanız gerekir.');
       return;
     }
-    if (!title.trim() || !paidBy || Number.isNaN(num) || num <= 0) {
-      Alert.alert('Eksik bilgi', 'Başlık, tutar ve ödeyen gerekli.');
-      return;
+    
+    let hasError = false;
+    if (!title.trim()) {
+      setTitleError('Başlık gerekli.');
+      hasError = true;
     }
+    if (Number.isNaN(num) || num <= 0) {
+      setAmountError('Geçerli bir tutar girin.');
+      hasError = true;
+    }
+    if (!paidBy) {
+      Alert.alert('Eksik bilgi', 'Ödeyen kişiyi seçin.');
+      hasError = true;
+    }
+    
+    if (hasError) return;
     const participantIds = Array.from(selected);
     if (participantIds.length === 0) {
       Alert.alert('Katılımcı', 'En az bir katılımcı seçin.');
@@ -133,10 +155,11 @@ export default function AddExpenseScreen() {
         paidBy,
         createdBy: user.id,
         splitType,
+        icon: displayIcon,
         participantIds,
         manualAmounts,
       });
-      router.replace(href(`/groups/${gid}`));
+      router.back();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Harcama kaydedilemedi.';
       Alert.alert('Hata', msg);
@@ -172,6 +195,7 @@ export default function AddExpenseScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
+      <KeyboardDoneToolbar />
       <View style={[styles.topBar, { borderBottomColor: t.border }]}>
         <Pressable
           accessibilityRole="button"
@@ -192,7 +216,35 @@ export default function AddExpenseScreen() {
       >
         <Card style={{ gap: Spacing.four }}>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Harcama Bilgileri</Text>
-          <Input label="Başlık" value={title} onChangeText={setTitle} placeholder="örn. Akşam Yemeği" />
+          <View style={styles.titleRow}>
+            <Pressable
+              onPress={() => setShowIconPicker(!showIconPicker)}
+              style={[styles.iconBtnBig, { backgroundColor: t.inputBackground }]}
+              accessibilityRole="button"
+              accessibilityLabel="İkon seç"
+            >
+              <Text style={{ fontSize: 24 }}>{displayIcon}</Text>
+            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Input label="Başlık" value={title} onChangeText={setTitle} placeholder="örn. Akşam Yemeği" error={titleError ?? undefined} />
+            </View>
+          </View>
+          {showIconPicker && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.iconList}>
+              {EMOJI_LIST.map((emoji) => (
+                <Pressable
+                  key={emoji}
+                  onPress={() => {
+                    setManualIcon(emoji);
+                    setShowIconPicker(false);
+                  }}
+                  style={[styles.iconOption, { backgroundColor: manualIcon === emoji ? `${t.primary}22` : t.inputBackground }]}
+                >
+                  <Text style={{ fontSize: 20 }}>{emoji}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
           <View style={{ gap: Spacing.two }}>
             <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Açıklama (İsteğe bağlı)</Text>
             <TextInput
@@ -201,6 +253,7 @@ export default function AddExpenseScreen() {
               placeholder="Detaylar..."
               placeholderTextColor={t.mutedForeground}
               multiline
+              inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_ACCESSORY_ID : undefined}
               style={[
                 styles.textArea,
                 { color: t.foreground, backgroundColor: t.inputBackground, borderColor: 'transparent' },
@@ -209,7 +262,7 @@ export default function AddExpenseScreen() {
           </View>
           <View style={styles.row2}>
             <View style={{ flex: 1 }}>
-              <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" />
+              <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" error={amountError ?? undefined} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Tarih</Text>
@@ -478,4 +531,22 @@ const styles = StyleSheet.create({
   },
   splitEmoji: { fontSize: 28 },
   footerBtns: { flexDirection: 'row', gap: Spacing.three, marginTop: Spacing.two },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.three },
+  iconBtnBig: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  iconList: { gap: Spacing.two, paddingBottom: Spacing.one },
+  iconOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

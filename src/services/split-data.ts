@@ -53,6 +53,7 @@ export const splitData = {
     paidBy: string;
     createdBy: string;
     splitType: 'equal' | 'manual';
+    icon?: string | null;
     participantIds: string[];
     manualAmounts?: Record<string, number>;
   }) => {
@@ -65,14 +66,20 @@ export const splitData = {
       paidBy,
       createdBy,
       splitType,
+      icon,
       participantIds,
       manualAmounts,
     } = input;
 
     let shares: { userId: string; amount: number }[] = [];
     if (splitType === 'equal' && participantIds.length > 0) {
-      const each = amount / participantIds.length;
-      shares = participantIds.map((userId) => ({ userId, amount: each }));
+      const n = participantIds.length;
+      const base = Math.floor((amount / n) * 100) / 100;
+      const remainder = Math.round((amount - base * n) * 100) / 100;
+      shares = participantIds.map((userId, i) => ({
+        userId,
+        amount: i === 0 ? base + remainder : base,
+      }));
     } else if (splitType === 'manual' && manualAmounts) {
       shares = participantIds
         .map((userId) => {
@@ -91,6 +98,7 @@ export const splitData = {
       paidBy,
       createdBy,
       splitType,
+      icon,
       shares,
     });
     await loadExpensesForGroup(groupId);
@@ -103,9 +111,31 @@ export const splitData = {
     description?: string;
     amount: number;
     date: string;
+    icon?: string | null;
+    splitType: 'equal' | 'manual';
+    participantIds: string[];
+    manualAmounts?: Record<string, number>;
   }) => {
     const exp = useSplitDataStore.getState().expenses.find((e) => e.id === input.expenseId);
     if (!exp) throw new Error('expense_not_found');
+
+    let shares: { userId: string; amount: number }[] = [];
+    if (input.splitType === 'equal' && input.participantIds.length > 0) {
+      const n = input.participantIds.length;
+      const base = Math.floor((input.amount / n) * 100) / 100;
+      const remainder = Math.round((input.amount - base * n) * 100) / 100;
+      shares = input.participantIds.map((userId, i) => ({
+        userId,
+        amount: i === 0 ? base + remainder : base,
+      }));
+    } else if (input.splitType === 'manual' && input.manualAmounts) {
+      shares = input.participantIds
+        .map((userId) => {
+          const shareAmount = input.manualAmounts![userId] ?? 0;
+          return { userId, amount: shareAmount };
+        })
+        .filter((s) => s.amount > 0);
+    }
     await updateExpenseRemote({
       expenseId: input.expenseId,
       groupId: input.groupId,
@@ -113,7 +143,9 @@ export const splitData = {
       description: input.description,
       amount: input.amount,
       expenseDate: input.date,
-      splitType: exp.splitType,
+      splitType: input.splitType,
+      icon: input.icon,
+      shares,
     });
     await loadExpensesForGroup(input.groupId);
   },

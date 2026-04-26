@@ -229,6 +229,7 @@ Birincil anahtar: `(group_id, user_id)`.
 | `paid_by` | `uuid` | not null, FK → `profiles(id)` | Ödemeyi yapan kişi |
 | `created_by` | `uuid` | not null, FK → `profiles(id)` | Harcamayı sisteme giren kişi (farklı olabilir) |
 | `split_type` | `text` | not null, check in (`'equal'`, `'manual'`) | |
+| `icon` | `text` | nullable | Kategori emojisi (örn: 🍔, 🚕) |
 | `receipt_storage_path` | `text` | nullable | Storage bucket yolu (Hafta 8+) |
 | `ocr_suggestions` | `jsonb` | nullable | `{ "merchant_name": "...", "date": "...", "total": 0 }` |
 | `created_at` | `timestamptz` | default `now()` | |
@@ -667,5 +668,6 @@ Detaylar fiş özelliği işlenirken bu dosyaya eklenir.
 | 2026-04-05 | Hafta 3 migration uygulandı: [`supabase/migrations/20260405140000_week3_core.sql`](../supabase/migrations/20260405140000_week3_core.sql) — tablolar, RLS, RPC, `auth.users` → `profiles`, Realtime; arşiv cron: [`supabase/README.md`](../supabase/README.md) |
 
 | 2026-04-12 | Hafta 4 migration uygulandı: [`supabase/migrations/20260412140000_week4_expenses.sql`](../supabase/migrations/20260412140000_week4_expenses.sql) — `expenses`, `expense_shares`, `settlements` tabloları, indeksler, RLS politikaları, `set_updated_at` trigger, Realtime |
+| 2026-04-26 | Hafta 5 ekstra özellikleri: [`supabase/migrations/20260426233000_expense_icon.sql`](../supabase/migrations/20260426233000_expense_icon.sql) — `expenses` tablosuna `icon` sütunu eklendi |
 
 Yeni migration veya politika eklendiğinde bu tabloya bir satır ekleyin.

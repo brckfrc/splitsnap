@@ -38,6 +38,7 @@ export interface Expense {
   paidByUser?: User;
   createdBy?: string;
   splitType: 'equal' | 'manual';
+  icon?: string | null;
   receiptImageUrl?: string;
   ocrSuggestions?: {
     merchantName?: string;

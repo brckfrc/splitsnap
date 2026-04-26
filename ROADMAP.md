@@ -188,19 +188,18 @@
 - [x] Ödeyen kişi ve katılımcı seçme yapısının kurulması
 - [x] Eşit bölüşüm mantığının ilk sürümünün eklenmesi
 
-### Ekstra
-
-- [ ] **Pull-to-refresh:** Grup listesi ve grup detayda `RefreshControl` ile aşağı çekerek veri yenileme
-- [ ] **Harcama silme sonrası toast bildirimi:** Silme sonrası `AppToast` ile kısa bildirim ("Harcama silindi")
-- [ ] **Client-side input validation:** Login/register'da email format, password min uzunluk; harcama formunda inline hata mesajları
-- [ ] **Harcama düzenlemede manuel pay güncelleme:** `edit.tsx`'te bölüşüm paylarının da düzenlenebilmesi (şu an yalnızca başlık/tutar/tarih değişiyor)
-- [ ] **Boş durum (empty state) iyileştirmeleri:** Grup detayında harcama yokken ikon + mesaj + CTA
-- [ ] **Harcama kartlarına kategori/emoji:** Görsel ayrım için basit kategori seçici (yemek, ulaşım, market vb.)
+#### Ekstra (Gelişmiş UX ve Finansal Tutarlılık)
+- [x] **Pull-to-refresh**: Liste sayfalarında (gruplarım, harcamalarım) veriyi tazelemek için `RefreshControl` kullanımı.
+- [x] **Toast bildirimleri**: Harcama başarıyla eklendiğinde/silindiğinde "Harcama eklendi" gibi zarif bildirimler.
+- [x] **Client-side input validation**: Sadece backend'den dönen hatalar değil, "Boş başlık", "0'dan küçük tutar" durumlarında UI'ın anında kırmızı hata vermesi.
+- [x] **Harcama düzenlemede manuel pay**: Başlangıçta manuel pay girilen harcamanın düzenleme ekranında da bu payların tekrar editlenebilmesi (şema ve UI senkronu).
+- [x] **Boş durum (Empty state)**: Hiç harcama olmayan grupta "Henüz harcama yok, eklemek için tıkla" şeklinde güzel bir görsel yer tutucu.
+- [x] **Kategori/Emoji**: Gelişmiş bir kategori ağacı yerine, harcamanın başına/sonuna ufak bir emoji seçici koyarak (🍔, 🚕, 🛒) harcama türünün görsel olarak ayırt edilmesi.)
 - [x] **Durumunuz kartı açıklama satırı:** Grup detayda bakiye tutarının altına "Alacaklısınız" / "Borçlusunuz" / "Eşitsiniz" metni eklendi
+- [x] **Navigasyon stack düzeltmesi:** `router.replace()` / `router.push()` kaynaklı stack pollution giderildi — geri dönüş aksiyonları `router.back()` ile standardize edildi.
+- [x] **iOS klavye "Tamam" toolbar:** Tek satır input'larda `returnKeyType="done"`, çok satırlı alanlarda `InputAccessoryView` ile klavye üstünde "Tamam" butonu — `Input` bileşenine gömüldü, tüm formlara otomatik uygulanıyor.
 
 ### Haftalık Notlar
-
-
 
 ### Video Linki
 
@@ -232,6 +231,9 @@
 - [ ] Uygulama açılış performansının iyileştirilmesi
 - [ ] Form doğrulama ve hata kontrollerinin güçlendirilmesi
 
+### Ekstra
+- [ ] **Dinamik Kategori/Emoji Haritası (Kullanıcı Alışkanlıklarından Öğrenme):** Sabit kelime sözlüğü kullanmak yerine, açılışta Supabase'den kullanıcıların en çok eşleştirdiği "kelime -> emoji" haritasının çekilip lokal storage'a (MMKV vb.) kaydedilmesi ve harcama eklerken bu dinamik listenin kullanılması.
+
 ### Haftalık Notlar
 
 
@@ -250,7 +252,7 @@
 - [ ] OCR sonucu ile tarih, işletme adı ve toplam tutar alanlarının otomatik doldurulması
 
 ### Haftalık Notlar
-
+- **Mimari Karar (Hibrit OCR + LLM):** Fiş okuma işlemi için karmaşık regex/parser yazmak yerine, telefonun yerel OCR yetenekleriyle okunan dağınık metin yığınını (saf text) OpenAI GPT-4o-mini API'sine gönderip JSON (Toplam tutar, kategori vb.) olarak yapılandırılmış çıktı alacağız. Bu sayede sunucu maliyetini inanılmaz düşürürken, fiş formatı ayrıştırma sorununu tamamen çözeceğiz.
 
 
 ### Video Linki

@@ -1,6 +1,7 @@
 import { ArrowLeft, Receipt, TrendingUp, UserPlus } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { useState, useCallback } from 'react';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,18 @@ export default function GroupDetailScreen() {
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
 
   const { group, members, expenses } = useGroupAggregates(gid);
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await splitData.loadExpensesForGroup(gid);
+    } catch {
+      /* store keeps previous data */
+    } finally {
+      setRefreshing(false);
+    }
+  }, [gid]);
 
   if (!group) {
     return (
@@ -60,7 +73,7 @@ export default function GroupDetailScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Geri"
-            onPress={() => router.push(href('/groups'))}
+            onPress={() => router.back()}
             style={styles.backBtn}
           >
             <ArrowLeft size={22} color={t.foreground} />
@@ -165,6 +178,7 @@ export default function GroupDetailScreen() {
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: APP_TAB_BAR_CONTENT_INSET }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} />}
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.sectionTitle, { color: t.foreground }]}>Üyeler</Text>
@@ -198,7 +212,15 @@ export default function GroupDetailScreen() {
 
         <Text style={[styles.sectionTitle, { color: t.foreground, marginTop: Spacing.five }]}>Harcamalar</Text>
         {expenses.length === 0 ? (
-          <Text style={{ color: t.mutedForeground }}>Henüz harcama yok.</Text>
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.seven, gap: Spacing.four }}>
+            <Text style={{ fontSize: 48 }}>🧾</Text>
+            <Text style={{ color: t.mutedForeground, textAlign: 'center', fontSize: 16 }}>Bu grupta henüz harcama bulunmuyor.</Text>
+            <Button
+              onPress={() => router.push(href(`/groups/${gid}/add-expense`))}
+            >
+              İlk Harcamayı Ekle
+            </Button>
+          </View>
         ) : (
           <View style={{ gap: Spacing.three }}>
             {expenses.map((e) => (
@@ -210,6 +232,9 @@ export default function GroupDetailScreen() {
               >
                 <Card>
                   <View style={styles.expRow}>
+                    <View style={[styles.iconContainer, { backgroundColor: t.inputBackground }]}>
+                      <Text style={{ fontSize: 24 }}>{e.icon || '📝'}</Text>
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.expTitle, { color: t.foreground }]}>{e.title}</Text>
                       <Text style={[styles.expMeta, { color: t.mutedForeground }]}>
@@ -294,7 +319,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   memberName: { fontSize: 16, fontWeight: '500' },
-  expRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  iconContainer: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  expRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   expTitle: { fontSize: 16, fontWeight: '600' },
   expMeta: { fontSize: 13, marginTop: 4 },
   expAmount: { fontSize: 16, fontWeight: '700' },

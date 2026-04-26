@@ -12,6 +12,7 @@ const CHANNEL = 'splitsnap-groups-sync';
 let channel: ReturnType<typeof supabase.channel> | null = null;
 let appStateSub: { remove: () => void } | null = null;
 let lastAppState: AppStateStatus = AppState.currentState;
+let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 function teardownChannel() {
   if (channel) {
@@ -20,17 +21,25 @@ function teardownChannel() {
   }
 }
 
-async function reloadGroupsAndExpenses() {
+export async function reloadGroupsAndExpenses() {
   await loadGroupsFromSupabase();
   const groupIds = useSplitDataStore.getState().groups.map((g) => g.id);
   await loadExpensesForAllGroups(groupIds);
 }
 
 function scheduleReload() {
-  void reloadGroupsAndExpenses().catch(() => {});
+  if (reloadTimer) clearTimeout(reloadTimer);
+  reloadTimer = setTimeout(() => {
+    reloadTimer = null;
+    void reloadGroupsAndExpenses().catch(() => {});
+  }, 300);
 }
 
 export function stopGroupsBackgroundSync() {
+  if (reloadTimer) {
+    clearTimeout(reloadTimer);
+    reloadTimer = null;
+  }
   if (appStateSub) {
     appStateSub.remove();
     appStateSub = null;

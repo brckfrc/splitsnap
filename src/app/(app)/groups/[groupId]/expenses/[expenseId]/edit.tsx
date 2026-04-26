@@ -1,20 +1,23 @@
 import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { DatePickerModal } from '@/components/ui/date-picker-modal';
-import { Input } from '@/components/ui/input';
+import { Input, KeyboardDoneToolbar, KEYBOARD_ACCESSORY_ID } from '@/components/ui/input';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useExpenseShares } from '@/hooks/use-expense-shares';
 import { useTheme } from '@/hooks/use-theme';
-import { href } from '@/lib/href';
 import { splitData, useSplitDataStore } from '@/services/split-data';
-import { formatCurrencyTry } from '@/utils/format';
+import { guessCategoryEmoji } from '@/utils/format';
+import { useGroupAggregates } from '@/hooks/use-group-aggregates';
+
+const EMOJI_LIST = ['📝', '🍔', '🛒', '🚕', '🏠', '🎮', '🏥', '👕', '🐾', '🍻', '🎁', '✈️', '☕️', '🍿', '🎬'];
 
 export default function EditExpenseScreen() {
   const { groupId, expenseId } = useLocalSearchParams<{ groupId: string; expenseId: string }>();
@@ -25,15 +28,79 @@ export default function EditExpenseScreen() {
   const expense = useSplitDataStore((s) => s.expenses.find((e) => e.id === eid));
   const shares = useExpenseShares(eid);
 
+  const { members } = useGroupAggregates(gid);
+  const activeMembers = members.filter((m) => !m.leftAt);
+
   const [title, setTitle] = useState(expense?.title ?? '');
   const [description, setDescription] = useState(expense?.description ?? '');
   const [amount, setAmount] = useState(expense ? String(expense.amount) : '');
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState<string | null>(null);
   const [dateObj, setDateObj] = useState(() =>
     expense ? new Date(expense.date) : new Date(),
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const date = dateObj.toISOString().slice(0, 10);
   const [saving, setSaving] = useState(false);
+
+  const [splitType, setSplitType] = useState<'equal' | 'manual'>(expense?.splitType ?? 'equal');
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(shares.map(s => s.userId)));
+  const [manual, setManual] = useState<Record<string, string>>(() => {
+    const obj: Record<string, string> = {};
+    if (expense?.splitType === 'manual') {
+      shares.forEach(s => {
+        obj[s.userId] = String(s.amount);
+      });
+    }
+    return obj;
+  });
+
+  const [manualIcon, setManualIcon] = useState<string | null>(expense?.icon ?? null);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const displayIcon = manualIcon ?? guessCategoryEmoji(title);
+
+  function handleManualInput(userId: string, raw: string) {
+    const sanitized = raw.replace(/[^0-9.,]/g, '');
+    const parsed = parseFloat((sanitized || '0').replace(',', '.'));
+    if (!Number.isNaN(parsed) && validTotal > 0) {
+      const othersTotal = Array.from(selected).reduce((sum, id) => {
+        if (id === userId) return sum;
+        const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+        return sum + (Number.isNaN(v) ? 0 : v);
+      }, 0);
+      const maxForThis = Math.max(0, validTotal - othersTotal);
+      if (parsed > maxForThis) {
+        setManual((prev) => ({ ...prev, [userId]: maxForThis.toFixed(2) }));
+        return;
+      }
+    }
+    setManual((prev) => ({ ...prev, [userId]: sanitized }));
+  }
+
+  function toggleParticipant(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const amountNum = parseFloat(amount.replace(',', '.'));
+  const validTotal = !Number.isNaN(amountNum) && amountNum > 0 ? amountNum : 0;
+  const perEqual =
+    splitType === 'equal' && selected.size > 0 && validTotal > 0
+      ? validTotal / selected.size
+      : 0;
+
+  const manualTotal = useMemo(() => {
+    let sum = 0;
+    for (const id of selected) {
+      const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+      if (!Number.isNaN(v) && v > 0) sum += v;
+    }
+    return sum;
+  }, [manual, selected]);
 
   if (!expense) {
     return (
@@ -47,10 +114,41 @@ export default function EditExpenseScreen() {
   }
 
   async function save() {
+    setTitleError(null);
+    setAmountError(null);
     const num = parseFloat(amount.replace(',', '.'));
-    if (!title.trim() || Number.isNaN(num) || num <= 0) {
-      Alert.alert('Hata', 'Geçerli başlık ve tutar girin.');
+    
+    let hasError = false;
+    if (!title.trim()) {
+      setTitleError('Başlık gerekli.');
+      hasError = true;
+    }
+    if (Number.isNaN(num) || num <= 0) {
+      setAmountError('Geçerli bir tutar girin.');
+      hasError = true;
+    }
+    
+    if (hasError) return;
+    const participantIds = Array.from(selected);
+    if (participantIds.length === 0) {
+      Alert.alert('Katılımcı', 'En az bir katılımcı seçin.');
       return;
+    }
+    let manualAmounts: Record<string, number> | undefined;
+    if (splitType === 'manual') {
+      manualAmounts = {};
+      let sum = 0;
+      for (const id of participantIds) {
+        const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+        if (!Number.isNaN(v) && v > 0) {
+          manualAmounts[id] = v;
+          sum += v;
+        }
+      }
+      if (Math.abs(sum - num) > 0.05) {
+        Alert.alert('Tutar uyuşmuyor', 'Manuel payların toplamı, harcama tutarına eşit olmalı.');
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -61,8 +159,12 @@ export default function EditExpenseScreen() {
         description,
         amount: num,
         date,
+        icon: displayIcon,
+        splitType,
+        participantIds,
+        manualAmounts,
       });
-      router.replace(href(`/groups/${gid}`));
+      router.back();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Kaydedilemedi.';
       Alert.alert('Hata', msg);
@@ -81,7 +183,8 @@ export default function EditExpenseScreen() {
           void (async () => {
             try {
               await splitData.deleteExpense(eid, gid);
-              router.replace(href(`/groups/${gid}`));
+              Toast.show({ type: 'success', text1: 'Harcama başarıyla silindi' });
+              router.back();
             } catch (e) {
               const msg = e instanceof Error ? e.message : 'Silinemedi.';
               Alert.alert('Hata', msg);
@@ -94,6 +197,7 @@ export default function EditExpenseScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
+      <KeyboardDoneToolbar />
       <View style={[styles.topBar, { borderBottomColor: t.border }]}>
         <Pressable accessibilityLabel="Geri" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
           <ArrowLeft size={22} color={t.foreground} />
@@ -118,11 +222,52 @@ export default function EditExpenseScreen() {
         ) : null}
 
         <Card style={{ gap: Spacing.four }}>
-          <Input label="Başlık" value={title} onChangeText={setTitle} />
-          <Input label="Açıklama" value={description} onChangeText={setDescription} />
+          <Text style={[styles.cardTitle, { color: t.foreground }]}>Harcama Bilgileri</Text>
+          <View style={styles.titleRow}>
+            <Pressable
+              onPress={() => setShowIconPicker(!showIconPicker)}
+              style={[styles.iconBtnBig, { backgroundColor: t.inputBackground }]}
+            >
+              <Text style={{ fontSize: 24 }}>{displayIcon}</Text>
+            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Input label="Başlık" value={title} onChangeText={setTitle} error={titleError ?? undefined} />
+            </View>
+          </View>
+          {showIconPicker && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.iconList}>
+              {EMOJI_LIST.map((emoji) => (
+                <Pressable
+                  key={emoji}
+                  onPress={() => {
+                    setManualIcon(emoji);
+                    setShowIconPicker(false);
+                  }}
+                  style={[styles.iconOption, { backgroundColor: manualIcon === emoji ? `${t.primary}22` : t.inputBackground }]}
+                >
+                  <Text style={{ fontSize: 20 }}>{emoji}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          )}
+          <View style={{ gap: Spacing.two }}>
+            <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Açıklama (İsteğe bağlı)</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Detaylar..."
+              placeholderTextColor={t.mutedForeground}
+              multiline
+              inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_ACCESSORY_ID : undefined}
+              style={[
+                styles.textArea,
+                { color: t.foreground, backgroundColor: t.inputBackground, borderColor: 'transparent' },
+              ]}
+            />
+          </View>
           <View style={styles.row2}>
             <View style={{ flex: 1 }}>
-              <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
+              <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" error={amountError ?? undefined} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Tarih</Text>
@@ -147,14 +292,91 @@ export default function EditExpenseScreen() {
           </View>
         </Card>
 
-        <Card>
-          <Text style={[styles.cardTitle, { color: t.foreground }]}>Paylaşım özeti</Text>
-          {shares.map((s) => (
-            <View key={s.userId} style={styles.shareRow}>
-              <Text style={{ color: t.foreground, flex: 1 }}>{s.user?.name ?? s.userId}</Text>
-              <Text style={{ color: t.primary, fontWeight: '700' }}>{formatCurrencyTry(s.amount)}</Text>
-            </View>
-          ))}
+        <Card style={{ gap: Spacing.four }}>
+          <Text style={[styles.cardTitle, { color: t.foreground }]}>Nasıl Bölünecek?</Text>
+          <View style={styles.row2}>
+            <Pressable
+              onPress={() => setSplitType('equal')}
+              style={[
+                styles.splitBox,
+                {
+                  borderColor: splitType === 'equal' ? t.primary : 'transparent',
+                  backgroundColor: splitType === 'equal' ? `${t.primary}12` : t.inputBackground,
+                },
+              ]}
+              accessibilityRole="button"
+            >
+              <Text style={styles.splitEmoji}>⚖️</Text>
+              <Text style={{ color: t.foreground, fontWeight: '600' }}>Eşit</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setSplitType('manual')}
+              style={[
+                styles.splitBox,
+                {
+                  borderColor: splitType === 'manual' ? t.primary : 'transparent',
+                  backgroundColor: splitType === 'manual' ? `${t.primary}12` : t.inputBackground,
+                },
+              ]}
+              accessibilityRole="button"
+            >
+              <Text style={styles.splitEmoji}>✏️</Text>
+              <Text style={{ color: t.foreground, fontWeight: '600' }}>Manuel</Text>
+            </Pressable>
+          </View>
+
+          <Text style={{ color: t.mutedForeground, fontSize: 13, fontWeight: '600' }}>Katılımcılar</Text>
+          <View style={{ gap: Spacing.two }}>
+            {activeMembers.map((m) => {
+              const on = selected.has(m.userId);
+              return (
+                <View key={m.userId} style={{ gap: Spacing.two }}>
+                  <Pressable
+                    onPress={() => toggleParticipant(m.userId)}
+                    style={[
+                      styles.choice,
+                      {
+                        borderColor: on ? t.primary : 'transparent',
+                        backgroundColor: on ? `${t.primary}12` : t.inputBackground,
+                      },
+                    ]}
+                  >
+                    <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                      <Text>{m.user.avatar ?? '👤'}</Text>
+                    </View>
+                    <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                    {on && splitType === 'equal' && amount ? (
+                      <Text style={{ color: t.primary, fontWeight: '700' }}>₺{perEqual.toFixed(2)}</Text>
+                    ) : null}
+                  </Pressable>
+                  {on && splitType === 'manual' ? (
+                    (() => {
+                      const raw = manual[m.userId] ?? '';
+                      const memberVal = parseFloat((raw || '0').replace(',', '.'));
+                      const remaining = validTotal - (manualTotal - (Number.isNaN(memberVal) ? 0 : memberVal));
+                      const hasValue = raw.length > 0;
+                      const showSuffix = validTotal > 0 && !hasValue;
+                      return (
+                        <Input
+                          label={`Pay — ${m.user.name}`}
+                          value={raw}
+                          onChangeText={(v) => handleManualInput(m.userId, v)}
+                          keyboardType="decimal-pad"
+                          placeholder="0"
+                          suffix={showSuffix ? `Kalan: ₺${remaining.toFixed(2)}` : undefined}
+                          onSuffixPress={
+                            showSuffix && remaining > 0
+                              ? () => setManual((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))
+                              : undefined
+                          }
+                        />
+                      );
+                    })()
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
         </Card>
 
         <View style={styles.footerBtns}>
@@ -200,4 +422,54 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   footerBtns: { flexDirection: 'row', gap: Spacing.three },
+  iconBtnBig: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  iconList: { gap: Spacing.two, paddingBottom: Spacing.one },
+  iconOption: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textArea: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: Spacing.four,
+    minHeight: 72,
+    fontSize: 16,
+  },
+  choice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splitBox: {
+    flex: 1,
+    padding: Spacing.four,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  splitEmoji: { fontSize: 28 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.three },
+
 });

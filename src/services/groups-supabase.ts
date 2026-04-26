@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
+import { mapProfileToUser, unwrapProfile, type ProfileRow } from '@/services/profile-mapper';
 import { useSplitDataStore } from '@/stores/split-data-store';
-import type { Group, GroupMember, User } from '@/types';
+import type { Group, GroupMember } from '@/types';
 
 type GroupRow = {
   id: string;
@@ -13,12 +14,6 @@ type GroupRow = {
   deleted_at: string | null;
 };
 
-type ProfileRow = {
-  display_name: string;
-  email: string | null;
-  avatar_url: string | null;
-};
-
 type MemberRow = {
   group_id: string;
   user_id: string;
@@ -27,18 +22,6 @@ type MemberRow = {
   left_at: string | null;
   profiles: ProfileRow | ProfileRow[] | null;
 };
-
-function mapProfileToUser(userId: string, p: ProfileRow | null | undefined): User {
-  if (!p) {
-    return { id: userId, name: 'Kullanıcı', email: '', avatar: '👤' };
-  }
-  return {
-    id: userId,
-    name: p.display_name || 'Kullanıcı',
-    email: p.email ?? '',
-    avatar: p.avatar_url ?? '👤',
-  };
-}
 
 function mapGroupRow(row: GroupRow): Group {
   return {
@@ -53,15 +36,11 @@ function mapGroupRow(row: GroupRow): Group {
   };
 }
 
-function unwrapProfile(profiles: MemberRow['profiles']): ProfileRow | null {
-  if (!profiles) return null;
-  return Array.isArray(profiles) ? profiles[0] ?? null : profiles;
-}
-
 export async function fetchMyGroupsPayload(): Promise<{ groups: Group[]; groupMembers: GroupMember[] }> {
   const { data: groupRows, error: gErr } = await supabase
     .from('groups')
     .select('id, name, description, owner_id, created_at, currency, invite_code, deleted_at')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (gErr) throw new Error(gErr.message);

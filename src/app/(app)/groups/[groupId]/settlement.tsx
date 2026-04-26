@@ -1,7 +1,8 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useCallback } from 'react';
 
 import { Card } from '@/components/ui/card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
@@ -17,6 +18,18 @@ export default function SettlementScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
   const t = useTheme();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await splitData.loadExpensesForGroup(gid);
+    } catch {
+      /* store keeps previous data */
+    } finally {
+      setRefreshing(false);
+    }
+  }, [gid]);
   const { user } = useAuth();
 
   const { group, members, expenses } = useGroupAggregates(gid);
@@ -45,7 +58,10 @@ export default function SettlementScreen() {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.body, { paddingBottom: APP_TAB_BAR_CONTENT_INSET + Spacing.five }]}>
+      <ScrollView
+        contentContainerStyle={[styles.body, { paddingBottom: APP_TAB_BAR_CONTENT_INSET + Spacing.five }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} />}
+      >
         <Text style={[styles.muted, { color: t.mutedForeground }]}>{group.name}</Text>
         <Text style={[styles.big, { color: t.foreground }]}>Toplam: {formatCurrencyTry(total)}</Text>
 

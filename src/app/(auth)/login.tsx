@@ -15,10 +15,29 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
     setError(null);
+    setEmailError(null);
+    setPasswordError(null);
+
+    const emailValue = email.trim();
+    let hasError = false;
+
+    if (!emailValue || !/\S+@\S+\.\S+/.test(emailValue)) {
+      setEmailError('Geçerli bir e-posta adresi girin.');
+      hasError = true;
+    }
+    if (!password || password.length < 6) {
+      setPasswordError('Şifre en az 6 karakter olmalıdır.');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
     setLoading(true);
     try {
       const { error: err } = await signIn(email.trim(), password);
@@ -63,7 +82,9 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                textContentType="emailAddress"
+                autoComplete="email"
+                textContentType="username"
+                error={emailError ?? undefined}
               />
               <Input
                 label="Şifre"
@@ -71,7 +92,9 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 placeholder="••••••••"
                 secureTextEntry
+                autoComplete="current-password"
                 textContentType="password"
+                error={passwordError ?? undefined}
               />
               {error ? (
                 <Text style={{ color: t.destructive }} accessibilityRole="alert">

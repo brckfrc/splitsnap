@@ -1,11 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { Expense, ExpenseShare, User } from '@/types';
-
-type ProfileRow = {
-  display_name: string;
-  email: string | null;
-  avatar_url: string | null;
-};
+import { mapProfileToUser, unwrapProfile, type ProfileRow } from '@/services/profile-mapper';
+import type { Expense, ExpenseShare } from '@/types';
 
 type ExpenseRow = {
   id: string;
@@ -17,6 +12,7 @@ type ExpenseRow = {
   paid_by: string;
   created_by: string;
   split_type: string;
+  icon: string | null;
   receipt_storage_path: string | null;
   ocr_suggestions: OcrJson | null;
   created_at: string;
@@ -51,23 +47,6 @@ function parseAmount(v: string | number): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function mapProfileToUser(userId: string, p: ProfileRow | null | undefined): User {
-  if (!p) {
-    return { id: userId, name: 'Kullanıcı', email: '', avatar: '👤' };
-  }
-  return {
-    id: userId,
-    name: p.display_name || 'Kullanıcı',
-    email: p.email ?? '',
-    avatar: p.avatar_url ?? '👤',
-  };
-}
-
-function unwrapProfile(profiles: ShareRow['profiles']): ProfileRow | null {
-  if (!profiles) return null;
-  return Array.isArray(profiles) ? profiles[0] ?? null : profiles;
-}
-
 function mapOcrSuggestions(json: OcrJson | null | undefined): Expense['ocrSuggestions'] {
   if (!json) return undefined;
   return {
@@ -92,6 +71,7 @@ function mapExpenseRow(row: ExpenseRow, payerById: Map<string, ProfileRow>): Exp
     paidByUser,
     createdBy: row.created_by,
     splitType: row.split_type === 'manual' ? 'manual' : 'equal',
+    icon: row.icon,
     receiptImageUrl: row.receipt_storage_path ?? undefined,
     ocrSuggestions: mapOcrSuggestions(row.ocr_suggestions),
     updatedAt: row.updated_at ?? undefined,
@@ -119,6 +99,7 @@ const EXPENSE_COLUMNS = `
   paid_by,
   created_by,
   split_type,
+  icon,
   receipt_storage_path,
   ocr_suggestions,
   created_at,
@@ -171,9 +152,11 @@ export async function fetchExpensesForGroupPayload(groupId: string): Promise<{
   if (eErr) throw new Error(eErr.message);
 
   const rawExpenses = (expRows ?? []) as ExpenseRow[];
-  const payerById = await resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by))]);
+  const [payerById, expenseShares] = await Promise.all([
+    resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by))]),
+    resolveShares(rawExpenses.map((r) => r.id)),
+  ]);
   const expenses = rawExpenses.map((row) => mapExpenseRow(row, payerById));
-  const expenseShares = await resolveShares(expenses.map((e) => e.id));
   return { expenses, expenseShares };
 }
 
@@ -193,9 +176,11 @@ export async function fetchExpensesForGroupsPayload(groupIds: string[]): Promise
   if (eErr) throw new Error(eErr.message);
 
   const rawExpenses = (expRows ?? []) as ExpenseRow[];
-  const payerById = await resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by))]);
+  const [payerById, expenseShares] = await Promise.all([
+    resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by))]),
+    resolveShares(rawExpenses.map((r) => r.id)),
+  ]);
   const expenses = rawExpenses.map((row) => mapExpenseRow(row, payerById));
-  const expenseShares = await resolveShares(expenses.map((e) => e.id));
   return { expenses, expenseShares };
 }
 
@@ -208,6 +193,7 @@ export type CreateExpenseInput = {
   paidBy: string;
   createdBy: string;
   splitType: 'equal' | 'manual';
+  icon?: string | null;
   shares: { userId: string; amount: number }[];
 };
 
@@ -219,41 +205,23 @@ export async function createExpenseRemote(input: CreateExpenseInput): Promise<vo
 
   const dateStr = input.expenseDate.slice(0, 10);
 
-  const { data: exp, error: insErr } = await supabase
-    .from('expenses')
-    .insert({
-      group_id: input.groupId,
-      title,
-      description: input.description?.trim() || null,
-      amount: input.amount,
-      expense_date: dateStr,
-      paid_by: input.paidBy,
-      created_by: input.createdBy,
-      split_type: input.splitType,
-      receipt_storage_path: null,
-      ocr_suggestions: null,
-    })
-    .select('id')
-    .single();
+  const sharesJson = input.shares
+    .filter((s) => s.amount > 0)
+    .map((s) => ({ user_id: s.userId, amount: s.amount }));
 
-  if (insErr || !exp) {
-    throw new Error(insErr?.message ?? 'insert_failed');
-  }
+  const { error } = await supabase.rpc('create_expense_with_shares', {
+    p_group_id: input.groupId,
+    p_title: title,
+    p_description: input.description?.trim() || null,
+    p_amount: input.amount,
+    p_expense_date: dateStr,
+    p_paid_by: input.paidBy,
+    p_split_type: input.splitType,
+    p_icon: input.icon ?? null,
+    p_shares: sharesJson,
+  });
 
-  const expenseId = (exp as { id: string }).id;
-
-  const shareRows = input.shares.map((s) => ({
-    expense_id: expenseId,
-    user_id: s.userId,
-    amount: s.amount,
-  }));
-
-  const { error: shErr } = await supabase.from('expense_shares').insert(shareRows);
-
-  if (shErr) {
-    await supabase.from('expenses').delete().eq('id', expenseId);
-    throw new Error(shErr.message);
-  }
+  if (error) throw new Error(error.message);
 }
 
 export type UpdateExpenseInput = {
@@ -264,6 +232,8 @@ export type UpdateExpenseInput = {
   amount: number;
   expenseDate: string;
   splitType: 'equal' | 'manual';
+  icon?: string | null;
+  shares: { userId: string; amount: number }[];
 };
 
 export async function updateExpenseRemote(input: UpdateExpenseInput): Promise<void> {
@@ -272,40 +242,23 @@ export async function updateExpenseRemote(input: UpdateExpenseInput): Promise<vo
   if (input.amount <= 0) throw new Error('invalid_amount');
   const dateStr = input.expenseDate.slice(0, 10);
 
-  const { error: upErr } = await supabase
-    .from('expenses')
-    .update({
-      title,
-      description: input.description?.trim() || null,
-      amount: input.amount,
-      expense_date: dateStr,
-    })
-    .eq('id', input.expenseId);
+  const sharesJson = input.shares
+    .filter((s) => s.amount > 0)
+    .map((s) => ({ user_id: s.userId, amount: s.amount }));
 
-  if (upErr) throw new Error(upErr.message);
+  const { error } = await supabase.rpc('update_expense_with_shares', {
+    p_expense_id: input.expenseId,
+    p_group_id: input.groupId,
+    p_title: title,
+    p_description: input.description?.trim() || null,
+    p_amount: input.amount,
+    p_expense_date: dateStr,
+    p_split_type: input.splitType,
+    p_icon: input.icon ?? null,
+    p_shares: sharesJson,
+  });
 
-  if (input.splitType === 'equal') {
-    const { data: sh, error: selErr } = await supabase
-      .from('expense_shares')
-      .select('user_id')
-      .eq('expense_id', input.expenseId);
-
-    if (selErr) throw new Error(selErr.message);
-    const userIds = ((sh ?? []) as { user_id: string }[]).map((r) => r.user_id);
-    if (userIds.length === 0) return;
-
-    const each = input.amount / userIds.length;
-    const { error: delErr } = await supabase.from('expense_shares').delete().eq('expense_id', input.expenseId);
-    if (delErr) throw new Error(delErr.message);
-
-    const newRows = userIds.map((user_id) => ({
-      expense_id: input.expenseId,
-      user_id,
-      amount: each,
-    }));
-    const { error: insErr } = await supabase.from('expense_shares').insert(newRows);
-    if (insErr) throw new Error(insErr.message);
-  }
+  if (error) throw new Error(error.message);
 }
 
 export async function softDeleteExpenseRemote(expenseId: string): Promise<void> {

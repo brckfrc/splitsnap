@@ -1,8 +1,22 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
+import {
+  InputAccessoryView,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  type TextInputProps,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+
+/** Shared nativeID for the iOS InputAccessoryView "Done" toolbar. */
+export const KEYBOARD_ACCESSORY_ID = 'keyboard-done-bar';
 
 export type InputProps = TextInputProps & {
   label?: string;
@@ -15,6 +29,7 @@ export type InputProps = TextInputProps & {
 
 export function Input({ label, error, suffix, onSuffixPress, style, accessibilityLabel, ...rest }: InputProps) {
   const t = useTheme();
+  const isMultiline = Boolean(rest.multiline);
 
   return (
     <View style={styles.wrapper}>
@@ -36,6 +51,11 @@ export function Input({ label, error, suffix, onSuffixPress, style, accessibilit
           placeholderTextColor={t.mutedForeground}
           accessibilityLabel={accessibilityLabel ?? label}
           style={[styles.input, { color: t.foreground }, style]}
+          // Single-line: "Done" key closes keyboard directly
+          returnKeyType={isMultiline ? undefined : (rest.returnKeyType ?? 'done')}
+          onSubmitEditing={isMultiline ? undefined : (rest.onSubmitEditing ?? (() => Keyboard.dismiss()))}
+          // Multiline: uses shared InputAccessoryView toolbar below
+          inputAccessoryViewID={isMultiline && Platform.OS === 'ios' ? KEYBOARD_ACCESSORY_ID : undefined}
           {...rest}
         />
         {suffix ? (
@@ -56,6 +76,32 @@ export function Input({ label, error, suffix, onSuffixPress, style, accessibilit
         </Text>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * Mount once at the layout/screen level (e.g. inside a SafeAreaView).
+ * Renders the "Tamam" toolbar above the iOS keyboard for multiline inputs.
+ * Single-line inputs use returnKeyType="done" and don't need this.
+ */
+export function KeyboardDoneToolbar() {
+  const t = useTheme();
+
+  if (Platform.OS !== 'ios') return null;
+
+  return (
+    <InputAccessoryView nativeID={KEYBOARD_ACCESSORY_ID}>
+      <View style={[styles.toolbar, { backgroundColor: t.inputBackground, borderTopColor: t.border }]}>
+        <TouchableOpacity
+          onPress={() => Keyboard.dismiss()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Klavyeyi kapat"
+        >
+          <Text style={[styles.toolbarBtn, { color: t.primary }]}>Tamam</Text>
+        </TouchableOpacity>
+      </View>
+    </InputAccessoryView>
   );
 }
 
@@ -86,5 +132,18 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 13,
+  },
+  toolbar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  toolbarBtn: {
+    fontSize: 16,
+    fontWeight: '600',
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two,
   },
 });

@@ -2,7 +2,7 @@ import { StyleSheet, Text } from 'react-native';
 import { Sheet, XStack } from 'tamagui';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Input, KeyboardDoneToolbar } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
@@ -54,6 +54,7 @@ export function CreateGroupModal({
         borderWidth={1}
         borderColor={t.border}
       >
+        <KeyboardDoneToolbar />
         <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header">
           Yeni Grup
         </Text>

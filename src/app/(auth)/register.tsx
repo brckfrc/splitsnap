@@ -17,10 +17,36 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
     setError(null);
+    setNameError(null);
+    setEmailError(null);
+    setPasswordError(null);
+
+    const emailValue = email.trim();
+    const nameValue = name.trim();
+    let hasError = false;
+
+    if (!nameValue) {
+      setNameError('Ad Soyad boş bırakılamaz.');
+      hasError = true;
+    }
+    if (!emailValue || !/\S+@\S+\.\S+/.test(emailValue)) {
+      setEmailError('Geçerli bir e-posta adresi girin.');
+      hasError = true;
+    }
+    if (!password || password.length < 6) {
+      setPasswordError('Şifre en az 6 karakter olmalıdır.');
+      hasError = true;
+    }
+
+    if (hasError) return;
+
     setLoading(true);
     try {
       const { error: err, session } = await signUp(email.trim(), password, name.trim());
@@ -63,7 +89,17 @@ export default function RegisterScreen() {
             <Text style={[styles.muted, { color: t.mutedForeground }]}>SplitSnap&apos;e hoş geldiniz</Text>
 
             <View style={styles.form}>
-              <Input label="Ad Soyad" value={name} onChangeText={setName} placeholder="Ahmet Yılmaz" />
+              <Input
+                label="Ad Soyad"
+                value={name}
+                onChangeText={setName}
+                placeholder="Ahmet Yılmaz"
+                autoComplete="name"
+                textContentType="name"
+                autoCapitalize="words"
+                autoCorrect={false}
+                error={nameError ?? undefined}
+              />
               <Input
                 label="E-posta"
                 value={email}
@@ -72,8 +108,21 @@ export default function RegisterScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                autoComplete="email"
+                textContentType="username"
+                error={emailError ?? undefined}
               />
-              <Input label="Şifre" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry />
+              <Input
+                label="Şifre"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry
+                autoComplete="new-password"
+                textContentType="newPassword"
+                passwordRules="minlength: 6;"
+                error={passwordError ?? undefined}
+              />
               {error ? (
                 <Text style={{ color: t.destructive }} accessibilityRole="alert">
                   {error}

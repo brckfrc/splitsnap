@@ -97,9 +97,13 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
     for (const e of prev.expenses) {
       if (e.groupId !== groupId && e.paidByUser) userMap.set(e.paidBy, e.paidByUser);
     }
+    const otherGroupExpenseIds = new Set(
+      prev.expenses.filter((e) => e.groupId !== groupId).map((e) => e.id),
+    );
     for (const sh of prev.expenseShares) {
-      const exp = prev.expenses.find((x) => x.id === sh.expenseId);
-      if (exp && exp.groupId !== groupId && sh.user) userMap.set(sh.userId, sh.user);
+      if (otherGroupExpenseIds.has(sh.expenseId) && sh.user) {
+        userMap.set(sh.userId, sh.user);
+      }
     }
     if (prev.sessionUserId) {
       const self = prev.users.find((u) => u.id === prev.sessionUserId);

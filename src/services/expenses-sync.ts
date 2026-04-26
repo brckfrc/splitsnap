@@ -9,6 +9,7 @@ let channel: ReturnType<typeof supabase.channel> | null = null;
 let appStateSub: { remove: () => void } | null = null;
 let lastAppState: AppStateStatus = AppState.currentState;
 let activeGroupId: string | null = null;
+let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 function teardownChannel() {
   if (channel) {
@@ -18,12 +19,20 @@ function teardownChannel() {
 }
 
 function scheduleReload() {
-  if (activeGroupId) {
-    void loadExpensesForGroup(activeGroupId).catch(() => {});
-  }
+  if (reloadTimer) clearTimeout(reloadTimer);
+  reloadTimer = setTimeout(() => {
+    reloadTimer = null;
+    if (activeGroupId) {
+      void loadExpensesForGroup(activeGroupId).catch(() => {});
+    }
+  }, 300);
 }
 
 export function stopExpensesBackgroundSync() {
+  if (reloadTimer) {
+    clearTimeout(reloadTimer);
+    reloadTimer = null;
+  }
   if (appStateSub) {
     appStateSub.remove();
     appStateSub = null;

@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ChevronRight, Users } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState, useCallback } from 'react';
+import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CreateGroupModal } from '@/components/modals/create-group-modal';
@@ -11,6 +11,7 @@ import { PressableCard } from '@/components/ui/card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { reloadGroupsAndExpenses } from '@/services/groups-sync';
 import { href } from '@/lib/href';
 import { useTheme } from '@/hooks/use-theme';
 import { groupsService } from '@/services/groups';
@@ -23,6 +24,17 @@ const EMPTY_GROUPS: Group[] = [];
 export default function GroupsListScreen() {
   const t = useTheme();
   const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await reloadGroupsAndExpenses();
+    } catch {
+      /* store keeps previous data */
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -128,6 +140,7 @@ export default function GroupsListScreen() {
       <ScrollView
         contentContainerStyle={[styles.list, { paddingBottom: APP_TAB_BAR_CONTENT_INSET }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} />}
       >
         {groups.length === 0 ? (
           <View style={styles.empty} accessibilityLabel="Grup yok">

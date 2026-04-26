@@ -126,16 +126,38 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - Eşit bölüşüm: `splitType === 'equal'` → `perEqual` otomatik hesaplama, katılımcı yanında pay gösterimi.
 - Manuel bölüşüm: `splitType === 'manual'` → kişi başı input, `suffix` ile kalan miktar, tutar üst sınırı, sayısal giriş kısıtlaması.
 
-**Yapılabilecek ekstralar (Hafta 5):**
-- [ ] Pull-to-refresh (grup listesi + grup detay)
-- [ ] Harcama silme sonrası toast bildirimi
-- [ ] Client-side input validation (login/register + harcama formu inline hatalar)
-- [ ] Harcama düzenlemede manuel pay güncelleme (`edit.tsx` — bölüşüm payları)
-- [ ] Boş durum iyileştirmeleri (grup detayda harcama yokken CTA)
-- [ ] Harcama kartlarına kategori/emoji
+**Yapılan Ekstralar (Hafta 5):**
+- [x] Pull-to-refresh (grup listesi + grup detay + ödeme özeti)
+- [x] Harcama silme sonrası toast bildirimi
+- [x] Client-side input validation (login/register + harcama formu inline hatalar)
+- [x] Harcama düzenlemede manuel pay güncelleme (`edit.tsx` — bölüşüm payları)
+- [x] Boş durum iyileştirmeleri (grup detayda harcama yokken CTA)
+- [x] Harcama kartlarına kategori/emoji tahminleyicisi
 - [x] Durumunuz kartı açıklama satırı: bakiye altına "Alacaklısınız" / "Borçlusunuz" / "Eşitsiniz" metni
 
 **Not:** Roadmap maddeleri Hafta 4 commit'leri (`eeb39a8`, `419099d`) kapsamında tamamlandı; Hafta 5 roadmap maddeleri `[x]` olarak işaretlendi.
+
+**Güvenlik & Optimizasyon Denetimi (Hafta 5 sonu):**
+- **BUG-01/02 — Atomic RPC:** `create_expense_with_shares` ve `update_expense_with_shares` PL/pgSQL fonksiyonları (`SECURITY DEFINER`) ile harcama + paylar tek transaction'da; önceki non-atomic insert/delete zinciri (veri kaybı riski) kaldırıldı.
+- **SEC-01 — `expense_shares` RLS:** INSERT/UPDATE/DELETE policy'lerine `created_by = auth.uid() OR owner_id = auth.uid()` kontrolü eklendi; önceden herhangi bir grup üyesi başkasının paylarını silebiliyordu.
+- **SEC-05 — Soft-deleted gruplar:** `groups_select_participant` RLS policy'sine `deleted_at IS NULL` eklendi; client tarafında `fetchMyGroupsPayload`'a `.is('deleted_at', null)` filtresi eklendi.
+- **PERF-01 — Realtime debounce:** `groups-sync` ve `expenses-sync` içindeki `scheduleReload` 300ms debounce ile sarıldı; ardışık Realtime event'leri tek fetch'e indirgendi (~5-10x API çağrısı azalması).
+- **PERF-02 — Paralel fetch:** `fetchExpensesForGroupPayload` ve `fetchExpensesForGroupsPayload` içindeki `resolvePayerProfiles` + `resolveShares` sequential → `Promise.all` (~%33 latency azalması).
+- **BUG-03 — Rounding fix:** Eşit bölüşümde `amount / n` yerine `floor + remainder` pattern'i; 100₺/3 artık 99.99 değil 100.00 topluyor.
+- **PERF-03 — Store O(n) lookup:** `replaceExpensesAndSharesForGroup` içindeki `Array.find` (O(n²)) → `Set.has` (O(n)).
+- **PERF-05/06 — Kod tekrarı:** `ProfileRow`, `mapProfileToUser`, `unwrapProfile` → `src/services/profile-mapper.ts` ortak modülüne çıkarıldı.
+- **PERF-07 — Spinner stuck fix:** 3 ekrandaki `onRefresh` `try/finally` ile sarıldı; hata durumunda spinner takılmıyor. `settlement.tsx`'te `RefreshControl` tanımlıydı ama JSX'e bağlı değildi — düzeltildi.
+- **Navigasyon stack düzeltmesi:** `add-expense.tsx`, `edit.tsx` kaydet/sil sonrası ve `[groupId]/index.tsx` geri butonu `router.replace()` / `router.push()` yerine `router.back()` kullanıyor — stack'te duplikat sayfa birikimi önlendi.
+
+---
+
+## Week 8 — Fiş ve OCR Altyapısı (Notlar)
+
+**Mimari Karar:** 
+Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan saf lokal OCR text parsing algoritmaları yerine "Hibrit Model" kullanılması kararlaştırılmıştır. 
+- Telefonun ücretsiz ve lokal OCR yeteneği ile (Örn: Apple Vision veya Google ML Kit) fiş üzerindeki raw (saf) metin alınacak.
+- Bu dağınık metin yığını OpenAI GPT-4o-mini API'sine gönderilip (çok düşük maliyetle) yapılandırılmış JSON formatında (toplam tutar, kategori, vb.) döndürülmesi sağlanacak.
+- Bu yöntem, yüksek hacimli regex yazma yükünü tamamen ortadan kaldırmaktadır.
 
 ---
 
@@ -200,4 +222,4 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - [ ] **Çoklu ödeyen desteği (split payer):** Şu an bir harcamayı yalnızca tek kişi ödeyebilir (`paidBy: string`). İleride bir ödemeyi birden fazla kişinin karşılaması (ör. A ₺60, B ₺40 ödedi) — `paidBy` → `paidByShares: { userId, amount }[]` dönüşümü, DB şema değişikliği, settlement hesaplama güncellenmesi gerekir.
 - [ ] **Auth rate limiting UX:** çok fazla başarısız deneme için client-side feedback / cooldown
 - [ ] **Üretim Auth e-postası: custom domain + SMTP (hosted Supabase)** — Zorunlu değil; MVP’de built-in gönderici veya e-posta onayı kapalı test yeterli. Ürün büyüyünce veya `429: email rate limit exceeded` (built-in ~2 e-posta/saat) sorununda: ürün subdomain’i veya kök domain (`splitsnap.borak.dev`, ileride ayrı alan adı) için DNS, Dashboard’da **Custom SMTP** (Resend, SendGrid, Postmark vb.), redirect / site URL ve e-posta şablonlarındaki linklerin aynı domainle uyumu
-- [ ] **Davet kodu + tıklanabilir davet linki (grup sahibi paylaşımı):** Şu an `UserPlus` → `Share.share` ile düz metin + `#KOD`. Backend / ürün tarafında **custom domain** (ve istenirse **Universal Links / App Links**) oturduktan sonra: paylaşılan içerikte güvenilir bir **HTTPS join URL**’si (`https://<domain>/join?…` veya benzeri); ikon tıklanınca sheet veya paylaşım sheet’inde link + kod birlikte; link tıklanınca uygulama / web’de gruba katılım akışı. Domain yokken kısa `app.supabase.co` veya rastgele deep link güven vermez; bu yüzden özellik custom domain sonrasına ertelendi.
+- [ ] **Davet kodu + tıklanabilir davet linki + Associated Domains:** Şu an `UserPlus` -> `Share.share` ile düz metin + `#KOD`. Custom domain oturduktan sonra yapılacaklar: (1) `https://<domain>/.well-known/apple-app-site-association` dosyasına `webcredentials` + `applinks` servisleri eklenmeli, (2) Xcode -> Signing & Capabilities -> Associated Domains'e `webcredentials:<domain>` + `applinks:<domain>` eklenmeli. Bu sayede hem **Universal Links** (davet linki tıklanınca uygulama açılır) hem **iOS Keychain "Güçlü Şifre Öner"** (`textContentType="newPassword"`) aynı anda aktif olur. Kod tarafında `register.tsx` ve `login.tsx` zaten `textContentType` + `autoComplete` prop'larıyla hazır.
