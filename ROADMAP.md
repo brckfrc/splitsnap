@@ -203,9 +203,22 @@
 
 ### Video Linki
 
-
+[Hafta 5 — 27-04-2026](https://youtu.be/tjnbJSpax2M)
 
 ### Ekran Görselleri
+
+**Harcamalar Ekranı Emojileri**
+
+![Harcamalar emojiler](docs/roadmap-screenshots/week-05/expenses-emojis.png)
+
+**Gruplar Pull-to-Refresh**
+
+![Gruplar pull to refresh](docs/roadmap-screenshots/week-05/refresh-groups.png)
+
+**Toast Bildirimi (Başarılı)**
+
+![Toast başarı](docs/roadmap-screenshots/week-05/toast-message-success.png)
+
 
 ## Hafta 6 — Paylaşım ve Hesaplama
 

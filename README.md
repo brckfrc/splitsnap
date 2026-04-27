@@ -18,6 +18,7 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 | 2 | [Week 2 Video](https://youtu.be/ErOGMI0s7SE) |
 | 3 | [Week 3 Video](https://youtu.be/WzUGQyE3S0g) |
 | 4 | [Week 4 Video](https://youtu.be/bfmGb2MThas) |
+| 5 | [Week 5 Video](https://youtu.be/tjnbJSpax2M) |
 
 ## Requirements
 
