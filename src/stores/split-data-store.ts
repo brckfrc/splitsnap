@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { buildEmptySplitStateForUser } from '@/data/mock-split-seed';
-import type { Expense, ExpenseShare, Group, GroupMember, User } from '@/types';
+import type { Expense, ExpenseShare, Group, GroupMember, Settlement, User } from '@/types';
 
 type SplitState = {
   users: User[];
@@ -9,17 +9,19 @@ type SplitState = {
   groupMembers: GroupMember[];
   expenses: Expense[];
   expenseShares: ExpenseShare[];
+  settlements: Settlement[];
   sessionUserId: string | null;
   resetForUser: (user: User) => void;
   clearSessionData: () => void;
   replaceGroupsAndMembers: (groups: Group[], groupMembers: GroupMember[]) => void;
-  replaceExpensesAndSharesForGroup: (groupId: string, expenses: Expense[], expenseShares: ExpenseShare[]) => void;
-  replaceAllExpensesAndShares: (expenses: Expense[], expenseShares: ExpenseShare[]) => void;
+  replaceExpensesAndSharesForGroup: (groupId: string, expenses: Expense[], expenseShares: ExpenseShare[], settlements: Settlement[]) => void;
+  replaceAllExpensesAndShares: (expenses: Expense[], expenseShares: ExpenseShare[], settlements: Settlement[]) => void;
   listGroupsForUser: (userId: string) => Group[];
   getGroup: (groupId: string) => Group | undefined;
   getMembers: (groupId: string) => GroupMember[];
   getExpenses: (groupId: string) => Expense[];
   getShares: (expenseId: string) => ExpenseShare[];
+  getSettlements: (groupId: string) => Settlement[];
 };
 
 function userById(users: User[]): Record<string, User> {
@@ -32,6 +34,7 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
   groupMembers: [],
   expenses: [],
   expenseShares: [],
+  settlements: [],
   sessionUserId: null,
 
   resetForUser: (user) => {
@@ -49,6 +52,7 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
       groupMembers: [],
       expenses: [],
       expenseShares: [],
+      settlements: [],
       sessionUserId: null,
     });
   },
@@ -79,7 +83,7 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
     });
   },
 
-  replaceExpensesAndSharesForGroup: (groupId, expenses, expenseShares) => {
+  replaceExpensesAndSharesForGroup: (groupId, expenses, expenseShares, settlements) => {
     const prev = get();
     const userMap = new Map<string, User>();
     for (const u of prev.users) {
@@ -91,8 +95,12 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
     for (const e of expenses) {
       if (e.paidByUser) userMap.set(e.paidBy, e.paidByUser);
     }
-    for (const sh of expenseShares) {
+    for (const sh of prev.expenseShares) {
       if (sh.user) userMap.set(sh.userId, sh.user);
+    }
+    for (const s of settlements) {
+      if (s.fromUser) userMap.set(s.fromUserId, s.fromUser);
+      if (s.toUser) userMap.set(s.toUserId, s.toUser);
     }
     for (const e of prev.expenses) {
       if (e.groupId !== groupId && e.paidByUser) userMap.set(e.paidBy, e.paidByUser);
@@ -110,19 +118,20 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
       if (self) userMap.set(self.id, self);
     }
 
-    const oldIds = new Set(prev.expenses.filter((e) => e.groupId === groupId).map((e) => e.id));
+    const oldExpenseIds = new Set(prev.expenses.filter((e) => e.groupId === groupId).map((e) => e.id));
 
     set({
       expenses: [...prev.expenses.filter((e) => e.groupId !== groupId), ...expenses],
       expenseShares: [
-        ...prev.expenseShares.filter((sh) => !oldIds.has(sh.expenseId)),
+        ...prev.expenseShares.filter((sh) => !oldExpenseIds.has(sh.expenseId)),
         ...expenseShares,
       ],
+      settlements: [...prev.settlements.filter((s) => s.groupId !== groupId), ...settlements],
       users: Array.from(userMap.values()),
     });
   },
 
-  replaceAllExpensesAndShares: (expenses, expenseShares) => {
+  replaceAllExpensesAndShares: (expenses, expenseShares, settlements) => {
     const prev = get();
     const userMap = new Map<string, User>();
     for (const u of prev.users) userMap.set(u.id, u);
@@ -133,6 +142,10 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
     for (const sh of expenseShares) {
       if (sh.user) userMap.set(sh.userId, sh.user);
     }
+    for (const s of settlements) {
+      if (s.fromUser) userMap.set(s.fromUserId, s.fromUser);
+      if (s.toUser) userMap.set(s.toUserId, s.toUser);
+    }
     if (prev.sessionUserId) {
       const self = prev.users.find((u) => u.id === prev.sessionUserId);
       if (self) userMap.set(self.id, self);
@@ -140,6 +153,7 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
     set({
       expenses,
       expenseShares,
+      settlements,
       users: Array.from(userMap.values()),
     });
   },
@@ -159,6 +173,8 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
   getExpenses: (groupId) => get().expenses.filter((e) => e.groupId === groupId),
 
   getShares: (expenseId) => get().expenseShares.filter((s) => s.expenseId === expenseId),
+
+  getSettlements: (groupId) => get().settlements.filter((s) => s.groupId === groupId),
 }));
 
 export { userById };

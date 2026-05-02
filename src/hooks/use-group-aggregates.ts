@@ -13,6 +13,7 @@ export function useGroupAggregates(groupId: string) {
   const group = useSplitDataStore((s) => s.getGroup(groupId));
   const groupMembers = useSplitDataStore((s) => s.groupMembers);
   const allExpenses = useSplitDataStore((s) => s.expenses);
+  const allSettlements = useSplitDataStore((s) => s.settlements);
 
   const members = useMemo(
     () => groupMembers.filter((m) => m.groupId === groupId),
@@ -24,5 +25,10 @@ export function useGroupAggregates(groupId: string) {
     [allExpenses, groupId],
   );
 
-  return { group, members, expenses };
+  const settlements = useMemo(
+    () => allSettlements.filter((s) => s.groupId === groupId),
+    [allSettlements, groupId],
+  );
+
+  return { group, members, expenses, settlements };
 }

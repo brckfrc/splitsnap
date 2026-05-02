@@ -10,6 +10,7 @@ import {
   softDeleteExpenseRemote,
   updateExpenseRemote,
 } from '@/services/expenses-supabase';
+import { fetchSettlementsForGroup, createSettlementRemote } from '@/services/settlements-supabase';
 import { useSplitDataStore } from '@/stores/split-data-store';
 import type { User } from '@/types';
 
@@ -26,13 +27,16 @@ export function clearSplitSessionData() {
 
 export async function loadExpensesForGroup(groupId: string): Promise<void> {
   const payload = await fetchExpensesForGroupPayload(groupId);
-  useSplitDataStore.getState().replaceExpensesAndSharesForGroup(groupId, payload.expenses, payload.expenseShares);
+  const settlements = await fetchSettlementsForGroup(groupId);
+  useSplitDataStore.getState().replaceExpensesAndSharesForGroup(groupId, payload.expenses, payload.expenseShares, settlements);
 }
 
 export async function loadExpensesForAllGroups(groupIds: string[]): Promise<void> {
   if (groupIds.length === 0) return;
   const payload = await fetchExpensesForGroupsPayload(groupIds);
-  useSplitDataStore.getState().replaceAllExpensesAndShares(payload.expenses, payload.expenseShares);
+  const settlementsLists = await Promise.all(groupIds.map((id) => fetchSettlementsForGroup(id)));
+  const settlements = settlementsLists.flat();
+  useSplitDataStore.getState().replaceAllExpensesAndShares(payload.expenses, payload.expenseShares, settlements);
 }
 
 export const splitData = {
@@ -41,6 +45,7 @@ export const splitData = {
   getMembers: (groupId: string) => useSplitDataStore.getState().getMembers(groupId),
   getExpenses: (groupId: string) => useSplitDataStore.getState().getExpenses(groupId),
   getShares: (expenseId: string) => useSplitDataStore.getState().getShares(expenseId),
+  getSettlements: (groupId: string) => useSplitDataStore.getState().getSettlements(groupId),
 
   loadExpensesForGroup,
 
@@ -153,6 +158,17 @@ export const splitData = {
   deleteExpense: async (expenseId: string, groupId: string) => {
     await softDeleteExpenseRemote(expenseId);
     await loadExpensesForGroup(groupId);
+  },
+
+  addSettlement: async (input: {
+    groupId: string;
+    fromUserId: string;
+    toUserId: string;
+    amount: number;
+    note?: string;
+  }) => {
+    await createSettlementRemote(input);
+    await loadExpensesForGroup(input.groupId);
   },
 };
 

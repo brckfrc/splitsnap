@@ -1,8 +1,9 @@
-import type { Expense, ExpenseShare, GroupMember, SettlementSuggestion } from '@/types';
+import type { Expense, ExpenseShare, GroupMember, Settlement, SettlementSuggestion } from '@/types';
 
 export function calculateBalances(
   members: GroupMember[],
   expenses: Expense[],
+  settlements: Settlement[],
   getShares: (expenseId: string) => ExpenseShare[],
 ): Record<string, number> {
   const balances: Record<string, number> = {};
@@ -20,6 +21,15 @@ export function calculateBalances(
         balances[share.userId] -= share.amount;
       }
     });
+  });
+
+  settlements.forEach((settlement) => {
+    if (balances[settlement.fromUserId] !== undefined) {
+      balances[settlement.fromUserId] += settlement.amount;
+    }
+    if (balances[settlement.toUserId] !== undefined) {
+      balances[settlement.toUserId] -= settlement.amount;
+    }
   });
 
   return balances;
@@ -70,6 +80,7 @@ export function calculateSettlements(
 export function userNetBalance(
   userId: string,
   expenses: Expense[],
+  settlements: Settlement[],
   getShares: (expenseId: string) => ExpenseShare[],
 ): number {
   let paid = 0;
@@ -80,5 +91,11 @@ export function userNetBalance(
     const mine = shares.find((s) => s.userId === userId);
     if (mine) owes += mine.amount;
   });
+  
+  settlements.forEach((settlement) => {
+    if (settlement.fromUserId === userId) paid += settlement.amount;
+    if (settlement.toUserId === userId) owes += settlement.amount;
+  });
+
   return paid - owes;
 }

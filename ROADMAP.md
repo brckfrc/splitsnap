@@ -222,10 +222,10 @@
 
 ## Hafta 6 — Paylaşım ve Hesaplama
 
-- [ ] ExpenseSplit yapısının tamamlanması
-- [ ] Manuel kişi bazlı tutar dağıtım özelliğinin eklenmesi
-- [ ] Borç-alacak hesaplama mantığının yazılması
-- [ ] Grup özet ekranının yapılması
+- [x] ExpenseSplit yapısının tamamlanması
+- [x] Manuel kişi bazlı tutar dağıtım özelliğinin eklenmesi
+- [x] Borç-alacak hesaplama mantığının yazılması
+- [x] Grup özet ekranının yapılması
 
 ### Haftalık Notlar
 

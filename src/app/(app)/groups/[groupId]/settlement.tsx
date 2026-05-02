@@ -1,9 +1,10 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useCallback } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
@@ -11,7 +12,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
 import { splitData } from '@/services/split-data';
-import { formatCurrencyTry } from '@/utils/format';
+import { formatCurrencyTry, formatShortDate } from '@/utils/format';
 import { calculateBalances, calculateSettlements } from '@/utils/settlement';
 
 export default function SettlementScreen() {
@@ -20,6 +21,7 @@ export default function SettlementScreen() {
   const t = useTheme();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -32,7 +34,7 @@ export default function SettlementScreen() {
   }, [gid]);
   const { user } = useAuth();
 
-  const { group, members, expenses } = useGroupAggregates(gid);
+  const { group, members, expenses, settlements: pastSettlements } = useGroupAggregates(gid);
 
   if (!group) {
     return (
@@ -42,10 +44,39 @@ export default function SettlementScreen() {
     );
   }
 
-  const balances = calculateBalances(members, expenses, (eid) => splitData.getShares(eid));
+  const balances = calculateBalances(members, expenses, pastSettlements, (eid) => splitData.getShares(eid));
   const settlements = calculateSettlements(members, balances);
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const myBalance = user ? balances[user.id] ?? 0 : 0;
+
+  async function handleSettle(fromUserId: string, toUserId: string, amount: number) {
+    Alert.alert(
+      'Ödeme Kaydet',
+      `${formatCurrencyTry(amount)} tutarındaki ödemeyi kaydetmek istiyor musunuz?`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Kaydet',
+          onPress: async () => {
+            setSubmitting(true);
+            try {
+              await splitData.addSettlement({
+                groupId: gid,
+                fromUserId,
+                toUserId,
+                amount,
+              });
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'Ödeme kaydedilemedi.';
+              Alert.alert('Hata', msg);
+            } finally {
+              setSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
@@ -119,6 +150,43 @@ export default function SettlementScreen() {
                   <Text style={{ color: t.primary, fontWeight: '800', fontSize: 16 }}>
                     {formatCurrencyTry(s.amount)}
                   </Text>
+                  {(user?.id === s.from.id || user?.id === s.to.id) && (
+                    <Button
+                      size="sm"
+                      disabled={submitting}
+                      onPress={() => handleSettle(s.from.id, s.to.id, s.amount)}
+                    >
+                      Öde
+                    </Button>
+                  )}
+                </View>
+              </Card>
+            ))}
+          </View>
+        )}
+
+        <Text style={[styles.section, { color: t.foreground, marginTop: Spacing.six }]}>Geçmiş ödemeler</Text>
+        {pastSettlements.length === 0 ? (
+          <Text style={{ color: t.mutedForeground }}>Henüz ödeme kaydı bulunmuyor.</Text>
+        ) : (
+          <View style={{ gap: Spacing.three }}>
+            {pastSettlements.map((s) => (
+              <Card key={s.id}>
+                <View style={styles.settleRow}>
+                  <View style={[styles.iconContainer, { backgroundColor: t.positiveMuted }]}>
+                    <Check size={20} color={t.positive} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: t.foreground, fontWeight: '600' }}>
+                      {s.fromUser?.name} <Text style={{ color: t.mutedForeground, fontWeight: '400' }}>ödedi</Text> {s.toUser?.name}
+                    </Text>
+                    <Text style={{ color: t.mutedForeground, fontSize: 12, marginTop: 2 }}>
+                      {formatShortDate(s.createdAt)}
+                    </Text>
+                  </View>
+                  <Text style={{ color: t.foreground, fontWeight: '700', fontSize: 15 }}>
+                    {formatCurrencyTry(s.amount)}
+                  </Text>
                 </View>
               </Card>
             ))}
@@ -151,4 +219,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   settleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   arrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  iconContainer: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });

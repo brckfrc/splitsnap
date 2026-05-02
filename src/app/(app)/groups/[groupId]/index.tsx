@@ -22,7 +22,7 @@ export default function GroupDetailScreen() {
   const { user } = useAuth();
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
 
-  const { group, members, expenses } = useGroupAggregates(gid);
+  const { group, members, expenses, settlements } = useGroupAggregates(gid);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -49,7 +49,7 @@ export default function GroupDetailScreen() {
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const balance =
-    user ? userNetBalance(user.id, expenses, (eid) => splitData.getShares(eid)) : 0;
+    user ? userNetBalance(user.id, expenses, settlements, (eid) => splitData.getShares(eid)) : 0;
 
   const isOwner = Boolean(user && user.id === group.ownerId);
   const inviteCode = group.inviteCode;
