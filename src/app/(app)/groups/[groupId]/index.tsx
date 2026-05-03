@@ -1,14 +1,44 @@
-import { ArrowLeft, Receipt, TrendingUp, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, ArrowUpRight, Receipt, TrendingUp, UserPlus } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, PressableCard } from '@/components/ui/card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+
+const AVATAR_PALETTE = [
+  { bg: '#F4B8C1', text: '#7A2E38' },
+  { bg: '#F9C9A0', text: '#7A3D0A' },
+  { bg: '#F5E4A0', text: '#6B5100' },
+  { bg: '#A8E6CF', text: '#1A5C42' },
+  { bg: '#A8D8F0', text: '#1A4A6B' },
+  { bg: '#C8B8F0', text: '#3D2475' },
+  { bg: '#F0C4B0', text: '#6B2E18' },
+  { bg: '#B8DFC8', text: '#1E4D35' },
+  { bg: '#B0CCF0', text: '#1A3A6B' },
+  { bg: '#F0B8D8', text: '#6B1A45' },
+] as const;
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function avatarPalette(userId: string): { bg: string; text: string } {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i);
+    hash |= 0;
+  }
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
 import { href } from '@/lib/href';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,6 +53,9 @@ export default function GroupDetailScreen() {
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
 
   const { group, members, expenses, settlements } = useGroupAggregates(gid);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const [isMembersExpanded, setIsMembersExpanded] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -122,19 +155,25 @@ export default function GroupDetailScreen() {
         </View>
 
         <View style={styles.statsRow}>
-          <Card style={[styles.statCard, { borderColor: `${t.primary}33`, backgroundColor: `${t.primary}0D` }]}>
+          <PressableCard
+            style={[styles.statCard, { borderColor: `${t.primary}33`, backgroundColor: `${t.primary}0D` }]}
+            onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+            accessibilityLabel="Harcamalar listesine git"
+          >
             <View style={styles.statLabelRow}>
               <Receipt size={16} color={t.mutedForeground} />
               <Text style={[styles.statLabel, { color: t.mutedForeground }]}>Toplam Harcama</Text>
             </View>
             <Text style={[styles.statValue, { color: t.primary }]}>{formatCurrencyTry(total)}</Text>
-          </Card>
-          <Card
+          </PressableCard>
+          <PressableCard
             style={[
               styles.statCard,
               balance > 0 && { borderColor: `${t.positive}44`, backgroundColor: t.positiveMuted },
               balance < 0 && { borderColor: `${t.destructive}44`, backgroundColor: `${t.destructive}14` },
             ]}
+            onPress={() => router.push(href(`/groups/${gid}/settlement`))}
+            accessibilityLabel="Ödeme özetine git"
           >
             <View style={styles.statLabelRow}>
               <TrendingUp size={16} color={t.mutedForeground} />
@@ -148,22 +187,16 @@ export default function GroupDetailScreen() {
             >
               {formatCurrencyTry(balance)}
             </Text>
-            <Text style={[styles.statHint, { color: t.mutedForeground }]}>
-              {balance > 0.01 ? 'Alacaklısınız' : balance < -0.01 ? 'Borçlusunuz' : 'Eşitsiniz'}
-            </Text>
-          </Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={[styles.statHint, { color: t.mutedForeground }]}>
+                {balance > 0.01 ? 'Alacaklısınız' : balance < -0.01 ? 'Borçlusunuz' : 'Eşitsiniz'}
+              </Text>
+              <ArrowUpRight size={14} color={t.mutedForeground} style={{ opacity: 0.6 }} />
+            </View>
+          </PressableCard>
         </View>
 
         <View style={styles.actions}>
-          <View style={styles.actionCell}>
-            <Button
-              style={styles.actionButtonFill}
-              variant="secondary"
-              onPress={() => router.push(href(`/groups/${gid}/settlement`))}
-            >
-              Ödeme Özeti
-            </Button>
-          </View>
           <View style={styles.actionCell}>
             <Button
               style={styles.actionButtonFill}
@@ -177,25 +210,45 @@ export default function GroupDetailScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.body, { paddingBottom: APP_TAB_BAR_CONTENT_INSET }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} />}
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.sectionTitle, { color: t.foreground }]}>Üyeler</Text>
         <Card style={{ gap: Spacing.three }}>
-          {members.map((m) => {
-            const isAdmin = m.role === 'admin' || m.userId === group.ownerId;
-            const left = Boolean(m.leftAt);
-            return (
+          {(() => {
+            const displayed = isMembersExpanded ? members : members.slice(0, 3);
+            return displayed.map((m) => {
+              const isAdmin = m.role === 'admin' || m.userId === group.ownerId;
+              const left = Boolean(m.leftAt);
+              const isMe = user?.id === m.userId;
+              const initials = getInitials(m.user.name);
+              const { bg, text: avatarText } = avatarPalette(m.userId);
+              return (
               <View
                 key={m.userId}
-                style={[styles.memberRow, left && { opacity: 0.55 }]}
+                style={[
+                  styles.memberRow,
+                  left && { opacity: 0.55 },
+                  isMe && {
+                    backgroundColor: t.background === '#252525' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.12)',
+                    borderRadius: 8,
+                    paddingHorizontal: Spacing.three,
+                    paddingVertical: Spacing.two,
+                    marginHorizontal: -Spacing.three,
+                  },
+                ]}
               >
-                <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                  <Text style={{ fontSize: 18 }}>{m.user.avatar ?? '👤'}</Text>
+                <View style={[styles.avatar, { backgroundColor: bg }]}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: avatarText, letterSpacing: 0.5 }}>
+                    {initials}
+                  </Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.memberName, { color: t.foreground }]}>{m.user.name}</Text>
+                  <Text style={[styles.memberName, { color: t.foreground }]}>
+                    {m.user.name} {isMe && <Text style={{ color: t.mutedForeground, fontWeight: '400' }}>(Sen)</Text>}
+                  </Text>
                   <View style={styles.memberMeta}>
                     {isAdmin ? (
                       <Text style={[styles.badge, { color: t.primary, borderColor: `${t.primary}55` }]}>Yönetici</Text>
@@ -207,7 +260,18 @@ export default function GroupDetailScreen() {
                 </View>
               </View>
             );
-          })}
+          });
+          })()}
+          {members.length > 3 && (
+            <Pressable
+              onPress={() => setIsMembersExpanded(!isMembersExpanded)}
+              style={{ paddingTop: Spacing.two, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.border, marginTop: Spacing.one }}
+            >
+              <Text style={{ color: t.primary, fontWeight: '600' }}>
+                {isMembersExpanded ? 'Daha Az Göster' : `Tümünü Gör (+${members.length - 3} kişi)`}
+              </Text>
+            </Pressable>
+          )}
         </Card>
 
         <Text style={[styles.sectionTitle, { color: t.foreground, marginTop: Spacing.five }]}>Harcamalar</Text>

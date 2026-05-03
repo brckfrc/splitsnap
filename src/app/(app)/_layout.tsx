@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { href } from '@/lib/href';
 
 export default function AppShellLayout() {
-  const { user, initializing, signOutApp } = useAuth();
+  const { user, initializing } = useAuth();
 
   if (initializing) {
     return (
@@ -23,7 +23,7 @@ export default function AppShellLayout() {
   return (
     <View style={styles.root}>
       <Stack screenOptions={{ headerShown: false }} />
-      <AppBottomBar onLogout={() => void signOutApp()} />
+      <AppBottomBar />
     </View>
   );
 }

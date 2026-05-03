@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider, Theme } from 'tamagui';
 
@@ -32,7 +32,7 @@ export default function RootLayout() {
   });
 
   const scheme = useColorScheme();
-  const themeName = scheme === 'dark' ? 'dark' : 'light';
+  const themeName = (scheme === 'dark' || scheme === 'light') ? scheme : 'light';
 
   if (!fontsLoaded && !fontError) {
     return null;

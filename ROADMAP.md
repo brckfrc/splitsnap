@@ -227,6 +227,16 @@
 - [x] Borç-alacak hesaplama mantığının yazılması
 - [x] Grup özet ekranının yapılması
 
+### Ekstra
+- [x] **Üye avatarı — pastel renk paleti:** İsim baş harfleri (2 harf, ör. "BK") + `userId` hash'inden deterministik seçilen 10 renk pastel paletten renkli avatar daire; aynı baş harflere sahip kullanıcılar renk farkıyla görsel olarak ayrışır; oturum sahibi üyede `(Sen)` etiketi gösterilir.
+- [x] **Üye listesi daralt/genişlet:** Grup detayda varsayılan 3 üye gösterilir; "Tümünü Gör (+N kişi)" / "Daha Az Göster" ile toggle; tüm üyelerin baş harfleri collapsed/expanded durumda tutarlı hesaplanır.
+- [x] **Stat kartları tıklanabilir (`PressableCard`):** "Toplam Harcama" kartına basınca harcama listesine scroll edilir; "Durumunuz" kartına basınca ödeme özeti ekranına yönlendirilir; önceki ayrı "Ödeme Özeti" butonu kaldırıldı.
+- [x] **Ödeme özeti — "Harcama Dökümüm" bölümü:** Oturum sahibinin dahil olduğu her harcama için kişisel döküm (başlık + toplam tutar, ödedi, payı, net katkı renk kodlu); collapsible kart, varsayılan açık; alt footer'da harcama toplamı.
+- [x] **Başlık yazım tutarlılığı:** Settlement ve grup detay ekranlarındaki tüm section / card başlıklar "Her Kelimenin İlk Harfi Büyük" kuralına getirildi; kural `docs/AGENTS.md`'ye eklendi.
+- [x] **"Öde" butonu → "Ödendi":** Ödeme onay dialoguna daha açıklayıcı metin eklendi (kayıt amaçlı olduğu vurgusu).
+- [x] **Tema seçimi (Sistem / Açık / Koyu):** Profil ekranında `ActionSheetIOS` ile tema seçimi; `app-settings-store` (Zustand + AsyncStorage) ile kalıcı tercih; `useColorScheme` hook store'u okuyacak şekilde güncellendi.
+- [x] **Alt çubuk temizleme:** Çıkış butonu alt çubuğundan kaldırıldı, Profil ekranına taşındı.
+
 ### Haftalık Notlar
 
 

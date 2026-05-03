@@ -1,16 +1,48 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ChevronRight, Key, LogOut, Monitor, Moon, Sun, User as UserIcon } from 'lucide-react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
+import { useAppSettingsStore, type AppThemeMode } from '@/stores/app-settings-store';
 
 export default function ProfileScreen() {
   const t = useTheme();
   const { user, signOutApp } = useAuth();
+  const { themeMode, setThemeMode } = useAppSettingsStore();
+
+  const handleThemePress = () => {
+    const options = ['İptal', 'Cihaz Ayarı (Sistem)', 'Açık', 'Koyu'];
+    const actions: AppThemeMode[] = ['system', 'system', 'light', 'dark'];
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: 0,
+          title: 'Uygulama Teması',
+          message: 'Uygulamanın genel görünümünü seçin.',
+        },
+        (buttonIndex) => {
+          if (buttonIndex !== 0) {
+            setThemeMode(actions[buttonIndex]);
+          }
+        }
+      );
+    } else {
+      Alert.alert('Uygulama Teması', 'Uygulamanın genel görünümünü seçin.', [
+        { text: 'Cihaz Ayarı', onPress: () => setThemeMode('system') },
+        { text: 'Açık', onPress: () => setThemeMode('light') },
+        { text: 'Koyu', onPress: () => setThemeMode('dark') },
+        { text: 'İptal', style: 'cancel' },
+      ]);
+    }
+  };
+
+  const themeLabel = themeMode === 'light' ? 'Açık' : themeMode === 'dark' ? 'Koyu' : 'Sistem';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
@@ -18,24 +50,90 @@ export default function ProfileScreen() {
         <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header">
           Profil
         </Text>
-        <Text style={[styles.sub, { color: t.mutedForeground }]}>Hesap bilgileriniz</Text>
       </View>
 
       <ScrollView contentContainerStyle={[styles.body, { paddingBottom: APP_TAB_BAR_CONTENT_INSET + Spacing.five }]}>
-        <Card style={{ gap: Spacing.three }}>
-          <View>
-            <Text style={[styles.label, { color: t.mutedForeground }]}>Ad</Text>
-            <Text style={[styles.value, { color: t.foreground }]}>{user?.name ?? '—'}</Text>
+        {/* AVATAR & INFO HEADER */}
+        <View style={styles.avatarSection}>
+          <View style={[styles.avatarCircle, { backgroundColor: t.secondary, borderColor: t.border }]}>
+            <Text style={{ fontSize: 28, fontWeight: '700', color: t.secondaryForeground, letterSpacing: 1 }}>
+              {(() => {
+                const parts = (user?.name ?? '').trim().split(/\s+/).filter(Boolean);
+                if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                return parts[0]?.[0]?.toUpperCase() ?? '?';
+              })()}
+            </Text>
           </View>
-          <View>
-            <Text style={[styles.label, { color: t.mutedForeground }]}>E-posta</Text>
-            <Text style={[styles.value, { color: t.foreground }]}>{user?.email ?? '—'}</Text>
-          </View>
+          <Text style={[styles.userName, { color: t.foreground }]}>{user?.name ?? 'Kullanıcı'}</Text>
+          <Text style={[styles.userEmail, { color: t.mutedForeground }]}>{user?.email ?? 'E-posta tanımlı değil'}</Text>
+        </View>
+
+        {/* HESAP (ACCOUNT) */}
+        <Text style={[styles.sectionTitle, { color: t.mutedForeground }]}>HESAP</Text>
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <Pressable
+            style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: t.accent }]}
+            onPress={() => Alert.alert('Bilgi', 'Profil düzenleme ekranı yakında eklenecek.')}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.primary }]}>
+              <UserIcon size={16} color={t.primaryForeground} />
+            </View>
+            <Text style={[styles.listLabel, { color: t.foreground }]}>Kişisel Bilgiler</Text>
+            <ChevronRight size={18} color={t.mutedForeground} style={styles.chevron} />
+          </Pressable>
+          <View style={[styles.divider, { backgroundColor: t.border }]} />
+          <Pressable
+            style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: t.accent }]}
+            onPress={() => Alert.alert('Bilgi', 'Şifre değiştirme ekranı yakında eklenecek.')}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.primary }]}>
+              <Key size={16} color={t.primaryForeground} />
+            </View>
+            <Text style={[styles.listLabel, { color: t.foreground }]}>Şifre Değiştir</Text>
+            <ChevronRight size={18} color={t.mutedForeground} style={styles.chevron} />
+          </Pressable>
         </Card>
 
-        <Button variant="destructive" onPress={() => void signOutApp()} accessibilityLabel="Çıkış yap">
-          Çıkış Yap
-        </Button>
+        {/* UYGULAMA (APP SETTINGS) */}
+        <Text style={[styles.sectionTitle, { color: t.mutedForeground, marginTop: Spacing.four }]}>UYGULAMA</Text>
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <Pressable
+            style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: t.accent }]}
+            onPress={handleThemePress}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.foreground }]}>
+              {themeMode === 'light' ? (
+                <Sun size={16} color={t.background} />
+              ) : themeMode === 'dark' ? (
+                <Moon size={16} color={t.background} />
+              ) : (
+                <Monitor size={16} color={t.background} />
+              )}
+            </View>
+            <Text style={[styles.listLabel, { color: t.foreground }]}>Tema</Text>
+            <Text style={[styles.listValue, { color: t.mutedForeground }]}>{themeLabel}</Text>
+            <ChevronRight size={18} color={t.mutedForeground} style={styles.chevron} />
+          </Pressable>
+        </Card>
+
+        {/* TEHLİKELİ ALAN (DANGER ZONE) */}
+        <Text style={[styles.sectionTitle, { color: t.mutedForeground, marginTop: Spacing.four }]}>GÜVENLİK</Text>
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <Pressable
+            style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: `${t.destructive}1A` }]}
+            onPress={() => {
+              Alert.alert('Çıkış Yap', 'Hesabınızdan çıkmak istediğinize emin misiniz?', [
+                { text: 'İptal', style: 'cancel' },
+                { text: 'Çıkış Yap', style: 'destructive', onPress: () => void signOutApp() },
+              ]);
+            }}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.destructive }]}>
+              <LogOut size={16} color={t.destructiveForeground} />
+            </View>
+            <Text style={[styles.listLabel, { color: t.destructive, fontWeight: '600' }]}>Çıkış Yap</Text>
+          </Pressable>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -47,11 +145,66 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.five,
     paddingVertical: Spacing.four,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: Spacing.one,
   },
   title: { fontSize: 24, fontWeight: '800' },
-  sub: { fontSize: 14 },
-  body: { padding: Spacing.five, gap: Spacing.five },
-  label: { fontSize: 13, marginBottom: 4 },
-  value: { fontSize: 17, fontWeight: '600' },
+  body: { padding: Spacing.five, paddingBottom: Spacing.seven },
+  
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: Spacing.six,
+  },
+  avatarCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.three,
+  },
+  userName: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 15,
+  },
+
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: Spacing.two,
+    marginLeft: Spacing.one,
+    letterSpacing: 0.5,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.four,
+  },
+  iconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.three,
+  },
+  listLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  listValue: {
+    fontSize: 16,
+    marginRight: Spacing.one,
+  },
+  chevron: {
+    opacity: 0.5,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 52, // icon width + margin
+  },
 });

@@ -53,6 +53,7 @@
 - Types: `src/types/`
 - Zustand stores: `src/stores/` (ör. `split-data-store.ts`); yeni slice’lar burada
 - **Localization:** Şu an UI string’leri **Türkçe** sabit; **en / tr** i18n planı `docs/PROGRESS.md` backlog’unda — yeni ekranlarda çeviri katmanı yoksa Türkçe ile devam et veya i18n eklendiğinde anahtarları ortak sözlüğe taşı
+- **Türkçe başlık yazım kuralı:** Ekran başlıkları, section başlıkları ve kart başlıkları (`sectionTitle`, `cardTitle`, `topTitle`, `section` stillerindeki `Text` bileşenleri) **Her Kelimenin İlk Harfi Büyük** olarak yazılır — örn. "Üye Bakiyeleri", "Harcama Dökümüm", "Önerilen Ödemeler". İstisna: `profile.tsx` ALL CAPS settings stili (`HESAP`, `UYGULAMA`, `GÜVENLİK`) kasıtlıdır, dokunma.
 - **Zustand + React 19:** `useSyncExternalStore` requires stable snapshots. Do **not** use `useSplitDataStore((s) => ({ ... }))` or selectors that call `getMembers` / `getExpenses` / `getShares` (they `.filter()` → new array every read → infinite loop / “getSnapshot should be cached”). Use root slices + `useMemo`, or [`useGroupAggregates`](../src/hooks/use-group-aggregates.ts) and [`useExpenseShares`](../src/hooks/use-expense-shares.ts). For multi-field objects with stable inner refs, `useShallow` from `zustand/react/shallow` is also valid.
 - Utils: `src/utils/`
 - Supabase client factory: `src/lib/supabase.ts` (read env from `process.env.EXPO_PUBLIC_*`)

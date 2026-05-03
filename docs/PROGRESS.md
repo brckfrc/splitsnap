@@ -163,7 +163,25 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 ## Week 6 — Splitting & Calculation
 
-**Status:** Not started (roadmap)
+**Status:** Complete (4/4 roadmap items + Ekstra)
+
+**Implemented (commit `3110365`):**
+- `src/services/settlements-supabase.ts` — `createSettlement`, `fetchSettlementsForGroup`; `settlements` tablosu + RLS.
+- `src/stores/split-data-store.ts` — `settlements` slice, `addSettlement`, `replaceSettlementsForGroup`.
+- `src/services/split-data.ts` — `addSettlement`, `loadSettlementsForGroup` facade.
+- `src/utils/settlement.ts` — `calculateBalances` (harcama + settlement dahil), `calculateSettlements` (borçlu→alacaklı greedy eşleştirme), `userNetBalance`.
+- `src/hooks/use-group-aggregates.ts` — `settlements` slice eklendi.
+- `settlement.tsx` — bakiye kartı, üye bakiyeleri, önerilen ödemeler listesi, geçmiş ödemeler; `handleSettle` → `splitData.addSettlement`.
+
+**Ekstra (bu oturum — Hafta 6 commit'i üzerine):**
+- **Pastel avatar sistemi:** `getInitials` (2 harf) + `avatarPalette` (`userId` hash → 10 renk AVATAR_PALETTE); üye listesinde emoji avatar yerine renkli daire + harf; `(Sen)` etiketi.
+- **Üye listesi daralt/genişlet:** `isMembersExpanded` state, varsayılan 3, "Tümünü Gör (+N)" toggle; `resolveAllInitials` kaldırıldı (karmaşık çapraz algoritma → basit 2 harf + renk).
+- **Stat kartları `PressableCard`:** Toplam Harcama → listeye scroll; Durumunuz → settlement ekranına; "Ödeme Özeti" butonu kaldırıldı; `ArrowUpRight` hint ikonu.
+- **"Harcama Dökümüm" bölümü (`settlement.tsx`):** `myLedger` — kullanıcının dahil olduğu her harcama için `{ paid, myShare, net, amount }`; başlık yanında `(₺X)` toplam; net katkı renk kodlu; collapsible (varsayılan açık); footer toplamı.
+- **Başlık tutarlılığı:** "Her Kelimenin İlk Harfi Büyük" kuralı settlement ekranına uygulandı; kural `docs/AGENTS.md`'ye eklendi.
+- **"Ödendi" butonu:** Eski "Öde" → "Ödendi" + `variant="secondary"`; onay dialogunda kayıt-amaçlı uyarı metni.
+- **Tema kalıcılığı:** `src/stores/app-settings-store.ts` (Zustand + AsyncStorage, `system`/`light`/`dark`); `src/hooks/use-color-scheme.ts` store'u öncelikli okur; `profile.tsx`'e `ActionSheetIOS` tema seçici (Sun/Moon/Monitor ikonları).
+- **Alt çubuk temizleme:** `AppBottomBar`'dan `onLogout` prop ve çıkış butonu kaldırıldı; çıkış Profil → Güvenlik bölümünde.
 
 ---
 

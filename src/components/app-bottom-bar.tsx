@@ -12,11 +12,7 @@ const items = [
   { key: 'profile', label: 'Profil', href: '/profile' as const, Icon: User },
 ];
 
-type AppBottomBarProps = {
-  onLogout: () => void;
-};
-
-export function AppBottomBar({ onLogout }: AppBottomBarProps) {
+export function AppBottomBar() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
@@ -55,15 +51,6 @@ export function AppBottomBar({ onLogout }: AppBottomBarProps) {
           </Pressable>
         );
       })}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Çıkış yap"
-        onPress={onLogout}
-        style={styles.item}
-      >
-        <LogOut size={22} color={t.destructive} />
-        <Text style={[styles.label, { color: t.destructive }]}>Çıkış</Text>
-      </Pressable>
     </View>
   );
 }
