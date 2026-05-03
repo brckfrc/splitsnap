@@ -243,9 +243,29 @@
 
 ### Video Linki
 
-
+[Hafta 6 — 03-05-2026](https://youtu.be/FsKxH_ItLFo)
 
 ### Ekran Görselleri
+
+**Grup Detay — Renkli Avatarlar, Tıklanabilir Stat Kartları ve Üye Listesi**
+
+![Grup detay yeni görünüm](docs/roadmap-screenshots/week-06/expenses-new.png)
+
+**Ödeme Özeti — Harcama Dökümüm Bölümü**
+
+![Ödeme özeti harcama dökümüm](docs/roadmap-screenshots/week-06/my-expenses.png)
+
+**Profil Ekranı — Tema Seçimi (Açık Mod)**
+
+![Profil ekranı yeni](docs/roadmap-screenshots/week-06/profile-new.png)
+
+**Tema Seçici — ActionSheet**
+
+![Uygulama teması ActionSheet](docs/roadmap-screenshots/week-06/app-theme.png)
+
+**Profil Ekranı — Koyu Mod**
+
+![Koyu mod profil](docs/roadmap-screenshots/week-06/dark-mode.png)
 
 ## Hafta 7 — Yerel Veri Saklama ve İyileştirmeler
 
