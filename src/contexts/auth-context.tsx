@@ -26,7 +26,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(next);
       const profile = { id: next.id, name: next.name, email: next.email, avatar: '👤' };
       ensureSplitDataForUser(profile);
-      void syncGroupsForSessionUser(profile);
+      // Fire-and-forget: don't block splash on network sync.
+      // MMKV cache will show stale data while this refreshes in background.
+      syncGroupsForSessionUser(profile).catch(() => {});
     } else {
       stopGroupsBackgroundSync();
       stopExpensesBackgroundSync();

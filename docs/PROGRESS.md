@@ -187,7 +187,36 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 ## Week 7 — Local Storage & Improvements
 
-**Status:** Not started
+**Status:** Complete (4/4 roadmap items + Ekstra)
+
+**Implemented:**
+
+### MMKV + Zustand Persist (Madde 1 + 2)
+- `src/lib/storage.ts` — `createMMKV({ id: 'splitsnap-storage' })` instance + `StateStorage` adaptörü (Zustand persist uyumlu).
+- `src/stores/split-data-store.ts` — `persist` middleware; `partialize` ile yalnızca veri slice'ları (groups, members, expenses, shares, settlements, sessionUserId) MMKV'ye yazılır; fonksiyonlar hariç. `_hydrated` flag + `storeHydrated` Promise export.
+- `src/stores/app-settings-store.ts` — AsyncStorage → MMKV geçişi; `persist` middleware ile tema tercihi kalıcı.
+- **Sonuç:** Uygulama kapatılıp açıldığında önceki oturumdaki veriler **anında** görüntülenir (MMKV senkron okuma).
+
+### Açılış Performansı (Madde 3)
+- `src/app/_layout.tsx` — `SplashGate` artık `storeHydrated` Promise bekler; MMKV rehydrate + auth session kontrolü tamamlanınca splash gizlenir.
+- `src/contexts/auth-context.tsx` — `syncGroupsForSessionUser` fire-and-forget; splash ağ bağlantısına bağlı değil.
+- **Sonuç:** Açılış süresi ağ gecikmesinden bağımsız (~1-2s → ~0.3-0.5s beklenen iyileşme).
+
+### Form Doğrulama (Madde 4)
+- `login.tsx` — Email regex + min 6 karakter şifre (önceden vardı, doğrulandı).
+- `register.tsx` — Ad min 2 karakter kontrolü eklendi (önceki: boşluk kontrolü).
+- `add-expense.tsx` — Tutar üst limiti (1.000.000 ₺), başlık max uzunluk (100 karakter).
+
+### Profil Ekranları (Ekstra)
+- `src/app/(app)/edit-profile.tsx` [NEW] — İsim düzenleme (Supabase `auth.updateUser({ data: { full_name } })`); canlı avatar önizleme; email + user ID readonly gösterimi; toast feedback.
+- `src/app/(app)/change-password.tsx` [NEW] — Mevcut şifre doğrulama (`signInWithPassword`) + yeni şifre güncelleme; min 6 karakter, eşleşme kontrolü, aynı-şifre engeli, anlık gücü feedback.
+- `src/app/(app)/profile.tsx` — Placeholder alert'ler gerçek `router.push` navigasyonuna dönüştürüldü.
+
+### Dinamik Emoji Haritası (Ekstra)
+- `supabase/migrations/20260505000000_emoji_usage_stats.sql` — `get_emoji_usage_stats()` RPC; platform genelinde harcama `title` → `icon` eşleşme istatistiklerini döndürür (min 2 kullanım, limit 200).
+- `src/services/emoji-map-service.ts` [NEW] — Supabase'den emoji haritasını çek + MMKV'ye cache; `getEmojiMap()` senkron okuma, `refreshEmojiMap()` async güncelleme.
+- `src/utils/format.ts` — `guessCategoryEmoji()` artık önce dinamik haritayı kontrol eder (kullanıcı alışkanlıkları), sonra sabit sözlüğe düşer.
+- `src/services/groups-sync.ts` — `reloadGroupsAndExpenses` içinde `refreshEmojiMap()` fire-and-forget.
 
 ---
 

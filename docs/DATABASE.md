@@ -671,3 +671,5 @@ Detaylar fiş özelliği işlenirken bu dosyaya eklenir.
 | 2026-04-26 | Hafta 5 ekstra özellikleri: [`supabase/migrations/20260426233000_expense_icon.sql`](../supabase/migrations/20260426233000_expense_icon.sql) — `expenses` tablosuna `icon` sütunu eklendi |
 
 Yeni migration veya politika eklendiğinde bu tabloya bir satır ekleyin.
+
+| 2026-05-05 | Hafta 7 migration: [`supabase/migrations/20260505000000_emoji_usage_stats.sql`](../supabase/migrations/20260505000000_emoji_usage_stats.sql) — `get_emoji_usage_stats()` RPC fonksiyonu; platform genelinde harcama `title` → `icon` eşleşme istatistiklerini döndürür (dinamik emoji haritası). |

@@ -1,6 +1,7 @@
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+import { refreshEmojiMap } from '@/services/emoji-map-service';
 import { loadExpensesForAllGroups } from '@/services/split-data';
 import { useSplitDataStore } from '@/stores/split-data-store';
 import type { User } from '@/types';
@@ -25,6 +26,8 @@ export async function reloadGroupsAndExpenses() {
   await loadGroupsFromSupabase();
   const groupIds = useSplitDataStore.getState().groups.map((g) => g.id);
   await loadExpensesForAllGroups(groupIds);
+  // Refresh dynamic emoji map in background (non-blocking)
+  refreshEmojiMap().catch(() => {});
 }
 
 function scheduleReload() {

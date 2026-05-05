@@ -19,6 +19,9 @@ import { guessCategoryEmoji } from '@/utils/format';
 
 const EMOJI_LIST = ['📝', '🍔', '🛒', '🚕', '🏠', '🎮', '🏥', '👕', '🐾', '🍻', '🎁', '✈️', '☕️', '🍿', '🎬'];
 
+const MAX_EXPENSE_AMOUNT = 1_000_000;
+const MAX_TITLE_LENGTH = 100;
+
 export default function AddExpenseScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
@@ -111,9 +114,15 @@ export default function AddExpenseScreen() {
     if (!title.trim()) {
       setTitleError('Başlık gerekli.');
       hasError = true;
+    } else if (title.trim().length > MAX_TITLE_LENGTH) {
+      setTitleError(`Başlık en fazla ${MAX_TITLE_LENGTH} karakter olabilir.`);
+      hasError = true;
     }
     if (Number.isNaN(num) || num <= 0) {
       setAmountError('Geçerli bir tutar girin.');
+      hasError = true;
+    } else if (num > MAX_EXPENSE_AMOUNT) {
+      setAmountError(`Tutar en fazla ${MAX_EXPENSE_AMOUNT.toLocaleString('tr-TR')} ₺ olabilir.`);
       hasError = true;
     }
     if (!paidBy) {

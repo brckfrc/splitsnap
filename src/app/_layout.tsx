@@ -9,6 +9,7 @@ import { TamaguiProvider, Theme } from 'tamagui';
 
 import { AppToast } from '@/components/app-toast';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { storeHydrated } from '@/stores/split-data-store';
 import { tamaguiConfig } from '../../tamagui.config';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -18,7 +19,10 @@ function SplashGate() {
 
   useEffect(() => {
     if (!initializing) {
-      SplashScreen.hideAsync().catch(() => {});
+      // Wait for MMKV store rehydration before hiding splash
+      storeHydrated.then(() => {
+        SplashScreen.hideAsync().catch(() => {});
+      });
     }
   }, [initializing]);
 

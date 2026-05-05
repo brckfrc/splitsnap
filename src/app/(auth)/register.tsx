@@ -32,8 +32,8 @@ export default function RegisterScreen() {
     const nameValue = name.trim();
     let hasError = false;
 
-    if (!nameValue) {
-      setNameError('Ad Soyad boş bırakılamaz.');
+    if (!nameValue || nameValue.length < 2) {
+      setNameError('Ad Soyad en az 2 karakter olmalıdır.');
       hasError = true;
     }
     if (!emailValue || !/\S+@\S+\.\S+/.test(emailValue)) {

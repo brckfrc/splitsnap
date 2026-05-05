@@ -1,4 +1,5 @@
 import { ChevronRight, Key, LogOut, Monitor, Moon, Sun, User as UserIcon } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -73,7 +74,7 @@ export default function ProfileScreen() {
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           <Pressable
             style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: t.accent }]}
-            onPress={() => Alert.alert('Bilgi', 'Profil düzenleme ekranı yakında eklenecek.')}
+            onPress={() => router.push('/edit-profile' as never)}
           >
             <View style={[styles.iconBox, { backgroundColor: t.primary }]}>
               <UserIcon size={16} color={t.primaryForeground} />
@@ -84,7 +85,7 @@ export default function ProfileScreen() {
           <View style={[styles.divider, { backgroundColor: t.border }]} />
           <Pressable
             style={({ pressed }) => [styles.listItem, pressed && { backgroundColor: t.accent }]}
-            onPress={() => Alert.alert('Bilgi', 'Şifre değiştirme ekranı yakında eklenecek.')}
+            onPress={() => router.push('/change-password' as never)}
           >
             <View style={[styles.iconBox, { backgroundColor: t.primary }]}>
               <Key size={16} color={t.primaryForeground} />

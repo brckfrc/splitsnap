@@ -1,3 +1,5 @@
+import { getEmojiMap } from '@/services/emoji-map-service';
+
 export function formatCurrencyTry(amount: number) {
   return new Intl.NumberFormat('tr-TR', {
     style: 'currency',
@@ -30,10 +32,28 @@ const EMOJI_MAP: Record<string, string[]> = {
   '🐾': ['kedi', 'köpek', 'mama', 'veteriner', 'pet', 'evcil'],
 };
 
+/**
+ * Guess an emoji for an expense title.
+ *
+ * Priority:
+ * 1. Dynamic emoji map (platform-wide usage stats from Supabase, cached in MMKV)
+ * 2. Static keyword dictionary (hardcoded fallback)
+ * 3. Default 📝
+ */
 export function guessCategoryEmoji(title: string): string {
   if (!title) return '📝';
   const lowerTitle = title.toLowerCase();
-  
+  const words = lowerTitle.split(/\s+/).filter(Boolean);
+
+  // 1. Check dynamic map (user behavior data)
+  const dynamicMap = getEmojiMap();
+  for (const word of words) {
+    if (dynamicMap[word]) {
+      return dynamicMap[word];
+    }
+  }
+
+  // 2. Fallback to static keyword dictionary
   for (const [emoji, keywords] of Object.entries(EMOJI_MAP)) {
     if (keywords.some(k => lowerTitle.includes(k))) {
       return emoji;
@@ -41,3 +61,4 @@ export function guessCategoryEmoji(title: string): string {
   }
   return '📝'; // Default receipt emoji
 }
+

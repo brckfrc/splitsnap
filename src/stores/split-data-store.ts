@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { buildEmptySplitStateForUser } from '@/data/mock-split-seed';
+import { zustandMMKVStorage } from '@/lib/storage';
 import type { Expense, ExpenseShare, Group, GroupMember, Settlement, User } from '@/types';
 
 type SplitState = {
@@ -11,6 +13,8 @@ type SplitState = {
   expenseShares: ExpenseShare[];
   settlements: Settlement[];
   sessionUserId: string | null;
+  /** True once MMKV rehydration is complete. */
+  _hydrated: boolean;
   resetForUser: (user: User) => void;
   clearSessionData: () => void;
   replaceGroupsAndMembers: (groups: Group[], groupMembers: GroupMember[]) => void;
@@ -28,7 +32,16 @@ function userById(users: User[]): Record<string, User> {
   return Object.fromEntries(users.map((u) => [u.id, u]));
 }
 
-export const useSplitDataStore = create<SplitState>((set, get) => ({
+/**
+ * Promise that resolves once the store has been rehydrated from MMKV.
+ * Used by the splash gate to avoid showing a blank screen.
+ */
+let _resolveHydration: () => void;
+export const storeHydrated = new Promise<void>((resolve) => {
+  _resolveHydration = resolve;
+});
+
+export const useSplitDataStore = create<SplitState>()(persist((set, get) => ({
   users: [],
   groups: [],
   groupMembers: [],
@@ -36,6 +49,7 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
   expenseShares: [],
   settlements: [],
   sessionUserId: null,
+  _hydrated: false,
 
   resetForUser: (user) => {
     const next = buildEmptySplitStateForUser(user);
@@ -175,6 +189,25 @@ export const useSplitDataStore = create<SplitState>((set, get) => ({
   getShares: (expenseId) => get().expenseShares.filter((s) => s.expenseId === expenseId),
 
   getSettlements: (groupId) => get().settlements.filter((s) => s.groupId === groupId),
+}), {
+  name: 'splitsnap-split-data',
+  storage: createJSONStorage(() => zustandMMKVStorage),
+  partialize: (state) => ({
+    groups: state.groups,
+    groupMembers: state.groupMembers,
+    expenses: state.expenses,
+    expenseShares: state.expenseShares,
+    settlements: state.settlements,
+    sessionUserId: state.sessionUserId,
+  }),
+  onRehydrateStorage: () => {
+    return () => {
+      queueMicrotask(() => {
+        useSplitDataStore.setState({ _hydrated: true });
+        _resolveHydration();
+      });
+    };
+  },
 }));
 
 export { userById };

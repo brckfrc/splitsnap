@@ -269,13 +269,17 @@
 
 ## Hafta 7 — Yerel Veri Saklama ve İyileştirmeler
 
-- [ ] Yerel veri saklama yapısının eklenmesi
-- [ ] Kullanıcı oturumu ve bazı temel verilerin cihaz üzerinde tutulması
-- [ ] Uygulama açılış performansının iyileştirilmesi
-- [ ] Form doğrulama ve hata kontrollerinin güçlendirilmesi
+- [x] Yerel veri saklama yapısının eklenmesi
+- [x] Kullanıcı oturumu ve bazı temel verilerin cihaz üzerinde tutulması
+- [x] Uygulama açılış performansının iyileştirilmesi
+- [x] Form doğrulama ve hata kontrollerinin güçlendirilmesi
 
 ### Ekstra
-- [ ] **Dinamik Kategori/Emoji Haritası (Kullanıcı Alışkanlıklarından Öğrenme):** Sabit kelime sözlüğü kullanmak yerine, açılışta Supabase'den kullanıcıların en çok eşleştirdiği "kelime -> emoji" haritasının çekilip lokal storage'a (MMKV vb.) kaydedilmesi ve harcama eklerken bu dinamik listenin kullanılması.
+- [x] **Dinamik Kategori/Emoji Haritası (Kullanıcı Alışkanlıklarından Öğrenme):** Sabit kelime sözlüğü kullanmak yerine, açılışta Supabase'den kullanıcıların en çok eşleştirdiği "kelime -> emoji" haritasının çekilip lokal storage'a (MMKV vb.) kaydedilmesi ve harcama eklerken bu dinamik listenin kullanılması.
+- [x] **MMKV + Zustand Persist:** `split-data-store` ve `app-settings-store` için MMKV tabanlı Zustand persist altyapısı; açılışta ağ bağlantısı beklenmeden önceki oturumdaki veriler anında gösterilir.
+- [x] **Profil düzenleme ekranı:** İsim güncelleme formu (Supabase `auth.updateUser`), canlı avatar önizleme, toast geri bildirim.
+- [x] **Şifre değiştirme ekranı:** Mevcut şifre doğrulama (Supabase `signInWithPassword`) + yeni şifre güncelleme; min 6 karakter, eşleşme kontrolü, aynı-şifre engeli.
+- [x] **Splash gate optimizasyonu:** Splash screen MMKV rehydrate + auth kontrolü sonrası gizlenir; Supabase sync arka planda non-blocking çalışır.
 
 ### Haftalık Notlar
 
