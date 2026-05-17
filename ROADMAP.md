@@ -286,10 +286,21 @@
 
 
 ### Video Linki
-
-
+[Hafta 7 — 10-05-2026](https://youtu.be/hHDUEYARdsk)
 
 ### Ekran Görselleri
+
+**Profil Düzenleme Ekranı**
+
+![Profil Düzenleme](docs/roadmap-screenshots/week-07/profile-edit.png)
+
+**Şifre Değiştirme Ekranı**
+
+![Şifre Değiştirme](docs/roadmap-screenshots/week-07/profile-password-change.png)
+
+**Form Doğrulamaları**
+
+![Form Doğrulamaları](docs/roadmap-screenshots/week-07/form-validation.png)
 
 ## Hafta 8 — Fiş ve OCR Altyapısı
 
