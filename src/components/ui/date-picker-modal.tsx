@@ -1,5 +1,5 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -74,10 +74,14 @@ export function DatePickerModal({ visible, value, maximumDate, minimumDate, onCo
 function useDraft(initial: Date, visible: boolean) {
   const [current, setCurrent] = useState(initial);
   const prevVisible = useRef(visible);
-  if (visible && !prevVisible.current) {
-    setCurrent(initial);
-  }
-  prevVisible.current = visible;
+
+  useEffect(() => {
+    if (visible && !prevVisible.current) {
+      setCurrent(initial);
+    }
+    prevVisible.current = visible;
+  }, [visible, initial]);
+
   return { current, set: setCurrent };
 }
 

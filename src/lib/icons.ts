@@ -9,6 +9,8 @@
  *
  * To add an icon: add a line here and import it from `@/lib/icons`.
  */
+
+/* eslint-disable import/no-unresolved -- Metro resolver handles these subpaths at runtime; see metro.config.js */
 export { default as ArrowLeft } from 'lucide-react-native/icons/arrow-left';
 export { default as ArrowRight } from 'lucide-react-native/icons/arrow-right';
 export { default as ArrowUpRight } from 'lucide-react-native/icons/arrow-up-right';

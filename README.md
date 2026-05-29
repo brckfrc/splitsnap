@@ -1,6 +1,6 @@
 # SplitSnap
 
-Shared expense tracking for groups (friends, roommates, trips). **iOS-first** app built with **Expo SDK 55**, **React Native**, **TypeScript**, **Expo Router**, **Tamagui** (provider, themes, bottom sheets), and **Supabase**.
+Shared expense tracking for groups (friends, roommates, trips). **iOS-first** app built with **Expo SDK 56**, **React Native**, **TypeScript**, **Expo Router**, **Tamagui** (provider, themes, bottom sheets), and **Supabase**. Receipt scanning uses on-device **Apple Vision OCR** + **OpenAI gpt-4o-mini** (via Supabase Edge Function) to auto-fill expense fields.
 
 ## Project Tracking
 
@@ -27,7 +27,7 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
 ## Requirements
 
-- **Node.js** 20.19+ (Expo SDK 55)
+- **Node.js** 20.19+ (Expo SDK 56)
 - **macOS + Xcode** for iOS Simulator
 - A **Supabase** project (URL + publishable/anon key)
 

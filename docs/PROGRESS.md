@@ -305,7 +305,7 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 ## Week 10 — Final Polish
 
-**Status:** In progress
+**Status:** Complete (roadmap Hafta 10 maddeleri `[x]` — 2026-05-30)
 
 **Implemented (App Store & altyapı — 2026-05-29):**
 - **EAS Build + Submit pipeline:** `eas.json` production profili; `autoIncrement: true`; build 3 (v1.0.0) App Store Connect'e upload edildi, TestFlight'ta görünüyor.
@@ -317,6 +317,15 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 - **Asset temizliği:** Expo şablon görselleri kaldırıldı; `assets/icon/icon.png` tek kaynak ikon; website ikonları `website/` altında.
 - **App Store Connect:** Metadata (isim, subtitle, açıklama, keywords), Privacy Nutrition Label (5 veri tipi), Age Rating (4+), demo hesap, screenshots (iPhone 13 Pro Max), Copyright, Support URL. Review'a gönderildi.
 - **Dokümantasyon:** `docs/APP-STORE.md` oluşturuldu.
+
+**Implemented (2026-05-30 — son düzenlemeler):**
+- **Expo SDK 56 yükseltmesi:** SDK 55 → 56 (React Native 0.85.3); iOS 26.5 uyumluluğu. `@react-navigation` direct dep'leri kaldırıldı (SDK 56 çakışması).
+- **Startup crash fix:** EAS production build'de `EXPO_PUBLIC_SUPABASE_URL/KEY` eksikliği → `createClient('')` → SIGABRT. Fix: (a) EAS environment'a env var eklendi, (b) `src/lib/supabase.ts` defensive init (placeholder fallback + `isSupabaseConfigured` flag). Build 9 TestFlight'ta doğrulandı.
+- **Lucide tree-shaking:** `metro.config.js` custom resolver + `src/lib/icons.ts` centralized re-exports. Bundle: 1703 ikon → 19 ikon, JS bytecode 5.0M → 3.8M (−24%). TS desteği: `src/types/lucide-icons.d.ts` wildcard ambient module.
+- **App ikonu sıkıştırma:** `assets/icon/icon.png` 988K → 116K (1254px → 1024px + pngquant); görsel kalite korundu.
+- **`.easignore`:** `docs/`, `design/`, `website/`, `*.md` EAS Build yüklemelerinden dışlandı.
+- **Lint temizliği (24 error → 0):** `icons.ts` eslint-disable, `date-picker-modal.tsx` react-hooks/refs fix, `add-expense.tsx` set-state-in-effect → ref guard, `_layout.tsx` duplicate import birleştirildi, `[groupId]/index.tsx` mid-file import'lar başa taşındı, `app-bottom-bar.tsx` unused import silindi, `use-color-scheme.web.ts` → `useSyncExternalStore` pattern.
+- **Doküman tutarlılığı:** README.md, AGENTS.md, ROADMAP.md'deki SDK 55 current-state referansları → SDK 56 güncellendi. AGENTS.md'ye "agent commit yapmasın" kuralı eklendi.
 
 ---
 

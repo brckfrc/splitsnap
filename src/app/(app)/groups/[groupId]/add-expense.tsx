@@ -1,7 +1,7 @@
 import { ArrowLeft, Camera, ChevronDown, Image as ImageIcon } from '@/lib/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -61,9 +61,15 @@ export default function AddExpenseScreen() {
     return activeMembers[0]?.userId ?? '';
   }, [user, activeMembers]);
 
+  // Sync defaults when member list loads (avoid setState-in-effect by using ref guard)
+  const membersInitialized = useRef(false);
   useEffect(() => {
-    setPaidBy((p) => p || defaultPayer);
-    setSelected(new Set(activeMembers.map((m) => m.userId)));
+    if (activeMembers.length === 0) return;
+    if (!membersInitialized.current) {
+      membersInitialized.current = true;
+      setPaidBy((p) => p || defaultPayer);
+      setSelected(new Set(activeMembers.map((m) => m.userId)));
+    }
   }, [activeMembers, defaultPayer]);
 
   // -------------------------------------------------------------------------

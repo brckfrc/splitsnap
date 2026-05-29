@@ -1,4 +1,4 @@
-import { LogOut, User, Users } from '@/lib/icons';
+import { User, Users } from '@/lib/icons';
 import { router, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -9,6 +9,12 @@ import { Card, PressableCard } from '@/components/ui/card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { useGroupAggregates } from '@/hooks/use-group-aggregates';
+import { useTheme } from '@/hooks/use-theme';
+import { href } from '@/lib/href';
+import { splitData } from '@/services/split-data';
+import { formatCurrencyTry, formatShortDate } from '@/utils/format';
+import { userNetBalance } from '@/utils/settlement';
 
 const AVATAR_PALETTE = [
   { bg: '#F4B8C1', text: '#7A2E38' },
@@ -38,13 +44,6 @@ function avatarPalette(userId: string): { bg: string; text: string } {
   }
   return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
 }
-
-import { href } from '@/lib/href';
-import { useGroupAggregates } from '@/hooks/use-group-aggregates';
-import { useTheme } from '@/hooks/use-theme';
-import { splitData } from '@/services/split-data';
-import { formatCurrencyTry, formatShortDate } from '@/utils/format';
-import { userNetBalance } from '@/utils/settlement';
 
 export default function GroupDetailScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();

@@ -3,10 +3,11 @@
 ## Must-Follow Constraints
 
 - This project **ships for iOS only**. Do not add Android-specific features, dependencies, or branching logic for Android as a supported target. The Expo template may still include `android` / `web` blocks in `app.json` and scripts like `npm run android` / `npm run web` — treat those as **template defaults**, not product requirements (see `README.md`).
-- Framework: **Expo SDK 55** (React Native 0.83) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
+- Framework: **Expo SDK 56** (React Native 0.85) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
 - Backend: **Supabase** (`@supabase/supabase-js`). Do not write custom backend or server code. All Auth, DB, and Storage operations must go through the Supabase client.
 - Database schema changes require a migration plan in [`docs/DATABASE.md`](./DATABASE.md) (or an update to that file) before implementation.
 - Receipt OCR: **hybrid** approach. Image→text: **on-device** via `expo-text-extractor` (Apple Vision, installed Week 8). Text→JSON: **Supabase Edge Function `parse-receipt`** → `gpt-4o-mini` (key stored as Supabase secret `OPENAI_API_KEY` — never in client bundle, never `EXPO_PUBLIC_`). Falls back to local heuristic when the edge function is unavailable. Supabase Edge Functions are permitted for the OCR/LLM proxy (they are part of the Supabase platform, not a custom server).
+- **Do not create git commits.** All commits are made by the developer manually. Agents may stage changes and suggest commit messages, but must never run `git commit`.
 - Never commit `.env` files or Supabase keys. Commit **`.env.example`** only (placeholders). Use **`EXPO_PUBLIC_`** prefixed vars in `.env` for client-safe values.
 
 ## Environment Variables
@@ -20,18 +21,18 @@
 
 | Layer | Package | Purpose |
 |-------|---------|---------|
-| Framework | Expo SDK 55 | React Native 0.83, TypeScript built-in |
+| Framework | Expo SDK 56 | React Native 0.85, TypeScript built-in |
 | Navigation | Expo Router | File-based routing under **`src/app/`** |
 | Backend | @supabase/supabase-js | Auth, PostgreSQL, Storage |
 | Auth session storage | @react-native-async-storage/async-storage | Default `auth.storage` for Supabase (official Expo tutorial pattern) |
 | State Management | Zustand | Client state; store’lar **`src/stores/`** altında (ör. [`split-data-store.ts`](../src/stores/split-data-store.ts)); yeni özellikler için aynı düzeni izle |
 | Local Storage | react-native-mmkv + react-native-nitro-modules | Fast key-value; Zustand persist backend |
 | Secure Storage | expo-secure-store | Optional: extra-sensitive non-Supabase secrets, or future hardened auth adapter |
-| OCR (Week 8) | expo-text-extractor (installed) | On-device text recognition — Apple Vision on iOS, ML Kit on Android. Was listed as "expo-doc-vision" in earlier notes; that package does not exist. |
+| OCR (Week 8) | expo-text-extractor + Supabase Edge Function `parse-receipt` | On-device Apple Vision → raw text; Edge Function → gpt-4o-mini → structured JSON (`merchantName`, `date`, `total`, `currency`). Local regex fallback when offline. `expo-doc-vision` does not exist — ignore any reference to it. |
 | Image resize | expo-image-manipulator (installed) | Resize receipt images before upload (~1600px, jpeg q0.7) |
 | Image Picker | expo-image-picker | Receipt photo capture/selection |
 | UI system | tamagui + @tamagui/babel-plugin | `TamaguiProvider`, themes/tokens in [`tamagui.config.ts`](../../tamagui.config.ts); **Sheet** for bottom modals; **Inter** via `expo-font` in root layout. Root `package.json` must list **`@tamagui/portal`** (same version as `tamagui`) + **`overrides`** so npm hoists a **single** `@tamagui/portal` — otherwise `Sheet` modal resolves a nested copy and **`PortalDispatchContext` is null** at runtime. **Do not** add a second `PortalProvider` in `_layout` (duplicate `shouldAddRootHost` breaks portals). |
-| Icons | lucide-react-native + react-native-svg | Lucide icons with string `color` (avoids Tamagui themed icon Variable → SVG warnings) |
+| Icons | lucide-react-native + react-native-svg | Import icons from **`@/lib/icons`** (not from the barrel). Metro resolver in `metro.config.js` maps `lucide-react-native/icons/<name>` → individual ESM file; only used icons are bundled (~19 vs 1700). String `color` avoids Tamagui Variable → SVG warnings. |
 
 ## Validation Before Finishing
 

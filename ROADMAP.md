@@ -337,10 +337,6 @@
 
 ![OCR spinner](docs/roadmap-screenshots/week-08/receipt-ocr-loading.png)
 
-**Harcama Düzenleme — Fiş Görseli Önizlemesi**
-
-![Edit ekranı fiş thumbnail](docs/roadmap-screenshots/week-08/edit-receipt-thumbnail.png)
-
 ## Hafta 9 — OCR Entegrasyonu ve Arayüz
 
 - [x] OCR akışının harcama oluşturma ekranına bağlanması
@@ -369,25 +365,17 @@
 
 ![OCR otomatik doldurma](docs/roadmap-screenshots/week-09/ocr-autofill-result.png)
 
-**Eşit Bölüşüm — OCR'dan Gelen Tutar**
-
-![Eşit bölüşüm OCR tutarı](docs/roadmap-screenshots/week-09/ocr-equal-split.png)
-
 **Manuel Bölüşüm — OCR Tutarı ile**
 
 ![Manuel bölüşüm OCR](docs/roadmap-screenshots/week-09/ocr-manual-split.png)
 
-**Para Birimi Uyarısı (TRY Dışı Fiş)**
-
-![Para birimi uyarısı](docs/roadmap-screenshots/week-09/currency-warning.png)
-
 ## Hafta 10 — Son Düzenlemeler ve Final
 
-- [ ] Genel hata düzeltmeleri
-- [ ] Kod temizliği ve klasör düzeninin son halinin verilmesi
-- [ ] Ekranların görsel olarak iyileştirilmesi
-- [ ] GitHub üzerindeki açıklamaların toparlanması
-- [ ] Final gösterimine uygun stabil sürümün hazırlanması
+- [x] Genel hata düzeltmeleri
+- [x] Kod temizliği ve klasör düzeninin son halinin verilmesi
+- [x] Ekranların görsel olarak iyileştirilmesi
+- [x] GitHub üzerindeki açıklamaların toparlanması
+- [x] Final gösterimine uygun stabil sürümün hazırlanması
 
 ### Ekstra
 - [x] **App Store yayın altyapısı:** EAS Build + EAS Submit pipeline kuruldu (`eas.json`); `autoIncrement: true` ile build number otomatik artışı; `appVersionSource: remote` ile ASC'den versiyon yönetimi.
@@ -398,6 +386,13 @@
 - [x] **Grup davet universal link:** `https://splitsnap.borak.dev/invite/<KOD>` formatına geçildi; `invite/[code].tsx` deep link handler eklendi; oturum açık → otomatik katıl, oturum kapalı → giriş sonrası otomatik katıl (`pendingInviteStore`); website fallback sayfası (`/invite/index.html`) App Store yönlendirmesi içeriyor.
 - [x] **Asset temizliği:** Expo şablon görselleri (`expo.icon/`, Android adaptive icon'lar, React logo'ları vb.) kaldırıldı; `assets/icon/icon.png` tek kaynak ikon olarak belirlendi; website ikon dosyaları `website/` altına taşındı.
 - [x] **App Store Connect:** App Information, Age Rating (4+), Privacy Nutrition Label (5 veri tipi), App Review bilgileri ve demo hesap girildi.
+- [x] **Expo SDK 56 yükseltmesi:** SDK 55 → 56 (React Native 0.85.3) geçişi; iOS 26.5 uyumluluğu sağlandı.
+- [x] **Supabase crash fix:** Eksik `EXPO_PUBLIC_*` env değişkenlerinde uygulama crash'i önlendi; EAS production ortam değişkenleri eklendi.
+- [x] **Lucide tree-shaking:** `metro.config.js` resolver + `src/lib/icons.ts` modülü ile ~1700 ikon yerine yalnızca kullanılan ~19 ikon bundle'a alınıyor; JS bytecode 5.0M → 3.8M (−24%).
+- [x] **Uygulama ikonu optimizasyonu:** 988K → 116K (pngquant); görsel kalite korundu.
+- [x] **`.easignore`:** EAS Build yüklemelerinde gereksiz dosyalar (docs, design, website, *.md) dışlanıyor.
+- [x] **Lint temizliği:** 24 hata → 0; `import/no-unresolved` (metro resolver), `react-hooks/refs` (date-picker), `set-state-in-effect` (add-expense, web color scheme), unused import, duplicate import düzeltildi.
+- [x] **Doküman güncellemesi:** README.md, AGENTS.md, ROADMAP.md'deki SDK 55 referansları → SDK 56 ile güncellendi.
 
 ### Haftalık Notlar
 
@@ -409,6 +404,26 @@
 
 ### Ekran Görselleri
 
+**App Store Connect — Uygulama Bilgileri**
+
+![App Store Connect uygulama bilgileri](docs/roadmap-screenshots/week-10/asc-app-info.png)
+
+**TestFlight — Build Listesi**
+
+![TestFlight build listesi](docs/roadmap-screenshots/week-10/testflight-builds.png)
+
+**Hesap Silme Akışı**
+
+![Hesap silme akışı](docs/roadmap-screenshots/week-10/account-deletion.png)
+
+**Universal Link — Davet Katılımı**
+
+![Universal link davet katılımı](docs/roadmap-screenshots/week-10/universal-link-invite.png)
+
+**splitsnap.borak.dev — Web Sitesi**
+
+![Web sitesi](docs/roadmap-screenshots/week-10/website-landing.png)
+
 ---
 
 React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygulaması.
@@ -417,12 +432,12 @@ React Native + TypeScript ile iOS için geliştirilecek ortak harcama takip uygu
 
 | Katman | Teknoloji |
 |--------|-----------|
-| Framework | React Native (Expo SDK 55) |
+| Framework | React Native (Expo SDK 56) |
 | Dil | TypeScript |
 | Platform | iOS (Xcode, iOS Simulator) |
 | Backend | Supabase (Auth, PostgreSQL, Storage) |
 | Tasarım | Figma |
-| OCR | iOS cihaz içi metin tanıma |
+| OCR | Apple Vision (cihaz içi) + gpt-4o-mini (Supabase Edge Function) |
 | Sürüm Kontrolü | Git & GitHub |
 
 ## Veri Modelleri
@@ -444,6 +459,6 @@ Aşağıdaki özellikler bilinçli olarak ilk sürüm kapsamı dışında bırak
 - Fişteki ürünleri kalem kalem otomatik ayrıştırma
 - Gerçek para transferi
 - Banka veya kart entegrasyonu
-- Tam App Store yayın süreci
+- ~~Tam App Store yayın süreci~~ ✅ Hafta 10'da tamamlandı (EAS Build + EAS Submit, TestFlight, App Store review)
 - Çoklu para birimi desteği (şu an uygulama yalnızca ₺/TRY; €, $, £ fişler için uyarı gösterilir ama tutar dönüştürülmez)
 - Supabase Data API Güvenlik Güncellemesi (Todo: 30 Ekim 2026): Yeni oluşturulacak tabloların API'den erişilebilir olması için `migrations` dosyalarına açıkça `GRANT` izinlerinin eklenmesi
