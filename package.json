@@ -16,9 +16,6 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
-    "@react-navigation/bottom-tabs": "^7.15.5",
-    "@react-navigation/elements": "^2.9.10",
-    "@react-navigation/native": "^7.1.33",
     "@supabase/supabase-js": "^2.99.3",
     "@tamagui/babel-plugin": "^2.0.0-rc.29",
     "@tamagui/config": "^2.0.0-rc.29",
@@ -66,8 +63,8 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
-    "eslint-config-expo": "~55.0.0",
-    "typescript": "~5.9.2"
+    "eslint-config-expo": "~56.0.4",
+    "typescript": "~6.0.3"
   },
   "private": true
 }
