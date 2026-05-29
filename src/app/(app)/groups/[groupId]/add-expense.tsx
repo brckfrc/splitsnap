@@ -1,8 +1,8 @@
-import { ArrowLeft, Camera, ChevronDown } from 'lucide-react-native';
+import { ArrowLeft, Camera, ChevronDown, Image as ImageIcon } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
+import { uploadReceipt } from '@/services/receipts';
+import { parseReceipt, type ReceiptParseResult } from '@/services/receipt-parse';
 import { splitData } from '@/services/split-data';
 import { guessCategoryEmoji } from '@/utils/format';
 
@@ -44,13 +46,15 @@ export default function AddExpenseScreen() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [manual, setManual] = useState<Record<string, string>>({});
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<ReceiptParseResult | null>(null);
+  const [currencyWarning, setCurrencyWarning] = useState<string | null>(null);
   const [showPayerPicker, setShowPayerPicker] = useState(false);
   const [manualIcon, setManualIcon] = useState<string | null>(null);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const displayIcon = manualIcon ?? guessCategoryEmoji(title);
-
-  const [submitting, setSubmitting] = useState(false);
 
   const defaultPayer = useMemo(() => {
     if (user && activeMembers.some((m) => m.userId === user.id)) return user.id;
@@ -61,6 +65,72 @@ export default function AddExpenseScreen() {
     setPaidBy((p) => p || defaultPayer);
     setSelected(new Set(activeMembers.map((m) => m.userId)));
   }, [activeMembers, defaultPayer]);
+
+  // -------------------------------------------------------------------------
+  // Receipt capture + OCR autofill
+  // -------------------------------------------------------------------------
+
+  async function handleReceiptPicked(uri: string) {
+    setReceiptUri(uri);
+    setOcrResult(null);
+    setCurrencyWarning(null);
+    setOcrLoading(true);
+    try {
+      const result = await parseReceipt(uri);
+      setOcrResult(result);
+      // Detect non-TL currency — skip amount autofill and warn user
+      const isForeignCurrency = result.currency != null && result.currency !== 'TRY';
+      if (isForeignCurrency) {
+        setCurrencyWarning(`Bu fiş ${result.currency} cinsinden — tutarı kendiniz girin.`);
+      }
+      // Autofill only empty fields so the user's own input is never overwritten
+      if (result.merchantName && !title.trim()) setTitle(result.merchantName);
+      if (!isForeignCurrency && result.total && !amount) setAmount(String(result.total));
+      if (result.date) {
+        const d = new Date(result.date);
+        if (!isNaN(d.getTime()) && d <= new Date()) setDateObj(d);
+      }
+    } catch {
+      // OCR/parse failed silently — user fills manually
+    } finally {
+      setOcrLoading(false);
+    }
+  }
+
+  async function pickFromCamera() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('İzin gerekli', 'Kamera erişimi için izin verin.');
+      return;
+    }
+    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
+    if (!res.canceled && res.assets[0]) {
+      await handleReceiptPicked(res.assets[0].uri);
+    }
+  }
+
+  async function pickFromGallery() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('İzin gerekli', 'Galeri erişimi için izin verin.');
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+    if (!res.canceled && res.assets[0]) {
+      await handleReceiptPicked(res.assets[0].uri);
+    }
+  }
+
+  function removeReceipt() {
+    setReceiptUri(null);
+    setOcrResult(null);
+    setOcrLoading(false);
+    setCurrencyWarning(null);
+  }
+
+  // -------------------------------------------------------------------------
+  // Manual split helpers
+  // -------------------------------------------------------------------------
 
   function handleManualInput(userId: string, raw: string) {
     const sanitized = raw.replace(/[^0-9.,]/g, '');
@@ -89,27 +159,16 @@ export default function AddExpenseScreen() {
     });
   }
 
-  async function pickReceipt() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert('İzin gerekli', 'Galeri erişimi için izin verin.');
-      return;
-    }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (!res.canceled && res.assets[0]) {
-      setReceiptUri(res.assets[0].uri);
-    }
-  }
+  // -------------------------------------------------------------------------
+  // Submit
+  // -------------------------------------------------------------------------
 
   async function submit() {
     setTitleError(null);
     setAmountError(null);
     const num = parseFloat(amount.replace(',', '.'));
-    if (!user) {
-      Alert.alert('Oturum', 'Giriş yapmanız gerekir.');
-      return;
-    }
-    
+    if (!user) { Alert.alert('Oturum', 'Giriş yapmanız gerekir.'); return; }
+
     let hasError = false;
     if (!title.trim()) {
       setTitleError('Başlık gerekli.');
@@ -125,27 +184,19 @@ export default function AddExpenseScreen() {
       setAmountError(`Tutar en fazla ${MAX_EXPENSE_AMOUNT.toLocaleString('tr-TR')} ₺ olabilir.`);
       hasError = true;
     }
-    if (!paidBy) {
-      Alert.alert('Eksik bilgi', 'Ödeyen kişiyi seçin.');
-      hasError = true;
-    }
-    
+    if (!paidBy) { Alert.alert('Eksik bilgi', 'Ödeyen kişiyi seçin.'); hasError = true; }
     if (hasError) return;
+
     const participantIds = Array.from(selected);
-    if (participantIds.length === 0) {
-      Alert.alert('Katılımcı', 'En az bir katılımcı seçin.');
-      return;
-    }
+    if (participantIds.length === 0) { Alert.alert('Katılımcı', 'En az bir katılımcı seçin.'); return; }
+
     let manualAmounts: Record<string, number> | undefined;
     if (splitType === 'manual') {
       manualAmounts = {};
       let sum = 0;
       for (const id of participantIds) {
         const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
-        if (!Number.isNaN(v) && v > 0) {
-          manualAmounts[id] = v;
-          sum += v;
-        }
+        if (!Number.isNaN(v) && v > 0) { manualAmounts[id] = v; sum += v; }
       }
       if (Math.abs(sum - num) > 0.05) {
         Alert.alert('Tutar uyuşmuyor', 'Manuel payların toplamı, harcama tutarına eşit olmalı.');
@@ -155,6 +206,16 @@ export default function AddExpenseScreen() {
 
     setSubmitting(true);
     try {
+      // Upload receipt first (if any), get the storage path
+      let receiptStoragePath: string | undefined;
+      if (receiptUri) {
+        try {
+          receiptStoragePath = await uploadReceipt(receiptUri, gid);
+        } catch {
+          // Upload failure is non-blocking — save expense without receipt
+        }
+      }
+
       await splitData.addExpense({
         groupId: gid,
         title,
@@ -167,6 +228,8 @@ export default function AddExpenseScreen() {
         icon: displayIcon,
         participantIds,
         manualAmounts,
+        receiptStoragePath,
+        ocrSuggestions: ocrResult ?? undefined,
       });
       router.back();
     } catch (e) {
@@ -177,14 +240,16 @@ export default function AddExpenseScreen() {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Derived values
+  // -------------------------------------------------------------------------
+
   const amountNum = parseFloat(amount.replace(',', '.'));
   const validTotal = !Number.isNaN(amountNum) && amountNum > 0 ? amountNum : 0;
-
   const perEqual =
     splitType === 'equal' && selected.size > 0 && validTotal > 0
       ? validTotal / selected.size
       : 0;
-
   const manualTotal = useMemo(() => {
     let sum = 0;
     for (const id of selected) {
@@ -201,6 +266,10 @@ export default function AddExpenseScreen() {
       </SafeAreaView>
     );
   }
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
@@ -223,6 +292,7 @@ export default function AddExpenseScreen() {
         contentContainerStyle={[styles.form, { paddingBottom: APP_TAB_BAR_CONTENT_INSET + Spacing.five }]}
         keyboardShouldPersistTaps="handled"
       >
+        {/* ── Harcama bilgileri ─────────────────────────────────────────── */}
         <Card style={{ gap: Spacing.four }}>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Harcama Bilgileri</Text>
           <View style={styles.titleRow}>
@@ -235,7 +305,13 @@ export default function AddExpenseScreen() {
               <Text style={{ fontSize: 24 }}>{displayIcon}</Text>
             </Pressable>
             <View style={{ flex: 1 }}>
-              <Input label="Başlık" value={title} onChangeText={setTitle} placeholder="örn. Akşam Yemeği" error={titleError ?? undefined} />
+              <Input
+                label="Başlık"
+                value={title}
+                onChangeText={setTitle}
+                placeholder="örn. Akşam Yemeği"
+                error={titleError ?? undefined}
+              />
             </View>
           </View>
           {showIconPicker && (
@@ -243,10 +319,7 @@ export default function AddExpenseScreen() {
               {EMOJI_LIST.map((emoji) => (
                 <Pressable
                   key={emoji}
-                  onPress={() => {
-                    setManualIcon(emoji);
-                    setShowIconPicker(false);
-                  }}
+                  onPress={() => { setManualIcon(emoji); setShowIconPicker(false); }}
                   style={[styles.iconOption, { backgroundColor: manualIcon === emoji ? `${t.primary}22` : t.inputBackground }]}
                 >
                   <Text style={{ fontSize: 20 }}>{emoji}</Text>
@@ -263,15 +336,19 @@ export default function AddExpenseScreen() {
               placeholderTextColor={t.mutedForeground}
               multiline
               inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_ACCESSORY_ID : undefined}
-              style={[
-                styles.textArea,
-                { color: t.foreground, backgroundColor: t.inputBackground, borderColor: 'transparent' },
-              ]}
+              style={[styles.textArea, { color: t.foreground, backgroundColor: t.inputBackground, borderColor: 'transparent' }]}
             />
           </View>
           <View style={styles.row2}>
             <View style={{ flex: 1 }}>
-              <Input label="Tutar (₺)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" error={amountError ?? undefined} />
+              <Input
+                label="Tutar (₺)"
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                error={amountError ?? undefined}
+              />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Tarih</Text>
@@ -296,31 +373,59 @@ export default function AddExpenseScreen() {
           </View>
         </Card>
 
-        <Card>
+        {/* ── Fiş fotoğrafı + OCR ──────────────────────────────────────── */}
+        <Card style={{ gap: Spacing.three }}>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Fiş Fotoğrafı (İsteğe bağlı)</Text>
+
           {receiptUri ? (
             <View style={{ gap: Spacing.three }}>
-              <Text style={{ color: t.mutedForeground }}>Görsel seçildi (OCR Hafta 8+).</Text>
-              <Button variant="secondary" size="sm" onPress={() => setReceiptUri(null)}>
+              <View style={styles.receiptThumbWrap}>
+                <Image source={{ uri: receiptUri }} style={styles.receiptThumb} resizeMode="cover" />
+                {ocrLoading ? (
+                  <View style={styles.ocrOverlay}>
+                    <ActivityIndicator color="#fff" />
+                    <Text style={styles.ocrOverlayText}>Fiş okunuyor…</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {!ocrLoading && ocrResult ? (
+                <Text style={{ color: currencyWarning ? '#D97706' : t.mutedForeground, fontSize: 13 }}>
+                  {currencyWarning
+                    ? `⚠️ ${currencyWarning}`
+                    : `✓ Otomatik dolduruldu${ocrResult.total ? ` — ₺${ocrResult.total.toFixed(2)}` : ''}${ocrResult.date ? ` | ${ocrResult.date}` : ''}${ocrResult.merchantName ? ` | ${ocrResult.merchantName}` : ''}`}
+                </Text>
+              ) : null}
+
+              <Button variant="secondary" size="sm" onPress={removeReceipt} disabled={ocrLoading}>
                 Fotoğrafı Kaldır
               </Button>
             </View>
           ) : (
-            <Pressable
-              onPress={pickReceipt}
-              style={[styles.upload, { borderColor: t.border, backgroundColor: t.inputBackground }]}
-              accessibilityRole="button"
-              accessibilityLabel="Fiş fotoğrafı seç"
-            >
-              <Camera size={32} color={t.mutedForeground} />
-              <Text style={{ color: t.foreground, fontWeight: '600' }}>Fotoğraf Seç</Text>
-              <Text style={{ color: t.mutedForeground, fontSize: 12, textAlign: 'center' }}>
-                Gerçek OCR ve depolama sonraki sprintte
-              </Text>
-            </Pressable>
+            <View style={styles.row2}>
+              <Pressable
+                onPress={() => void pickFromCamera()}
+                style={[styles.uploadHalf, { borderColor: t.border, backgroundColor: t.inputBackground }]}
+                accessibilityRole="button"
+                accessibilityLabel="Kamerayla çek"
+              >
+                <Camera size={24} color={t.mutedForeground} />
+                <Text style={{ color: t.foreground, fontWeight: '600', fontSize: 13 }}>Kamerayla Çek</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => void pickFromGallery()}
+                style={[styles.uploadHalf, { borderColor: t.border, backgroundColor: t.inputBackground }]}
+                accessibilityRole="button"
+                accessibilityLabel="Galeriden seç"
+              >
+                <ImageIcon size={24} color={t.mutedForeground} />
+                <Text style={{ color: t.foreground, fontWeight: '600', fontSize: 13 }}>Galeriden Seç</Text>
+              </Pressable>
+            </View>
           )}
         </Card>
 
+        {/* ── Kim ödedi ─────────────────────────────────────────────────── */}
         <Card>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Kim Ödedi?</Text>
           {(() => {
@@ -330,10 +435,7 @@ export default function AddExpenseScreen() {
               <>
                 <Pressable
                   onPress={() => setShowPayerPicker((p) => !p)}
-                  style={[
-                    styles.choice,
-                    { borderColor: t.primary, backgroundColor: `${t.primary}12` },
-                  ]}
+                  style={[styles.choice, { borderColor: t.primary, backgroundColor: `${t.primary}12` }]}
                   accessibilityRole="button"
                   accessibilityLabel="Ödeyen kişiyi değiştir"
                 >
@@ -372,39 +474,30 @@ export default function AddExpenseScreen() {
           })()}
         </Card>
 
+        {/* ── Bölüşüm ──────────────────────────────────────────────────── */}
         <Card style={{ gap: Spacing.four }}>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Nasıl Bölünecek?</Text>
           <View style={styles.row2}>
-            <Pressable
-              onPress={() => setSplitType('equal')}
-              style={[
-                styles.splitBox,
-                {
-                  borderColor: splitType === 'equal' ? t.primary : 'transparent',
-                  backgroundColor: splitType === 'equal' ? `${t.primary}12` : t.inputBackground,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: splitType === 'equal' }}
-            >
-              <Text style={styles.splitEmoji}>⚖️</Text>
-              <Text style={{ color: t.foreground, fontWeight: '600' }}>Eşit</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setSplitType('manual')}
-              style={[
-                styles.splitBox,
-                {
-                  borderColor: splitType === 'manual' ? t.primary : 'transparent',
-                  backgroundColor: splitType === 'manual' ? `${t.primary}12` : t.inputBackground,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: splitType === 'manual' }}
-            >
-              <Text style={styles.splitEmoji}>✏️</Text>
-              <Text style={{ color: t.foreground, fontWeight: '600' }}>Manuel</Text>
-            </Pressable>
+            {(['equal', 'manual'] as const).map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => setSplitType(type)}
+                style={[
+                  styles.splitBox,
+                  {
+                    borderColor: splitType === type ? t.primary : 'transparent',
+                    backgroundColor: splitType === type ? `${t.primary}12` : t.inputBackground,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: splitType === type }}
+              >
+                <Text style={styles.splitEmoji}>{type === 'equal' ? '⚖️' : '✏️'}</Text>
+                <Text style={{ color: t.foreground, fontWeight: '600' }}>
+                  {type === 'equal' ? 'Eşit' : 'Manuel'}
+                </Text>
+              </Pressable>
+            ))}
           </View>
 
           <Text style={{ color: t.mutedForeground, fontSize: 13, fontWeight: '600' }}>Katılımcılar</Text>
@@ -463,6 +556,7 @@ export default function AddExpenseScreen() {
           </View>
         </Card>
 
+        {/* ── Footer butonları ─────────────────────────────────────────── */}
         <View style={styles.footerBtns}>
           <Button variant="secondary" style={{ flex: 1 }} onPress={() => router.back()}>
             İptal
@@ -491,11 +585,31 @@ const styles = StyleSheet.create({
   topTitle: { fontSize: 18, fontWeight: '700' },
   form: { padding: Spacing.five, gap: Spacing.five },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: Spacing.two },
-  upload: {
+  receiptThumbWrap: {
+    position: 'relative',
+    width: '100%',
+    height: 160,
+  },
+  receiptThumb: {
+    width: '100%',
+    height: 160,
+    borderRadius: 10,
+  },
+  ocrOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  ocrOverlayText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  uploadHalf: {
+    flex: 1,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderRadius: 12,
-    padding: Spacing.six,
+    paddingVertical: Spacing.four,
     alignItems: 'center',
     gap: Spacing.two,
   },

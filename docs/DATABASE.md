@@ -596,15 +596,32 @@ Supabase Realtime, RLS politikalarını kullandığı için ayrı yetkilendirme 
 
 ---
 
-## 9. Storage (Hafta 8+ — plan)
+## 9. Storage (Hafta 8 — uygulandı)
 
-| Bucket | İçerik | RLS |
-|--------|--------|-----|
-| `receipts` | Fiş görselleri | Yükleme: aktif üye + harcama sahibi; okuma: grup üyesi |
+| Bucket | İçerik | Görünürlük | Dosya limiti | İzin verilen tipler |
+|--------|--------|------------|--------------|---------------------|
+| `receipts` | Fiş görselleri | **Private** | 5 MB | jpeg, jpg, png, heic, webp |
 
-Obje yolu önerisi: `receipts/{group_id}/{expense_id}/{filename}`.
+**Obje yolu:** `receipts/{group_id}/{timestamp}_{random}.jpg`
+- İlk klasör `group_id` → RLS bu klasöre göre `is_group_member` / `is_group_participant` fonksiyonlarını kullanır.
+- UUID yerine `{timestamp}_{random}` tercih edildi — `expense_id` ancak `create_expense_with_shares` RPC sonrası bilinir; önce yükleme → tek atomik RPC çağrısı akışı sağlar.
+- Okumalar **imzalı URL** ile (`createSignedUrl`, 1 saat TTL); bucket public değil.
 
-Detaylar fiş özelliği işlenirken bu dosyaya eklenir.
+**Storage RLS (`storage.objects` üstünde):**
+
+| İşlem | Politika |
+|-------|---------|
+| **INSERT** | `bucket_id = 'receipts' AND is_group_member(split_part(name, '/', 1)::uuid)` — aktif üye, kendi grubunun klasörüne yükleyebilir |
+| **SELECT** | `bucket_id = 'receipts' AND is_group_participant(split_part(name, '/', 1)::uuid)` — tüm katılımcılar (ayrılmış dahil) imzalı URL ile okuyabilir |
+| **UPDATE / DELETE** | Yok (fiş değişmez; gerekirse ileride creator/owner kısıtlamasıyla eklenir) |
+
+**Migration:** [`supabase/migrations/20260529000000_week8_receipts.sql`](../supabase/migrations/20260529000000_week8_receipts.sql)
+
+**OCR akışı:**
+1. Cihaz içi OCR (`expo-text-extractor` / Apple Vision) → ham metin
+2. Supabase Edge Function `parse-receipt` → `gpt-4o-mini` → `{ merchantName, date, total }` (JSON schema strict)
+3. Hata / anahtar yok → yerel heuristik (`src/services/receipt-parse.ts`) devreye girer
+4. OCR sonucu `expenses.ocr_suggestions` JSONB alanına kaydedilir
 
 ---
 
@@ -673,3 +690,4 @@ Detaylar fiş özelliği işlenirken bu dosyaya eklenir.
 Yeni migration veya politika eklendiğinde bu tabloya bir satır ekleyin.
 
 | 2026-05-05 | Hafta 7 migration: [`supabase/migrations/20260505000000_emoji_usage_stats.sql`](../supabase/migrations/20260505000000_emoji_usage_stats.sql) — `get_emoji_usage_stats()` RPC fonksiyonu; platform genelinde harcama `title` → `icon` eşleşme istatistiklerini döndürür (dinamik emoji haritası). |
+| 2026-05-29 | Hafta 8 migration: [`supabase/migrations/20260529000000_week8_receipts.sql`](../supabase/migrations/20260529000000_week8_receipts.sql) — `receipts` private bucket, storage RLS (`receipts_insert` / `receipts_select`), `create_expense_with_shares` ve `update_expense_with_shares` RPC'leri `p_receipt_storage_path` + `p_ocr_suggestions` parametreleriyle genişletildi (11 param, geriye uyumlu). |

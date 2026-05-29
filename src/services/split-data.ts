@@ -61,6 +61,8 @@ export const splitData = {
     icon?: string | null;
     participantIds: string[];
     manualAmounts?: Record<string, number>;
+    receiptStoragePath?: string | null;
+    ocrSuggestions?: { merchantName?: string; date?: string; total?: number } | null;
   }) => {
     const {
       groupId,
@@ -74,6 +76,8 @@ export const splitData = {
       icon,
       participantIds,
       manualAmounts,
+      receiptStoragePath,
+      ocrSuggestions,
     } = input;
 
     let shares: { userId: string; amount: number }[] = [];
@@ -105,6 +109,8 @@ export const splitData = {
       splitType,
       icon,
       shares,
+      receiptStoragePath,
+      ocrSuggestions,
     });
     await loadExpensesForGroup(groupId);
   },
@@ -120,6 +126,8 @@ export const splitData = {
     splitType: 'equal' | 'manual';
     participantIds: string[];
     manualAmounts?: Record<string, number>;
+    receiptStoragePath?: string | null;
+    ocrSuggestions?: { merchantName?: string; date?: string; total?: number } | null;
   }) => {
     const exp = useSplitDataStore.getState().expenses.find((e) => e.id === input.expenseId);
     if (!exp) throw new Error('expense_not_found');
@@ -151,6 +159,8 @@ export const splitData = {
       splitType: input.splitType,
       icon: input.icon,
       shares,
+      receiptStoragePath: input.receiptStoragePath,
+      ocrSuggestions: input.ocrSuggestions,
     });
     await loadExpensesForGroup(input.groupId);
   },

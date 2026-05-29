@@ -37,7 +37,15 @@
         }
       ],
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Fiş fotoğrafı çekmek için kamera kullanımına izin verin.",
+          "microphonePermission": false,
+          "photosPermission": "Galeriden fiş seçebilmek için fotoğraflarınıza erişim gereklidir."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

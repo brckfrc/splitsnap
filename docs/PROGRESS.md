@@ -220,12 +220,50 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 ---
 
-## Week 8+ — Receipt / OCR / Storage
+## Week 8 — Receipt / OCR / Storage
 
-**Status:** Not started (roadmap Hafta 8 maddeleri)
+**Status:** Complete (roadmap Hafta 8 maddeleri `[x]` — 2026-05-29)
 
-**Notes:**
-- Yerel görsel seçimi / placeholder kod varsa bile “fiş altyapısı” ROADMAP maddesi, Storage + ürün gereksinimleri karşılanana kadar `[x]` yapılmaz.
+**Implemented:**
+
+### Supabase Storage
+- `receipts` private bucket (5 MB, jpeg/png/heic/webp); bucket oluşturma migration'a dahil.
+- Storage RLS: `split_part(name, '/', 1)::uuid` ile path'ten groupId çıkarımı; `is_group_member` (INSERT) + `is_group_participant` (SELECT) SECURITY DEFINER yardımcıları kullanıldı.
+- Path şeması: `{groupId}/{timestamp_b36}_{random6}.jpg` — `uploadReceipt()` önce `expo-image-manipulator` ile max 1600px / JPEG q0.7 resize, sonra Supabase'e yükler.
+- `getReceiptSignedUrl()` — 1 saatlik signed URL; `edit.tsx` thumbnail görünümü için kullanılır.
+- Upload zamanlaması: “Kaydet” butonunda, orphan önlemek için OCR sonrası değil kayıt anında.
+
+### OCR Pipeline
+- **Cihazda (Apple Vision):** `expo-text-extractor` → `extractTextFromImage(uri)` → `string[]` → `join('\n')` → raw metin
+  - Görsel hiçbir zaman buluta çıkmaz.
+- **LLM (Supabase Edge Function):** Raw metin → `parse-receipt` edge function → `gpt-4o-mini` (json_schema strict) → `{ merchantName, date, total, currency }`
+- **Lokal heuristik fallback:** Edge function erişilemezse (key yok, offline, hata) → `parseReceiptTextLocal()` — TOPLAM/ÖDENECEK regex, dd.mm.yyyy tarih, para birimi sembolü tespiti.
+- **Para birimi tespiti:** `currency` alanı (`TRY`/`EUR`/`USD`/`GBP`) hem edge function hem lokal heuristikten döner. TRY dışı bir fişte tutar autofill atlanır, kullanıcıya ⚠️ uyarı gösterilir.
+
+### Veritabanı (Migration `20260529000000_week8_receipts.sql`)
+- `create_expense_with_shares` ve `update_expense_with_shares` RPC'leri 9 → 11 parametre: `p_receipt_storage_path text DEFAULT NULL`, `p_ocr_suggestions jsonb DEFAULT NULL` (geriye dönük uyumlu, önceki çağrılar bozulmaz).
+- `update_expense_with_shares` → `COALESCE(p_receipt_storage_path, receipt_storage_path)` ile mevcut fiş korunur.
+- `re-grant EXECUTE on authenticated`.
+
+### Yeni Servisler
+- `src/services/receipts.ts` — `uploadReceipt`, `getReceiptSignedUrl`
+- `src/services/ocr.ts` — `extractReceiptText`
+- `src/services/receipt-parse.ts` — `ReceiptParseResult`, `parseReceiptTextLocal`, `parseReceiptText`, `parseReceipt`
+- `supabase/functions/parse-receipt/index.ts` — Deno edge function (redeploy gerektirir; key: `supabase secrets set OPENAI_API_KEY=...`)
+
+### UI
+- `add-expense.tsx` — Fiş Fotoğrafı kartı: Kamerayla Çek / Galeriden Seç, thumbnail, spinner overlay (OCR sırasında görsel geri bildirim), ✓ / ⚠️ durum metni, “Fotoğrafı Kaldır”.
+- `edit.tsx` — `receiptSignedUrl` state + `useEffect`; signed URL ile thumbnail render.
+- `app.json` — `expo-image-picker` plugin, Türkçe izin metinleri.
+- `tsconfig.json` — `supabase/functions` exclude (Deno tipleri tsc uyumsuzluğu).
+
+**Pending (kullanıcı aksiyonu):**
+- `supabase db push` — DB şifresi ile (Dashboard → Settings → Database)
+- `supabase secrets set OPENAI_API_KEY=sk-...`
+- `supabase functions deploy parse-receipt`
+- Proje INACTIVE ise önce Dashboard'dan restore et
+
+**Maliyet:** ~541 token / fiş, $0.00 spend (gpt-4o-mini fiyatlandırmasında negligible).
 
 ---
 

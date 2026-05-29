@@ -6,7 +6,7 @@
 - Framework: **Expo SDK 55** (React Native 0.83) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
 - Backend: **Supabase** (`@supabase/supabase-js`). Do not write custom backend or server code. All Auth, DB, and Storage operations must go through the Supabase client.
 - Database schema changes require a migration plan in [`docs/DATABASE.md`](./DATABASE.md) (or an update to that file) before implementation.
-- Receipt OCR must be **on-device** (no cloud OCR APIs). Planned package: **`expo-doc-vision`** in Week 8+ — **not installed in the baseline app**; add it when implementing OCR.
+- Receipt OCR: **hybrid** approach. Image→text: **on-device** via `expo-text-extractor` (Apple Vision, installed Week 8). Text→JSON: **Supabase Edge Function `parse-receipt`** → `gpt-4o-mini` (key stored as Supabase secret `OPENAI_API_KEY` — never in client bundle, never `EXPO_PUBLIC_`). Falls back to local heuristic when the edge function is unavailable. Supabase Edge Functions are permitted for the OCR/LLM proxy (they are part of the Supabase platform, not a custom server).
 - Never commit `.env` files or Supabase keys. Commit **`.env.example`** only (placeholders). Use **`EXPO_PUBLIC_`** prefixed vars in `.env` for client-safe values.
 
 ## Environment Variables
@@ -14,6 +14,7 @@
 - `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL (Data API).
 - `EXPO_PUBLIC_SUPABASE_KEY` — Supabase **publishable** key (or legacy anon key); same role as in [Supabase + Expo docs](https://supabase.com/docs/guides/getting-started/tutorials/with-expo-react-native).
 - Do **not** put the database **direct connection string** in the app.
+- `OPENAI_API_KEY` — **Supabase secret only** (`supabase secrets set OPENAI_API_KEY=sk-...`). Used exclusively by the `parse-receipt` Edge Function. Must **never** appear in `.env`, `EXPO_PUBLIC_*`, or be committed to git.
 
 ## Tech Stack
 
@@ -26,7 +27,8 @@
 | State Management | Zustand | Client state; store’lar **`src/stores/`** altında (ör. [`split-data-store.ts`](../src/stores/split-data-store.ts)); yeni özellikler için aynı düzeni izle |
 | Local Storage | react-native-mmkv + react-native-nitro-modules | Fast key-value; Zustand persist backend |
 | Secure Storage | expo-secure-store | Optional: extra-sensitive non-Supabase secrets, or future hardened auth adapter |
-| OCR (Week 8+) | expo-doc-vision (to add) | On-device text recognition — install when implementing OCR |
+| OCR (Week 8) | expo-text-extractor (installed) | On-device text recognition — Apple Vision on iOS, ML Kit on Android. Was listed as "expo-doc-vision" in earlier notes; that package does not exist. |
+| Image resize | expo-image-manipulator (installed) | Resize receipt images before upload (~1600px, jpeg q0.7) |
 | Image Picker | expo-image-picker | Receipt photo capture/selection |
 | UI system | tamagui + @tamagui/babel-plugin | `TamaguiProvider`, themes/tokens in [`tamagui.config.ts`](../../tamagui.config.ts); **Sheet** for bottom modals; **Inter** via `expo-font` in root layout. Root `package.json` must list **`@tamagui/portal`** (same version as `tamagui`) + **`overrides`** so npm hoists a **single** `@tamagui/portal` — otherwise `Sheet` modal resolves a nested copy and **`PortalDispatchContext` is null** at runtime. **Do not** add a second `PortalProvider` in `_layout` (duplicate `shouldAddRootHost` breaks portals). |
 | Icons | lucide-react-native + react-native-svg | Lucide icons with string `color` (avoids Tamagui themed icon Variable → SVG warnings) |

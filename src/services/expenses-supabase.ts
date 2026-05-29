@@ -184,6 +184,12 @@ export async function fetchExpensesForGroupsPayload(groupIds: string[]): Promise
   return { expenses, expenseShares };
 }
 
+export type OcrSuggestions = {
+  merchantName?: string;
+  date?: string;
+  total?: number;
+};
+
 export type CreateExpenseInput = {
   groupId: string;
   title: string;
@@ -195,6 +201,8 @@ export type CreateExpenseInput = {
   splitType: 'equal' | 'manual';
   icon?: string | null;
   shares: { userId: string; amount: number }[];
+  receiptStoragePath?: string | null;
+  ocrSuggestions?: OcrSuggestions | null;
 };
 
 export async function createExpenseRemote(input: CreateExpenseInput): Promise<void> {
@@ -209,6 +217,14 @@ export async function createExpenseRemote(input: CreateExpenseInput): Promise<vo
     .filter((s) => s.amount > 0)
     .map((s) => ({ user_id: s.userId, amount: s.amount }));
 
+  const ocrJson = input.ocrSuggestions
+    ? {
+        merchant_name: input.ocrSuggestions.merchantName ?? null,
+        date: input.ocrSuggestions.date ?? null,
+        total: input.ocrSuggestions.total ?? null,
+      }
+    : null;
+
   const { error } = await supabase.rpc('create_expense_with_shares', {
     p_group_id: input.groupId,
     p_title: title,
@@ -219,6 +235,8 @@ export async function createExpenseRemote(input: CreateExpenseInput): Promise<vo
     p_split_type: input.splitType,
     p_icon: input.icon ?? null,
     p_shares: sharesJson,
+    p_receipt_storage_path: input.receiptStoragePath ?? null,
+    p_ocr_suggestions: ocrJson,
   });
 
   if (error) throw new Error(error.message);
@@ -234,6 +252,9 @@ export type UpdateExpenseInput = {
   splitType: 'equal' | 'manual';
   icon?: string | null;
   shares: { userId: string; amount: number }[];
+  /** Pass a new path to update; omit/null to keep the existing receipt. */
+  receiptStoragePath?: string | null;
+  ocrSuggestions?: OcrSuggestions | null;
 };
 
 export async function updateExpenseRemote(input: UpdateExpenseInput): Promise<void> {
@@ -246,6 +267,14 @@ export async function updateExpenseRemote(input: UpdateExpenseInput): Promise<vo
     .filter((s) => s.amount > 0)
     .map((s) => ({ user_id: s.userId, amount: s.amount }));
 
+  const ocrJson = input.ocrSuggestions
+    ? {
+        merchant_name: input.ocrSuggestions.merchantName ?? null,
+        date: input.ocrSuggestions.date ?? null,
+        total: input.ocrSuggestions.total ?? null,
+      }
+    : null;
+
   const { error } = await supabase.rpc('update_expense_with_shares', {
     p_expense_id: input.expenseId,
     p_group_id: input.groupId,
@@ -256,6 +285,8 @@ export async function updateExpenseRemote(input: UpdateExpenseInput): Promise<vo
     p_split_type: input.splitType,
     p_icon: input.icon ?? null,
     p_shares: sharesJson,
+    p_receipt_storage_path: input.receiptStoragePath ?? null,
+    p_ocr_suggestions: ocrJson,
   });
 
   if (error) throw new Error(error.message);

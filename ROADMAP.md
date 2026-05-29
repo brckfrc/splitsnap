@@ -304,10 +304,20 @@
 
 ## Hafta 8 — Fiş ve OCR Altyapısı
 
-- [ ] Fiş görseli ekleme altyapısının hazırlanması
-- [ ] Supabase Storage ile fiş görseli saklama yapısının kurulması
-- [ ] iOS local OCR araştırmasının ve ilk entegrasyonunun yapılması
-- [ ] OCR sonucu ile tarih, işletme adı ve toplam tutar alanlarının otomatik doldurulması
+- [x] Fiş görseli ekleme altyapısının hazırlanması
+- [x] Supabase Storage ile fiş görseli saklama yapısının kurulması
+- [x] iOS local OCR araştırmasının ve ilk entegrasyonunun yapılması
+- [x] OCR sonucu ile tarih, işletme adı ve toplam tutar alanlarının otomatik doldurulması
+
+### Ekstra
+- [x] **Hibrit OCR mimarisi:** Cihaz içi Apple Vision OCR (`expo-text-extractor`) → Supabase Edge Function `parse-receipt` → `gpt-4o-mini` (JSON schema çıktı). `expo-doc-vision` gerçek bir paket olmadığından `expo-text-extractor` kullanıldı.
+- [x] **Yerel heuristik fallback:** Edge Function / anahtar yokken TOPLAM/tarih regex ayrıştırıcısı devreye girer; uygulama her koşulda çalışır.
+- [x] **Görsel sıkıştırma:** `expo-image-manipulator` ile yükleme öncesi max 1600px / JPEG q0.7 yeniden boyutlandırma.
+- [x] **Kamera + galeri seçimi:** "Kamerayla Çek" ve "Galeriden Seç" butonları; `NSCameraUsageDescription` app.json'a eklendi.
+- [x] **Storage RLS:** `receipts` private bucket; `is_group_member` (yükleme) / `is_group_participant` (okuma) politikaları; imzalı URL ile görüntüleme.
+- [x] **RPC genişletme:** `create_expense_with_shares` ve `update_expense_with_shares`'e `p_receipt_storage_path` + `p_ocr_suggestions` eklendi (geriye uyumlu, default NULL).
+- [x] **Fiş küçük resmi:** Edit ekranında imzalı URL ile fiş görseli gösterimi.
+- [x] **Dok güncellemeleri:** `AGENTS.md` (paket adı düzeltme, edge function izni, `OPENAI_API_KEY` secret notu), `DATABASE.md` §9, `tsconfig.json` (supabase/functions exclude).
 
 ### Haftalık Notlar
 - **Mimari Karar (Hibrit OCR + LLM):** Fiş okuma işlemi için karmaşık regex/parser yazmak yerine, telefonun yerel OCR yetenekleriyle okunan dağınık metin yığınını (saf text) OpenAI GPT-4o-mini API'sine gönderip JSON (Toplam tutar, kategori vb.) olarak yapılandırılmış çıktı alacağız. Bu sayede sunucu maliyetini inanılmaz düşürürken, fiş formatı ayrıştırma sorununu tamamen çözeceğiz.
@@ -391,3 +401,4 @@ Aşağıdaki özellikler bilinçli olarak ilk sürüm kapsamı dışında bırak
 - Gerçek para transferi
 - Banka veya kart entegrasyonu
 - Tam App Store yayın süreci
+- Çoklu para birimi desteği (şu an uygulama yalnızca ₺/TRY; €, $, £ fişler için uyarı gösterilir ama tutar dönüştürülmez)

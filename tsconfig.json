@@ -17,5 +17,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
-  "exclude": ["node_modules", "design"]
+  "exclude": ["node_modules", "design", "supabase/functions"]
 }

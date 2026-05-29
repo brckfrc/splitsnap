@@ -1,7 +1,7 @@
 import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,6 +13,7 @@ import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useExpenseShares } from '@/hooks/use-expense-shares';
 import { useTheme } from '@/hooks/use-theme';
+import { getReceiptSignedUrl } from '@/services/receipts';
 import { splitData, useSplitDataStore } from '@/services/split-data';
 import { guessCategoryEmoji } from '@/utils/format';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
@@ -58,6 +59,13 @@ export default function EditExpenseScreen() {
   const [manualIcon, setManualIcon] = useState<string | null>(expense?.icon ?? null);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const displayIcon = manualIcon ?? guessCategoryEmoji(title);
+
+  const [receiptSignedUrl, setReceiptSignedUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (expense?.receiptImageUrl) {
+      void getReceiptSignedUrl(expense.receiptImageUrl).then(setReceiptSignedUrl);
+    }
+  }, [expense?.receiptImageUrl]);
 
   function handleManualInput(userId: string, raw: string) {
     const sanitized = raw.replace(/[^0-9.,]/g, '');
@@ -215,9 +223,17 @@ export default function EditExpenseScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {expense.receiptImageUrl ? (
-          <Card>
+          <Card style={{ gap: Spacing.three }}>
             <Text style={[styles.cardTitle, { color: t.foreground }]}>Fiş</Text>
-            <Text style={{ color: t.mutedForeground }}>{expense.receiptImageUrl.slice(0, 80)}…</Text>
+            {receiptSignedUrl ? (
+              <Image
+                source={{ uri: receiptSignedUrl }}
+                style={{ width: '100%', height: 180, borderRadius: 10 }}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={{ color: t.mutedForeground, fontSize: 13 }}>Fiş yükleniyor…</Text>
+            )}
           </Card>
         ) : null}
 
