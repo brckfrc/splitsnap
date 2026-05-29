@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ChevronRight, Users } from 'lucide-react-native';
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,8 +14,11 @@ import { useAuth } from '@/contexts/auth-context';
 import { reloadGroupsAndExpenses } from '@/services/groups-sync';
 import { href } from '@/lib/href';
 import { useTheme } from '@/hooks/use-theme';
+import Toast from 'react-native-toast-message';
+
 import { groupsService } from '@/services/groups';
 import { useSplitDataStore } from '@/services/split-data';
+import { pendingInviteStore } from '@/stores/pending-invite-store';
 import type { Group } from '@/types';
 import { formatCurrencyTry } from '@/utils/format';
 
@@ -35,6 +38,22 @@ export default function GroupsListScreen() {
       setRefreshing(false);
     }
   }, []);
+  // Process a pending invite code stored before login (from universal link flow).
+  useEffect(() => {
+    const code = pendingInviteStore.get();
+    if (!code || !user) return;
+    pendingInviteStore.clear();
+    groupsService
+      .joinByInviteCode(code)
+      .then(() => reloadGroupsAndExpenses())
+      .then(() => Toast.show({ type: 'success', text1: 'Gruba katıldınız 🎉' }))
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : '';
+        if (!msg.includes('already')) Toast.show({ type: 'error', text1: msg || 'Gruba katılınamadı.' });
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [newName, setNewName] = useState('');

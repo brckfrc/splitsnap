@@ -1,0 +1,4 @@
+# Cloudflare Pages — AASA dosyasının doğru Content-Type ile servisi
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+  X-Content-Type-Options: nosniff

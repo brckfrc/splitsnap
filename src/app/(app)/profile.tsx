@@ -1,5 +1,6 @@
-import { ChevronRight, Key, LogOut, Monitor, Moon, Sun, User as UserIcon } from 'lucide-react-native';
+import { ChevronRight, Key, LogOut, Monitor, Moon, Sun, Trash2, User as UserIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,12 +9,49 @@ import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
+import { deleteAccount } from '@/services/account';
 import { useAppSettingsStore, type AppThemeMode } from '@/stores/app-settings-store';
 
 export default function ProfileScreen() {
   const t = useTheme();
   const { user, signOutApp } = useAuth();
   const { themeMode, setThemeMode } = useAppSettingsStore();
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Hesabı Sil',
+      'Hesabınız ve kişisel bilgileriniz kalıcı olarak silinecek. Gruplardaki ortak harcama kayıtları "Silinmiş Kullanıcı" olarak korunur. Bu işlem geri alınamaz.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Devam Et',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Son Onay', 'Hesabınız silinecek ve tekrar giriş yapamayacaksınız. Emin misiniz?', [
+              { text: 'Vazgeç', style: 'cancel' },
+              {
+                text: 'Hesabı Sil',
+                style: 'destructive',
+                onPress: async () => {
+                  setDeleting(true);
+                  try {
+                    await deleteAccount();
+                    await signOutApp();
+                  } catch (e) {
+                    const msg = e instanceof Error ? e.message : 'Hesap silinemedi.';
+                    Alert.alert('Hata', msg);
+                  } finally {
+                    setDeleting(false);
+                  }
+                },
+              },
+            ]);
+          },
+        },
+      ],
+    );
+  };
 
   const handleThemePress = () => {
     const options = ['İptal', 'Cihaz Ayarı (Sistem)', 'Açık', 'Koyu'];
@@ -133,6 +171,23 @@ export default function ProfileScreen() {
               <LogOut size={16} color={t.destructiveForeground} />
             </View>
             <Text style={[styles.listLabel, { color: t.destructive, fontWeight: '600' }]}>Çıkış Yap</Text>
+          </Pressable>
+          <View style={[styles.divider, { backgroundColor: t.border }]} />
+          <Pressable
+            disabled={deleting}
+            style={({ pressed }) => [
+              styles.listItem,
+              pressed && { backgroundColor: `${t.destructive}1A` },
+              deleting && { opacity: 0.5 },
+            ]}
+            onPress={handleDeleteAccount}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.destructive }]}>
+              <Trash2 size={16} color={t.destructiveForeground} />
+            </View>
+            <Text style={[styles.listLabel, { color: t.destructive, fontWeight: '600' }]}>
+              {deleting ? 'Hesap Siliniyor…' : 'Hesabı Sil'}
+            </Text>
           </Pressable>
         </Card>
       </ScrollView>

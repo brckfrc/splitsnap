@@ -389,6 +389,16 @@
 - [ ] GitHub üzerindeki açıklamaların toparlanması
 - [ ] Final gösterimine uygun stabil sürümün hazırlanması
 
+### Ekstra
+- [x] **App Store yayın altyapısı:** EAS Build + EAS Submit pipeline kuruldu (`eas.json`); `autoIncrement: true` ile build number otomatik artışı; `appVersionSource: remote` ile ASC'den versiyon yönetimi.
+- [x] **iOS Privacy Manifest:** Apple May 2024 zorunluluğu karşılandı — UserDefaults (CA92.1), FileTimestamp (C617.1), DiskSpace (E174.1) API kategorileri `app.json`'a eklendi.
+- [x] **Associated Domains:** `applinks:splitsnap.borak.dev` + `webcredentials:splitsnap.borak.dev` — iOS Keychain otomatik doldurma ve universal link desteği.
+- [x] **Hesap silme (Apple 5.1.1(v)):** Profil → Hesabı Sil akışı; Edge Function `delete-account` ile profil anonimleştirme + auth ban (hard delete yerine, FK kısıtları nedeniyle).
+- [x] **Website:** `splitsnap.borak.dev` Cloudflare Pages'e deploy edildi — ana sayfa, gizlilik politikası, AASA.
+- [x] **Grup davet universal link:** `https://splitsnap.borak.dev/invite/<KOD>` formatına geçildi; `invite/[code].tsx` deep link handler eklendi; oturum açık → otomatik katıl, oturum kapalı → giriş sonrası otomatik katıl (`pendingInviteStore`); website fallback sayfası (`/invite/index.html`) App Store yönlendirmesi içeriyor.
+- [x] **Asset temizliği:** Expo şablon görselleri (`expo.icon/`, Android adaptive icon'lar, React logo'ları vb.) kaldırıldı; `assets/icon/icon.png` tek kaynak ikon olarak belirlendi; website ikon dosyaları `website/` altına taşındı.
+- [x] **App Store Connect:** App Information, Age Rating (4+), Privacy Nutrition Label (5 veri tipi), App Review bilgileri ve demo hesap girildi.
+
 ### Haftalık Notlar
 
 

@@ -26,6 +26,7 @@
     "@tamagui/portal": "2.0.0-rc.29",
     "expo": "~55.0.8",
     "expo-constants": "~55.0.9",
+    "expo-dev-client": "~55.0.35",
     "expo-device": "~55.0.10",
     "expo-font": "~55.0.4",
     "expo-glass-effect": "~55.0.8",

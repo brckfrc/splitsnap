@@ -1,0 +1,22 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "762X6VC8GW.dev.borak.splitsnap"
+        ],
+        "components": [
+          {
+            "/": "/invite/*",
+            "comment": "Grup davet bağlantıları"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "762X6VC8GW.dev.borak.splitsnap"
+    ]
+  }
+}

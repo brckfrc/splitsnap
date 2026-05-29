@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SplitSnap — Gizlilik Politikası</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1a1a1a;
+      --muted: #5c6470;
+      --primary: #208AEF;
+      --border: #e6e8eb;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1115;
+        --fg: #e8eaed;
+        --muted: #9aa3af;
+        --primary: #4ba3f5;
+        --border: #232830;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .logo {
+      width: 40px; height: 40px; border-radius: 10px;
+      overflow: hidden; display: block; flex-shrink: 0;
+    }
+    h1 { font-size: 28px; margin: 24px 0 4px; }
+    h2 { font-size: 19px; margin: 36px 0 8px; }
+    .updated { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+    p, li { color: var(--fg); }
+    a { color: var(--primary); }
+    .muted { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 15px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+    code { background: rgba(127,127,127,.12); padding: 1px 6px; border-radius: 5px; font-size: 90%; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img class="logo" src="/android-chrome-512x512.png" alt="SplitSnap" />
+      <strong>SplitSnap</strong>
+    </header>
+
+    <h1>Gizlilik Politikası</h1>
+    <p class="updated">Son güncelleme: 29 Mayıs 2026</p>
+
+    <p>
+      SplitSnap ("Uygulama"), grup içi harcamaları kaydetmenizi, fiş fotoğraflarından
+      otomatik bilgi çıkarmanızı ve borç-alacak hesabını paylaşmanızı sağlayan bir mobil
+      uygulamadır. Bu politika, Uygulama'yı kullanırken hangi verilerin işlendiğini ve
+      haklarınızı açıklar.
+    </p>
+
+    <h2>1. İşlenen Veriler</h2>
+    <table>
+      <tr><th>Veri</th><th>Amaç</th></tr>
+      <tr><td>Ad ve e-posta adresi</td><td>Hesap oluşturma, giriş ve oturum yönetimi</td></tr>
+      <tr><td>Grup, harcama ve ödeme kayıtları</td><td>Uygulamanın temel işlevi (harcama bölüşümü ve hesaplama)</td></tr>
+      <tr><td>Fiş fotoğrafları</td><td>Harcama kaydına ek olarak saklama ve OCR ile otomatik doldurma</td></tr>
+      <tr><td>Fişten çıkarılan metin</td><td>İşletme adı, tarih ve tutarın yapılandırılması (aşağıdaki OpenAI maddesine bakınız)</td></tr>
+      <tr><td>Cihaz üzeri teknik veriler</td><td>Oturumun ve uygulama tercihlerinin cihazda saklanması</td></tr>
+    </table>
+
+    <h2>2. Verilerin Saklandığı Yer</h2>
+    <p>
+      Hesap ve uygulama verileri, altyapı sağlayıcımız <strong>Supabase</strong> üzerinde
+      (PostgreSQL veritabanı ve dosya depolama) güvenli şekilde tutulur. Fiş görselleri özel
+      (private) bir depolama kovasında saklanır ve yalnızca ilgili grubun üyeleri tarafından
+      süreli imzalı bağlantılarla erişilebilir.
+    </p>
+
+    <h2>3. Üçüncü Taraf: OCR / Yapay Zekâ</h2>
+    <p>
+      Fiş okuma özelliğinde, görüntüden metne dönüştürme işlemi <strong>cihazınızda</strong>
+      (Apple Vision) yapılır; <strong>fiş görseli buluta gönderilmez</strong>. Yalnızca elde
+      edilen <strong>ham metin</strong>, işletme adı/tarih/tutar alanlarını yapılandırmak üzere
+      <strong>OpenAI</strong> (gpt-4o-mini) servisine iletilir. Bu metin OpenAI tarafından model
+      eğitiminde kullanılmaz ve yanıt alındıktan sonra kalıcı olarak saklanmaz.
+    </p>
+
+    <h2>4. Verilerin Kullanılmadığı Durumlar</h2>
+    <ul>
+      <li>Verileriniz reklam veya pazarlama amacıyla <strong>satılmaz, kiralanmaz, paylaşılmaz</strong>.</li>
+      <li>Uygulama herhangi bir <strong>üçüncü taraf reklam/izleme (tracking) SDK'sı</strong> içermez.</li>
+    </ul>
+
+    <h2>5. Hesap ve Veri Silme</h2>
+    <p>
+      Uygulama içinden <strong>Profil → Hesabı Sil</strong> ile hesabınızı silebilirsiniz.
+      Hesap silindiğinde kişisel bilgileriniz (ad, e-posta) kaldırılır ve hesabınıza tekrar
+      erişilemez. Birlikte olduğunuz gruplardaki ortak harcama kayıtları, diğer üyelerin
+      hesaplamalarının bozulmaması için <strong>anonimleştirilmiş</strong> ("Silinmiş Kullanıcı")
+      biçimde korunabilir.
+    </p>
+
+    <h2>6. Haklarınız (KVKK / GDPR)</h2>
+    <p>
+      Kişisel verilerinize erişme, düzeltilmesini veya silinmesini isteme haklarına sahipsiniz.
+      Talepleriniz için <a href="mailto:splitsnap@borak.dev">splitsnap@borak.dev</a> adresinden
+      bize ulaşabilirsiniz.
+    </p>
+
+    <h2>7. Çocukların Gizliliği</h2>
+    <p>Uygulama 13 yaşın altındaki kullanıcılara yönelik değildir ve bu yaş grubundan bilerek veri toplamaz.</p>
+
+    <h2>8. Değişiklikler</h2>
+    <p>Bu politika zaman zaman güncellenebilir. Önemli değişikliklerde bu sayfadaki "Son güncelleme" tarihi yenilenir.</p>
+
+    <footer>
+      İletişim: <a href="mailto:splitsnap@borak.dev">splitsnap@borak.dev</a><br />
+      © 2026 SplitSnap
+    </footer>
+  </div>
+</body>
+</html>

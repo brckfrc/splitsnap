@@ -90,9 +90,11 @@ export default function GroupDetailScreen() {
 
   async function shareInviteCode() {
     if (!inviteCode) return;
+    const url = `https://splitsnap.borak.dev/invite/${inviteCode.toUpperCase()}`;
     try {
       await Share.share({
-        message: `SplitSnap — "${groupName}" grubuna katılmak için davet kodu: #${inviteCode}`,
+        url,   // iOS — link olarak paylaşılır (Messages, WhatsApp vs. önizleme gösterir)
+        message: `SplitSnap — "${groupName}" grubuna katılmak için:\n${url}`,
       });
     } catch {
       /* kullanıcı iptal */
