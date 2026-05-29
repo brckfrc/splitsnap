@@ -35,7 +35,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 - **AsyncStorage** for Supabase `auth.storage` — matches Supabase Expo tutorial; package installed.
 - **MMKV + nitro-modules** for fast local storage / future Zustand persist (not for duplicating Supabase session without a plan).
 - **expo-secure-store** installed for optional hardening or non-auth secrets later.
-- **expo-doc-vision** deferred to Week 8+ — not in baseline `package.json` until OCR work starts.
+- **expo-text-extractor** (OCR) installed in Week 8. Earlier notes refer to `expo-doc-vision` — that package does not exist; `expo-text-extractor` is the correct package.
 - **expo-image-picker** for receipt photos when implementing that flow.
 - **Dev client only** — MMKV requires native code; use `npm run ios` / `npx expo run:ios`, not Expo Go for full stack.
 
@@ -305,7 +305,18 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 ## Week 10 — Final Polish
 
-**Status:** Not started
+**Status:** In progress
+
+**Implemented (App Store & altyapı — 2026-05-29):**
+- **EAS Build + Submit pipeline:** `eas.json` production profili; `autoIncrement: true`; build 3 (v1.0.0) App Store Connect'e upload edildi, TestFlight'ta görünüyor.
+- **iOS Privacy Manifest:** `NSPrivacyAccessedAPITypes` — UserDefaults (CA92.1), FileTimestamp (C617.1), DiskSpace (E174.1).
+- **Associated Domains:** `applinks:` + `webcredentials:splitsnap.borak.dev` — `app.json`'a eklendi, Apple Developer Portal'da capability aktif.
+- **Hesap silme (Apple 5.1.1(v)):** `Profil → Hesabı Sil` akışı; Edge Function `delete-account` — profil anonimleştirme + auth ban (876000h). Hard delete yerine anonymize: `expenses.paid_by → profiles RESTRICT (NOT NULL)` kısıtı nedeniyle.
+- **Website:** `splitsnap.borak.dev` Cloudflare Pages'te yayında — ana sayfa, gizlilik politikası, AASA, `/invite/*` fallback sayfası.
+- **Grup davet universal link:** `https://splitsnap.borak.dev/invite/<KOD>` — `src/app/invite/[code].tsx` + `pendingInviteStore` (MMKV) — giriş durumuna göre akış. Detay: backlog `[x]` maddesi.
+- **Asset temizliği:** Expo şablon görselleri kaldırıldı; `assets/icon/icon.png` tek kaynak ikon; website ikonları `website/` altında.
+- **App Store Connect:** Metadata (isim, subtitle, açıklama, keywords), Privacy Nutrition Label (5 veri tipi), Age Rating (4+), demo hesap, screenshots (iPhone 13 Pro Max), Copyright, Support URL. Review'a gönderildi.
+- **Dokümantasyon:** `docs/APP-STORE.md` oluşturuldu.
 
 ---
 
@@ -337,4 +348,4 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 - [ ] **Çoklu ödeyen desteği (split payer):** Şu an bir harcamayı yalnızca tek kişi ödeyebilir (`paidBy: string`). İleride bir ödemeyi birden fazla kişinin karşılaması (ör. A ₺60, B ₺40 ödedi) — `paidBy` → `paidByShares: { userId, amount }[]` dönüşümü, DB şema değişikliği, settlement hesaplama güncellenmesi gerekir.
 - [ ] **Auth rate limiting UX:** çok fazla başarısız deneme için client-side feedback / cooldown
 - [ ] **Üretim Auth e-postası: custom domain + SMTP (hosted Supabase)** — Zorunlu değil; MVP’de built-in gönderici veya e-posta onayı kapalı test yeterli. Ürün büyüyünce veya `429: email rate limit exceeded` (built-in ~2 e-posta/saat) sorununda: ürün subdomain’i veya kök domain (`splitsnap.borak.dev`, ileride ayrı alan adı) için DNS, Dashboard’da **Custom SMTP** (Resend, SendGrid, Postmark vb.), redirect / site URL ve e-posta şablonlarındaki linklerin aynı domainle uyumu
-- [ ] **Davet kodu + tıklanabilir davet linki + Associated Domains:** Şu an `UserPlus` -> `Share.share` ile düz metin + `#KOD`. Custom domain oturduktan sonra yapılacaklar: (1) `https://<domain>/.well-known/apple-app-site-association` dosyasına `webcredentials` + `applinks` servisleri eklenmeli, (2) Xcode -> Signing & Capabilities -> Associated Domains'e `webcredentials:<domain>` + `applinks:<domain>` eklenmeli. Bu sayede hem **Universal Links** (davet linki tıklanınca uygulama açılır) hem **iOS Keychain "Güçlü Şifre Öner"** (`textContentType="newPassword"`) aynı anda aktif olur. Kod tarafında `register.tsx` ve `login.tsx` zaten `textContentType` + `autoComplete` prop'larıyla hazır.
+- [x] **Davet kodu + tıklanabilir davet linki + Associated Domains (Hafta 10):** `Share.share` artık `https://splitsnap.borak.dev/invite/<KOD>` paylaşıyor. `src/app/invite/[code].tsx` universal link handler'ı eklendi — giriş yapılmışsa anında `joinByInviteCode`, yapılmamışsa `pendingInviteStore` (MMKV) → `/login` → groups mount'ta otomatik katılım. AASA `applinks:splitsnap.borak.dev` + `webcredentials:splitsnap.borak.dev` aktif; website'de `/invite/*` fallback sayfası Cloudflare Pages'te yayında.

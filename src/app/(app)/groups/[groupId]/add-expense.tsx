@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   ocrOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 10,
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',

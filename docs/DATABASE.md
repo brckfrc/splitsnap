@@ -555,17 +555,17 @@ Derin bağlantı formatı:
 
 | Ortam | URL |
 |-------|-----|
-| Universal Link (iOS) | `https://splitsnap.app/invite/{invite_code}` |
-| Custom scheme (geliştirme) | `splitsnap://invite/{invite_code}` |
+| Universal Link (iOS) | `https://splitsnap.borak.dev/invite/{invite_code}` |
+| Custom scheme (fallback) | `splitsnap://invite/{invite_code}` |
 
-Uygulama açılırken veya zaten açıkken bu URL yakalanır (Expo Router deep link veya `expo-linking`); `invite_code` parse edilip `join_group_by_invite()` çağrılır.
+Uygulama açılırken bu URL yakalanır (Expo Router); `invite_code` parse edilip `join_group_by_invite()` çağrılır.
 
-**Gereksinimler (ileride):**
-- `app.json` → `scheme: "splitsnap"` (custom scheme)
-- iOS Associated Domains → `apple-app-site-association` dosyası (universal link)
-- `src/app/invite/[code].tsx` — deep link'i karşılayan ekran (onay + katılma)
-
-Şimdilik sadece **kod ile katılma** (UI text input) implement edilir; link paylaşımı backlog'da.
+**Hafta 10'da implement edildi:**
+- `app.json` → `scheme: "splitsnap"` + `associatedDomains: ["applinks:splitsnap.borak.dev", "webcredentials:splitsnap.borak.dev"]`
+- `website/.well-known/apple-app-site-association` — AASA dosyası Cloudflare Pages'te yayında
+- `src/app/invite/[code].tsx` — universal link handler; giriş yapılmışsa anında katıl, yapılmamışsa `pendingInviteStore` (MMKV) → login sonrası otomatik katılım
+- `src/stores/pending-invite-store.ts` — MMKV tabanlı geçici kod saklama
+- `website/invite/index.html` — uygulama yüklü değilse App Store yönlendirmeli fallback sayfa
 
 ### Grup davet kodu yenileme (P3)
 

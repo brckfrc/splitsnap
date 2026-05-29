@@ -10,7 +10,6 @@
     "ios": {
       "icon": "./assets/icon/icon.png",
       "bundleIdentifier": "dev.borak.splitsnap",
-      "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
       },

@@ -442,8 +442,8 @@ Aşağıdaki özellikler bilinçli olarak ilk sürüm kapsamı dışında bırak
 
 - Android desteği
 - Fişteki ürünleri kalem kalem otomatik ayrıştırma
-- Gelişmiş YZ destekli fiş analizi
 - Gerçek para transferi
 - Banka veya kart entegrasyonu
 - Tam App Store yayın süreci
 - Çoklu para birimi desteği (şu an uygulama yalnızca ₺/TRY; €, $, £ fişler için uyarı gösterilir ama tutar dönüştürülmez)
+- Supabase Data API Güvenlik Güncellemesi (Todo: 30 Ekim 2026): Yeni oluşturulacak tabloların API'den erişilebilir olması için `migrations` dosyalarına açıkça `GRANT` izinlerinin eklenmesi

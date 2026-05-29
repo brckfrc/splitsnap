@@ -95,7 +95,7 @@
 - **Tamagui portals / Sheet:** `TamaguiProvider` already wraps `PortalProvider` (`shouldAddRootHost`). If Metro still throws `PortalDispatchContext cannot be null`, the usual cause is **two physical copies** of `@tamagui/portal` under `node_modules` (e.g. nested under `@tamagui/sheet`). Fix: direct dep + `overrides` in [`package.json`](../../package.json) so only **one** `@tamagui/portal` exists at the repo root. Never add a **second** `PortalProvider` in `_layout`. For **Lucide** / native SVG, `useTheme()` must resolve Tamagui variables to strings — [`use-theme.ts`](../src/hooks/use-theme.ts) uses `getVariableValue` so `color={t.primary}` is never an object.
 - **Expo Go** does not load this project reliably — **MMKV / Nitro** need a **development build**. Use `npm run ios` or `npx expo run:ios`.
 - **Storage roles:** AsyncStorage = Supabase auth session (tutorial default). MMKV = app/Zustand persistence. Do not store the same session in two backends without an explicit migration plan.
-- **`expo-doc-vision`:** not in `package.json` until Week 8; iOS 13+ and dev client when added.
+- **OCR package:** `expo-text-extractor` (installed, Week 8). Earlier notes mention `expo-doc-vision` — that package does not exist; ignore any reference to it.
 - Path aliases in `tsconfig.json` must stay in sync with Metro if you add them.
 - Receipt uploads: validate size/format before Storage.
 - Equal-split math: watch currency rounding.
