@@ -1,0 +1,36 @@
+# .easignore controls what gets uploaded to EAS Build. When present it replaces
+# .gitignore for the upload archive, so it must also repeat the .gitignore rules.
+
+# --- mirrors .gitignore ---
+.env
+.env*.local
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
+*.tsbuildinfo
+app-example
+# EAS runs `expo prebuild` itself; don't ship the local native projects.
+/ios
+/android
+/logs
+
+# --- build-irrelevant content (docs, design, marketing) ---
+docs/
+design/
+website/
+*.md

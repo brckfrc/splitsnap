@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, ArrowRight, Check, ChevronDown } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, Check, ChevronDown } from '@/lib/icons';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

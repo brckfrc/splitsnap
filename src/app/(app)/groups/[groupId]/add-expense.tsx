@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, ChevronDown, Image as ImageIcon } from 'lucide-react-native';
+import { ArrowLeft, Camera, ChevronDown, Image as ImageIcon } from '@/lib/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';

@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft } from '@/lib/icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';

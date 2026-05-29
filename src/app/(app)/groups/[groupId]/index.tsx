@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUpRight, Receipt, TrendingUp, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, ArrowUpRight, Receipt, TrendingUp, UserPlus } from '@/lib/icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useCallback, useRef } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View, RefreshControl } from 'react-native';

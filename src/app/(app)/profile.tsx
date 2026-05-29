@@ -1,4 +1,4 @@
-import { ChevronRight, Key, LogOut, Monitor, Moon, Sun, Trash2, User as UserIcon } from 'lucide-react-native';
+import { ChevronRight, Key, LogOut, Monitor, Moon, Sun, Trash2, User as UserIcon } from '@/lib/icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';

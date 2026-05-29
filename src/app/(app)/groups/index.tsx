@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronRight, Users } from 'lucide-react-native';
+import { ChevronRight, Users } from '@/lib/icons';
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
