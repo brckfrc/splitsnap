@@ -331,10 +331,17 @@
 
 ## Hafta 9 — OCR Entegrasyonu ve Arayüz
 
-- [ ] OCR akışının harcama oluşturma ekranına bağlanması
-- [ ] Fiş toplamı üzerinden otomatik eşit bölüşüm önerisinin yapılması
-- [ ] Manuel kişi bazlı paylaştırma ile OCR sonucunun birlikte çalışır hale getirilmesi
-- [ ] Arayüz iyileştirmeleri
+- [x] OCR akışının harcama oluşturma ekranına bağlanması
+- [x] Fiş toplamı üzerinden otomatik eşit bölüşüm önerisinin yapılması
+- [x] Manuel kişi bazlı paylaştırma ile OCR sonucunun birlikte çalışır hale getirilmesi
+- [x] Arayüz iyileştirmeleri
+
+### Ekstra
+- [x] **OCR yüklenme animasyonu:** Fiş seçildikten sonra LLM cevabı gelene kadar thumbnail üzerine spinner overlay + yarı saydam katman gösterilir; "Fotoğrafı Kaldır" butonu OCR süresince devre dışı.
+- [x] **Para birimi tespiti + uyarı:** OCR pipeline'a `currency` alanı eklendi (TRY/EUR/USD/GBP). TRY dışı bir fiş algılandığında tutar autofill atlanır, sarı ⚠️ uyarısı gösterilir; mağaza adı ve tarih yine doldurulur.
+- [x] **Edge function `currency` alanı:** `parse-receipt` JSON şemasına `currency` eklendi; sistem promptuna ISO 4217 tespiti kuralları yazıldı. `supabase functions deploy parse-receipt` ile yeniden deploy gerekir.
+- [x] **GLM-OCR araştırması:** 0.9B model OmniDocBench benchmark değerlendirmesi yapıldı; görsel buluta gönderme gerektirdiğinden ve Supabase-only kısıtına takıldığından mevcut hibrit mimari korundu.
+- [x] **Çoklu para birimi kapsam dışı notu:** `ROADMAP.md` Kapsam Dışı bölümüne eklendi.
 
 ### Haftalık Notlar
 

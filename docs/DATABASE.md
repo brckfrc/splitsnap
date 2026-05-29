@@ -231,7 +231,7 @@ Birincil anahtar: `(group_id, user_id)`.
 | `split_type` | `text` | not null, check in (`'equal'`, `'manual'`) | |
 | `icon` | `text` | nullable | Kategori emojisi (örn: 🍔, 🚕) |
 | `receipt_storage_path` | `text` | nullable | Storage bucket yolu (Hafta 8+) |
-| `ocr_suggestions` | `jsonb` | nullable | `{ "merchant_name": "...", "date": "...", "total": 0 }` |
+| `ocr_suggestions` | `jsonb` | nullable | `{ "merchant_name": "...", "date": "...", "total": 0, "currency": "TRY" }` |
 | `created_at` | `timestamptz` | default `now()` | |
 | `updated_at` | `timestamptz` | nullable | `set_updated_at` trigger |
 | `deleted_at` | `timestamptz` | nullable | Soft delete |
@@ -619,7 +619,7 @@ Supabase Realtime, RLS politikalarını kullandığı için ayrı yetkilendirme 
 
 **OCR akışı:**
 1. Cihaz içi OCR (`expo-text-extractor` / Apple Vision) → ham metin
-2. Supabase Edge Function `parse-receipt` → `gpt-4o-mini` → `{ merchantName, date, total }` (JSON schema strict)
+2. Supabase Edge Function `parse-receipt` → `gpt-4o-mini` → `{ merchantName, date, total, currency }` (JSON schema strict; `currency` ISO 4217: TRY/EUR/USD/GBP)
 3. Hata / anahtar yok → yerel heuristik (`src/services/receipt-parse.ts`) devreye girer
 4. OCR sonucu `expenses.ocr_suggestions` JSONB alanına kaydedilir
 

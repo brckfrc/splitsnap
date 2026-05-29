@@ -267,9 +267,39 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 ---
 
-## Week 9 — OCR Integration & UI
+## Week 9 — OCR Entegrasyonu ve Arayüz
 
-**Status:** Not started
+**Status:** Complete (roadmap Hafta 9 maddeleri `[x]` — 2026-05-29)
+
+**Implemented:**
+
+### OCR → Harcama Oluşturma Bağlantısı (Madde 1)
+- `handleReceiptPicked(uri)` → `parseReceipt(uri)` → autofill: `merchantName` → başlık, `total` → tutar, `date` → tarih alanı.
+- Kullanıcının daha önce doldurduğu alan üzerine yazılmaz (boşsa doldurul, doluysa dokunma).
+- Uçtan uca test edildi; tarih, mağaza adı ve toplam tutar fişten doğru okundu.
+
+### Fiş Toplamı → Eşit Bölüşüm (Madde 2)
+- OCR `total` → `setAmount()` ile form alanına yazılır. Mevcut `perEqual = validTotal / selected.size` hesabı anında devreye girer.
+- Ayrı bir adım gerekmedi; mevcut eşit bölüşüm mekanizması OCR ile kendiliğinden entegre çalışır.
+
+### OCR + Manuel Bölüşüm Uyumu (Madde 3)
+- OCR yalnızca `amount` alanını doldurur; `splitType` bağımsız çalışır.
+- Kullanıcı OCR sonrası `Manual` moduna geçip kişi başı payları girebilir — çakışma yok.
+
+### Arayüz İyileştirmeleri (Madde 4)
+- **Spinner overlay:** Fiş thumbnail üzerine `rgba(0,0,0,0.45)` katman + `ActivityIndicator`; OCR sürerken görsel geri bildirim sağlar.
+- **"Fotoğrafı Kaldır" kilidi:** `disabled={ocrLoading}` — OCR tamamlanmadan fiş kaldırılamaz.
+- **✓ / ⚠️ durum metni:** Başarıda "✓ Otomatik dolduruldu — ₺X | tarih | mağaza"; yabancı dövizde turuncu ⚠️ uyarısı.
+
+### Ekstra — Para Birimi Tespiti
+- `ReceiptParseResult` tipine `currency?: string` eklendi.
+- Lokal heuristik: `₺/TL/TRY` → `"TRY"`, `€/EUR` → `"EUR"`, `$` → `"USD"`, `£` → `"GBP"` sırasıyla tarar.
+- Edge function JSON şeması güncellendi (`currency` alanı + ISO 4217 tespiti sistem promptuna eklendi); `supabase functions deploy parse-receipt` ile yeniden deploy gerekir.
+- TRY dışı currency algılandığında `isForeignCurrency = true` → tutar autofill atlanır, `currencyWarning` state'i set edilir, sarı ⚠️ gösterilir.
+
+### Ekstra — GLM-OCR Araştırması
+- Zhipu AI'ın 0.9B parametreli GLM-OCR modeli OmniDocBench v1.5'te 94.62 ile lider.
+- Değerlendirme: görsel buluta gitmesi gerektiğinden (gizlilik gerileme) ve self-host Supabase-only kısıtına takıldığından mevcut hibrit mimari korundu; basit fiş için gpt-4o-mini zaten yeterli (541 token / $0.00).
 
 ---
 
