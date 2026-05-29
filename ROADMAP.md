@@ -329,6 +329,18 @@
 
 ### Ekran Görselleri
 
+**Fiş Fotoğrafı Kartı — Kamera / Galeri Seçimi**
+
+![Fiş kartı boş durum](docs/roadmap-screenshots/week-08/receipt-card-empty.png)
+
+**Fiş Seçildi — OCR İşleniyor (Spinner Overlay)**
+
+![OCR spinner](docs/roadmap-screenshots/week-08/receipt-ocr-loading.png)
+
+**Harcama Düzenleme — Fiş Görseli Önizlemesi**
+
+![Edit ekranı fiş thumbnail](docs/roadmap-screenshots/week-08/edit-receipt-thumbnail.png)
+
 ## Hafta 9 — OCR Entegrasyonu ve Arayüz
 
 - [x] OCR akışının harcama oluşturma ekranına bağlanması
@@ -352,6 +364,22 @@
 
 
 ### Ekran Görselleri
+
+**OCR Otomatik Doldurma — Başlık, Tutar ve Tarih**
+
+![OCR otomatik doldurma](docs/roadmap-screenshots/week-09/ocr-autofill-result.png)
+
+**Eşit Bölüşüm — OCR'dan Gelen Tutar**
+
+![Eşit bölüşüm OCR tutarı](docs/roadmap-screenshots/week-09/ocr-equal-split.png)
+
+**Manuel Bölüşüm — OCR Tutarı ile**
+
+![Manuel bölüşüm OCR](docs/roadmap-screenshots/week-09/ocr-manual-split.png)
+
+**Para Birimi Uyarısı (TRY Dışı Fiş)**
+
+![Para birimi uyarısı](docs/roadmap-screenshots/week-09/currency-warning.png)
 
 ## Hafta 10 — Son Düzenlemeler ve Final
 
