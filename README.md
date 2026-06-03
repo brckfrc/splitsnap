@@ -24,16 +24,11 @@
 
 ## Project Tracking
 
-**Primary tracking document:** [`ROADMAP.md`](ROADMAP.md) — weekly progress, notes, embedded screenshots, and video links
-
-**Screenshots:** PNGs are organized by week under [`docs/roadmap-screenshots/`](docs/roadmap-screenshots/) (same images as in the roadmap; useful for quick browsing in the repo or on GitHub).
-
-## Weekly Progress Videos
-
-**Playlist (all weeks):** [YouTube playlist](https://youtube.com/playlist?list=PLfh_d_SOW477Ie0rM6Yj5QWix_al3jvDc&si=DfWwp8XzHfQsel_b)
-
-[Week 1](https://youtu.be/uZ3RfGsreec?si=huxHxwlchSmuWuN4) • [Week 2](https://youtu.be/ErOGMI0s7SE) • [Week 3](https://youtu.be/WzUGQyE3S0g) • [Week 4](https://youtu.be/bfmGb2MThas) • [Week 5](https://youtu.be/tjnbJSpax2M)  
-[Week 6](https://youtu.be/FsKxH_ItLFo) • [Week 7](https://youtu.be/hHDUEYARdsk) • [Week 8](https://youtu.be/fyO_hSsueec) • [Week 9](https://youtu.be/fsI8G6Z_4Z8) • [Week 10](https://youtu.be/Pwte_m7p3B4)
+- **Primary document:** [`ROADMAP.md`](ROADMAP.md) — weekly progress, notes, embedded screenshots, and video links.
+- **Screenshots:** PNGs are organized by week under [`docs/roadmap-screenshots/`](docs/roadmap-screenshots/) (useful for quick browsing).
+- **Weekly Progress Videos:** [YouTube Playlist (all weeks)](https://youtube.com/playlist?list=PLfh_d_SOW477Ie0rM6Yj5QWix_al3jvDc&si=DfWwp8XzHfQsel_b)
+  - [Week 1](https://youtu.be/uZ3RfGsreec?si=huxHxwlchSmuWuN4) • [Week 2](https://youtu.be/ErOGMI0s7SE) • [Week 3](https://youtu.be/WzUGQyE3S0g) • [Week 4](https://youtu.be/bfmGb2MThas) • [Week 5](https://youtu.be/tjnbJSpax2M)  
+  - [Week 6](https://youtu.be/FsKxH_ItLFo) • [Week 7](https://youtu.be/hHDUEYARdsk) • [Week 8](https://youtu.be/fyO_hSsueec) • [Week 9](https://youtu.be/fsI8G6Z_4Z8) • [Week 10](https://youtu.be/Pwte_m7p3B4)
 
 
 ## Key Features
@@ -105,12 +100,18 @@
 
    Never commit `.env`.
 
-3. **Supabase database (optional but required for real groups/friends)**
+3. **Supabase backend & AI Functions**
 
-   If you use the linked Supabase project and [CLI](https://supabase.com/docs/guides/cli):
+   To set up the database schema and deploy the AI receipt scanning edge functions, use the [Supabase CLI](https://supabase.com/docs/guides/cli):
 
    ```bash
    supabase db push
+   supabase functions deploy
+   ```
+
+   *Note: For the receipt parsing feature to work, you must set your OpenAI API key as a Supabase secret:*
+   ```bash
+   supabase secrets set OPENAI_API_KEY=your_api_key_here
    ```
 
    Migrations live under [`supabase/migrations/`](supabase/migrations/). See [`supabase/README.md`](supabase/README.md) for archive/`pg_cron` notes and RPC summary. Schema reference: [`docs/DATABASE.md`](docs/DATABASE.md).
