@@ -1,6 +1,10 @@
 <div align="center">
-  <img src="assets/icon/icon.png" alt="SplitSnap Logo" width="120" height="120">
-  <h1>SplitSnap — Shared expense tracking for groups</h1>
+  <img src="assets/icon/icon_rounded.png" alt="SplitSnap Logo" width="240" height="240">
+  <h1>
+    SplitSnap<br>
+    <small>Snap receipts. Split bills. Settle up effortlessly.</small>
+  </h1>
+  <br>
   <a href="https://apple.co/3PWAfUo">
     <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1780185600" alt="Download on the App Store" width="160">
   </a>
@@ -35,7 +39,8 @@
 ## Key Features
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.07.png" width="220" align="right" style="border-radius: 20px; margin-left: 20px;">
+  <img src="docs/roadmap-screenshots/apple/mockup/1.png" width="220" align="right" style="margin-left: 20px;">
+  <br><br><br>
   <h3>🏘 Groups & Shared Expenses</h3>
   <p>Create groups with your friends, roommates, or travel buddies. Track all shared expenses instantly from a single screen. Say goodbye to complicated math!</p>
 </div>
@@ -43,7 +48,8 @@
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.39.png" width="220" align="left" style="border-radius: 20px; margin-right: 20px;">
+  <img src="docs/roadmap-screenshots/apple/mockup/2.png" width="220" align="left" style="margin-right: 20px;">
+  <br><br><br>
   <h3>📸 AI-Powered Receipt Scanning</h3>
   <p>Snap a photo of your receipt or pick one from your gallery. Thanks to AI integration, the expense amount, date, and merchant name are filled in automatically.</p>
 </div>
@@ -51,7 +57,8 @@
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.49.png" width="220" align="right" style="border-radius: 20px; margin-left: 20px;">
+  <img src="docs/roadmap-screenshots/apple/mockup/3.png" width="220" align="right" style="margin-left: 20px;">
+  <br><br><br>
   <h3>💸 Fair & Flexible Splitting</h3>
   <p>Split expenses equally among group members or enter exact amounts manually. Our interface calculates the remaining balance in real-time, leaving zero room for error!</p>
 </div>
@@ -59,7 +66,8 @@
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.01.png" width="220" align="left" style="border-radius: 20px; margin-right: 20px;">
+  <img src="docs/roadmap-screenshots/apple/mockup/4.png" width="220" align="left" style="margin-right: 20px;">
+  <br><br><br>
   <h3>📊 Detailed Settlement Summary</h3>
   <p>"Who owes whom, and how much?" Get the answer on a single screen. Our algorithm minimizes the debt network, ensuring you settle up with the fewest possible transactions.</p>
 </div>
@@ -67,7 +75,8 @@
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.14.png" width="220" align="right" style="border-radius: 20px; margin-left: 20px;">
+  <img src="docs/roadmap-screenshots/apple/mockup/5.png" width="220" align="right" style="margin-left: 20px;">
+  <br><br><br>
   <h3>🌙 Dark Mode</h3>
   <p>A flawless dark mode experience that is easy on the eyes and seamlessly synchronizes with your system theme.</p>
 </div>
