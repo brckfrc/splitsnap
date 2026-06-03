@@ -34,53 +34,44 @@
 
 ## Key Features
 
-<table>
-  <tr>
-    <td width="50%" valign="middle">
-      <h3>🏘 Groups & Shared Expenses</h3>
-      <p>Create groups with your friends, roommates, or travel buddies. Track all shared expenses instantly from a single screen. Say goodbye to complicated math!</p>
-    </td>
-    <td width="50%" align="center">
-      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.07.png" width="220" style="border-radius: 20px;">
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center">
-      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.39.png" width="220" style="border-radius: 20px;">
-    </td>
-    <td width="50%" valign="middle">
-      <h3>📸 AI-Powered Receipt Scanning</h3>
-      <p>Snap a photo of your receipt or pick one from your gallery. Thanks to AI integration, the expense amount, date, and merchant name are filled in automatically.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="middle">
-      <h3>💸 Fair & Flexible Splitting</h3>
-      <p>Split expenses equally among group members or enter exact amounts manually. Our interface calculates the remaining balance in real-time, leaving zero room for error!</p>
-    </td>
-    <td width="50%" align="center">
-      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.49.png" width="220" style="border-radius: 20px;">
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center">
-      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.01.png" width="220" style="border-radius: 20px;">
-    </td>
-    <td width="50%" valign="middle">
-      <h3>📊 Detailed Settlement Summary</h3>
-      <p>"Who owes whom, and how much?" Get the answer on a single screen. Our algorithm minimizes the debt network, ensuring you settle up with the fewest possible transactions.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="middle">
-      <h3>🌙 Dark Mode</h3>
-      <p>A flawless dark mode experience that is easy on the eyes and seamlessly synchronizes with your system theme.</p>
-    </td>
-    <td width="50%" align="center">
-      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.14.png" width="220" style="border-radius: 20px;">
-    </td>
-  </tr>
-</table>
+<div>
+  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.07.png" width="220" align="right" style="border-radius: 20px; margin-left: 20px;">
+  <h3>🏘 Groups & Shared Expenses</h3>
+  <p>Create groups with your friends, roommates, or travel buddies. Track all shared expenses instantly from a single screen. Say goodbye to complicated math!</p>
+</div>
+<br clear="both"/>
+<br>
+
+<div>
+  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.39.png" width="220" align="left" style="border-radius: 20px; margin-right: 20px;">
+  <h3>📸 AI-Powered Receipt Scanning</h3>
+  <p>Snap a photo of your receipt or pick one from your gallery. Thanks to AI integration, the expense amount, date, and merchant name are filled in automatically.</p>
+</div>
+<br clear="both"/>
+<br>
+
+<div>
+  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.49.png" width="220" align="right" style="border-radius: 20px; margin-left: 20px;">
+  <h3>💸 Fair & Flexible Splitting</h3>
+  <p>Split expenses equally among group members or enter exact amounts manually. Our interface calculates the remaining balance in real-time, leaving zero room for error!</p>
+</div>
+<br clear="both"/>
+<br>
+
+<div>
+  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.01.png" width="220" align="left" style="border-radius: 20px; margin-right: 20px;">
+  <h3>📊 Detailed Settlement Summary</h3>
+  <p>"Who owes whom, and how much?" Get the answer on a single screen. Our algorithm minimizes the debt network, ensuring you settle up with the fewest possible transactions.</p>
+</div>
+<br clear="both"/>
+<br>
+
+<div>
+  <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.14.png" width="220" align="right" style="border-radius: 20px; margin-left: 20px;">
+  <h3>🌙 Dark Mode</h3>
+  <p>A flawless dark mode experience that is easy on the eyes and seamlessly synchronizes with your system theme.</p>
+</div>
+<br clear="both"/>
 
 ## Requirements
 
