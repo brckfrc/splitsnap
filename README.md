@@ -1,5 +1,9 @@
 # SplitSnap
 
+<a href="https://apple.co/3PWAfUo">
+  <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1780185600" alt="Download on the App Store" width="160">
+</a>
+
 Shared expense tracking for groups (friends, roommates, trips). **iOS-first** app built with **Expo SDK 56**, **React Native**, **TypeScript**, **Expo Router**, **Tamagui** (provider, themes, bottom sheets), and **Supabase**. Receipt scanning uses on-device **Apple Vision OCR** + **OpenAI gpt-4o-mini** (via Supabase Edge Function) to auto-fill expense fields.
 
 ## Project Tracking
@@ -21,15 +25,15 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 | 5 | [Week 5 Video](https://youtu.be/tjnbJSpax2M) |
 | 6 | [Week 6 Video](https://youtu.be/FsKxH_ItLFo) |
 | 7 | [Week 7 Video](https://youtu.be/hHDUEYARdsk) |
-| 8 | — |
-| 9 | — |
-| 10 | — |
+| 8 | [Week 8 Video](https://youtu.be/fyO_hSsueec) |
+| 9 | [Week 9 Video](https://youtu.be/fsI8G6Z_4Z8) |
+| 10 | [Week 10 Video](https://youtu.be/Pwte_m7p3B4) |
 
 ## Requirements
 
 - **Node.js** 20.19+ (Expo SDK 56)
 - **macOS + Xcode** for iOS Simulator
-- A **Supabase** project (URL + publishable/anon key)
+- **Supabase** project (URL + publishable/anon key)
 
 ## Setup
 

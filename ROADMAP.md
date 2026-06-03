@@ -325,7 +325,7 @@
 
 ### Video Linki
 
-
+[Hafta 8 — 29-05-2026](https://youtu.be/fyO_hSsueec)
 
 ### Ekran Görselleri
 
@@ -357,7 +357,7 @@
 
 ### Video Linki
 
-
+[Hafta 9 — 29-05-2026](https://youtu.be/fsI8G6Z_4Z8)
 
 ### Ekran Görselleri
 
@@ -400,7 +400,7 @@
 
 ### Video Linki
 
-
+[Hafta 10 — 30-05-2026](https://youtu.be/Pwte_m7p3B4)
 
 ### Ekran Görselleri
 

@@ -224,6 +224,8 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 **Status:** Complete (roadmap Hafta 8 maddeleri `[x]` — 2026-05-29)
 
+**Haftalık video:** [Hafta 8 — 29-05-2026](https://youtu.be/fyO_hSsueec) (`ROADMAP.md` ile aynı)
+
 **Implemented:**
 
 ### Supabase Storage
@@ -271,6 +273,8 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 
 **Status:** Complete (roadmap Hafta 9 maddeleri `[x]` — 2026-05-29)
 
+**Haftalık video:** [Hafta 9 — 29-05-2026](https://youtu.be/fsI8G6Z_4Z8) (`ROADMAP.md` ile aynı)
+
 **Implemented:**
 
 ### OCR → Harcama Oluşturma Bağlantısı (Madde 1)
@@ -306,6 +310,8 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 ## Week 10 — Final Polish
 
 **Status:** Complete (roadmap Hafta 10 maddeleri `[x]` — 2026-05-30)
+
+**Haftalık video:** [Hafta 10 — 30-05-2026](https://youtu.be/Pwte_m7p3B4) (`ROADMAP.md` ile aynı)
 
 **Implemented (App Store & altyapı — 2026-05-29):**
 - **EAS Build + Submit pipeline:** `eas.json` production profili; `autoIncrement: true`; build 3 (v1.0.0) App Store Connect'e upload edildi, TestFlight'ta görünüyor.
