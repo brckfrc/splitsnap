@@ -2,7 +2,7 @@
   <img src="assets/icon/icon_rounded.png" alt="SplitSnap Logo" width="240" height="240">
   <h1>
     SplitSnap<br>
-    <small>Snap receipts. Split bills. Settle up effortlessly.</small>
+    <small><small>Snap receipts. Split bills. Settle up effortlessly.</small></small>
   </h1>
   <br>
   <a href="https://apple.co/3PWAfUo">
