@@ -1,10 +1,22 @@
-# SplitSnap
+<div align="center">
+  <img src="assets/icon/icon.png" alt="SplitSnap Logo" width="120" height="120">
+  <h1>SplitSnap — Shared expense tracking for groups</h1>
+  <a href="https://apple.co/3PWAfUo">
+    <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1780185600" alt="Download on the App Store" width="160">
+  </a>
+</div>
 
-<a href="https://apple.co/3PWAfUo">
-  <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1780185600" alt="Download on the App Store" width="160">
-</a>
-
-Shared expense tracking for groups (friends, roommates, trips). **iOS-first** app built with **Expo SDK 56**, **React Native**, **TypeScript**, **Expo Router**, **Tamagui** (provider, themes, bottom sheets), and **Supabase**. Receipt scanning uses on-device **Apple Vision OCR** + **OpenAI gpt-4o-mini** (via Supabase Edge Function) to auto-fill expense fields.
+<br>
+<p align="center">
+  <img src="https://img.shields.io/badge/Expo-000020?style=for-the-badge&logo=expo&logoColor=white" />
+  <img src="https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tamagui-151515?style=for-the-badge&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/Zustand-443E38?style=for-the-badge&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white" />
+</p>
+<br>
 
 ## Project Tracking
 
@@ -16,18 +28,59 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
 **Playlist (all weeks):** [YouTube playlist](https://youtube.com/playlist?list=PLfh_d_SOW477Ie0rM6Yj5QWix_al3jvDc&si=DfWwp8XzHfQsel_b)
 
-| Week | Video |
-|------|-------|
-| 1 | [Week 1 Video](https://youtu.be/uZ3RfGsreec?si=huxHxwlchSmuWuN4) |
-| 2 | [Week 2 Video](https://youtu.be/ErOGMI0s7SE) |
-| 3 | [Week 3 Video](https://youtu.be/WzUGQyE3S0g) |
-| 4 | [Week 4 Video](https://youtu.be/bfmGb2MThas) |
-| 5 | [Week 5 Video](https://youtu.be/tjnbJSpax2M) |
-| 6 | [Week 6 Video](https://youtu.be/FsKxH_ItLFo) |
-| 7 | [Week 7 Video](https://youtu.be/hHDUEYARdsk) |
-| 8 | [Week 8 Video](https://youtu.be/fyO_hSsueec) |
-| 9 | [Week 9 Video](https://youtu.be/fsI8G6Z_4Z8) |
-| 10 | [Week 10 Video](https://youtu.be/Pwte_m7p3B4) |
+[Week 1](https://youtu.be/uZ3RfGsreec?si=huxHxwlchSmuWuN4) • [Week 2](https://youtu.be/ErOGMI0s7SE) • [Week 3](https://youtu.be/WzUGQyE3S0g) • [Week 4](https://youtu.be/bfmGb2MThas) • [Week 5](https://youtu.be/tjnbJSpax2M)  
+[Week 6](https://youtu.be/FsKxH_ItLFo) • [Week 7](https://youtu.be/hHDUEYARdsk) • [Week 8](https://youtu.be/fyO_hSsueec) • [Week 9](https://youtu.be/fsI8G6Z_4Z8) • [Week 10](https://youtu.be/Pwte_m7p3B4)
+
+
+## Key Features
+
+<table>
+  <tr>
+    <td width="50%" valign="middle">
+      <h3>🏘 Groups & Shared Expenses</h3>
+      <p>Create groups with your friends, roommates, or travel buddies. Track all shared expenses instantly from a single screen. Say goodbye to complicated math!</p>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.07.png" width="220" style="border-radius: 20px;">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.39.png" width="220" style="border-radius: 20px;">
+    </td>
+    <td width="50%" valign="middle">
+      <h3>📸 AI-Powered Receipt Scanning</h3>
+      <p>Snap a photo of your receipt or pick one from your gallery. Thanks to AI integration, the expense amount, date, and merchant name are filled in automatically.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="middle">
+      <h3>💸 Fair & Flexible Splitting</h3>
+      <p>Split expenses equally among group members or enter exact amounts manually. Our interface calculates the remaining balance in real-time, leaving zero room for error!</p>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.38.49.png" width="220" style="border-radius: 20px;">
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.01.png" width="220" style="border-radius: 20px;">
+    </td>
+    <td width="50%" valign="middle">
+      <h3>📊 Detailed Settlement Summary</h3>
+      <p>"Who owes whom, and how much?" Get the answer on a single screen. Our algorithm minimizes the debt network, ensuring you settle up with the fewest possible transactions.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="middle">
+      <h3>🌙 Dark Mode</h3>
+      <p>A flawless dark mode experience that is easy on the eyes and seamlessly synchronizes with your system theme.</p>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/roadmap-screenshots/apple/Simulator%20Screenshot%20-%20iPhone%2013%20Pro%20Max%2026.5%20-%202026-05-29%20at%2005.39.14.png" width="220" style="border-radius: 20px;">
+    </td>
+  </tr>
+</table>
 
 ## Requirements
 
@@ -74,31 +127,20 @@ Shared expense tracking for groups (friends, roommates, trips). **iOS-first** ap
 
    First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone). The same flow works on a **physical iPhone** (USB or network) with a dev client — not Expo Go.
 
-## Project layout
-
-- **Routes / screens:** [`src/app/`](src/app/) — Expo Router (file-based routing)
-- **UI components:** [`src/components/`](src/components/)
-- **Design reference (Figma export prototype):** [`design/figma_template/`](design/figma_template/) — Vite/React bundle; [`design/figma_screenshots/`](design/figma_screenshots/) for PNGs. Use for visuals when building RN screens (not run in production).
-- **Supabase client:** [`src/lib/supabase.ts`](src/lib/supabase.ts) — factory + env (`EXPO_PUBLIC_*`); data access through `src/services/` (see [`docs/AGENTS.md`](docs/AGENTS.md) for `src/stores/` and the rest of the target layout).
-- **Supabase SQL:** [`supabase/migrations/`](supabase/migrations/) — apply with `supabase db push` ([`supabase/README.md`](supabase/README.md))
-- **Docs:** [`docs/`](docs/)
-
-## Scripts
-
-| Command | Description |
-|--------|-------------|
-| `npm start` | Start Metro (use with dev build on simulator/device) |
-| `npm run ios` | Build and run iOS dev client |
-| `npm run check` | **Typecheck + lint** — run before commits / PRs |
-| `npm run typecheck` | `tsc --noEmit` (strict TS) |
-| `npm run lint` | ESLint via Expo |
-| `npm run lint:fix` | ESLint with auto-fix |
-| `npm run reset-project` | Template helper — moves starter to `app-example` (use with care) |
-| `npm run android` | Expo template — **not** a supported product target (iOS-only scope; see `docs/AGENTS.md`) |
-| `npm run web` | Expo web — optional preview only; not the production target |
-
 ## Learn more
 
 - [Expo documentation](https://docs.expo.dev/)
 - [Expo Router](https://docs.expo.dev/router/introduction/)
 - [Supabase + Expo](https://supabase.com/docs/guides/getting-started/tutorials/with-expo-react-native)
+
+## Contact
+
+**Developer:** Bora Kocabıyık  
+**Email:** borakocabiyik@hotmail.com  
+**Website:** [splitsnap.borak.dev](https://splitsnap.borak.dev)  
+
+If you have any questions, feedback, or need support, feel free to reach out via email or open an `Issue` in this repository.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

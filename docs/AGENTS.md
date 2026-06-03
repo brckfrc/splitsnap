@@ -100,3 +100,24 @@
 - Path aliases in `tsconfig.json` must stay in sync with Metro if you add them.
 - Receipt uploads: validate size/format before Storage.
 - Equal-split math: watch currency rounding.
+
+## Project Layout (from README)
+
+- **Routes / screens:** [`src/app/`](../src/app/) — Expo Router (file-based routing)
+- **UI components:** [`src/components/`](../src/components/)
+- **Design reference:** [`design/figma_template/`](../design/figma_template/)
+- **Supabase client:** [`src/lib/supabase.ts`](../src/lib/supabase.ts)
+- **Supabase SQL:** [`supabase/migrations/`](../supabase/migrations/)
+- **Docs:** [`docs/`](./)
+
+## Available Scripts
+
+| Command | Description |
+|--------|-------------|
+| `npm start` | Start Metro (use with dev build on simulator/device) |
+| `npm run ios` | Build and run iOS dev client |
+| `npm run check` | **Typecheck + lint** — run before commits / PRs |
+| `npm run typecheck` | `tsc --noEmit` (strict TS) |
+| `npm run lint` | ESLint via Expo |
+| `npm run lint:fix` | ESLint with auto-fix |
+| `npm run reset-project` | Template helper — moves starter to `app-example` |
