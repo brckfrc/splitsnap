@@ -3,6 +3,7 @@
 > Bu doküman, proje sürecini hafta hafta takip etmek için kullanılmaktadır.
 > Haftalık ilerleme, video bağlantıları ve ekran görselleri ilgili haftaların altında paylaşılmaktadır.
 > Proje planı, `docs/archive/SplitSnap Tanıtım Raporu.md` dönem başı teslim edilen proje tanıtım raporu içeriğiyle uyumlu şekilde korunmuştur.
+> 🎓 **[Final Teslim Raporu (PDF)](docs/school/SplitSnap_Final_Raporu.pdf)**
 
 ## Hafta 1 — Proje Kurulumu ve Temel Yapı
 

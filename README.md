@@ -24,6 +24,7 @@
 
 ## Project Tracking
 
+- **Final Report:** [📄 SplitSnap_Final_Raporu.pdf](docs/school/SplitSnap_Final_Raporu.pdf)
 - **Primary document:** [`ROADMAP.md`](ROADMAP.md) — weekly progress, notes, embedded screenshots, and video links.
 - **Screenshots:** PNGs are organized by week under [`docs/roadmap-screenshots/`](docs/roadmap-screenshots/) (useful for quick browsing).
 - **Weekly Progress Videos:** [YouTube Playlist (all weeks)](https://youtube.com/playlist?list=PLfh_d_SOW477Ie0rM6Yj5QWix_al3jvDc&si=DfWwp8XzHfQsel_b)
