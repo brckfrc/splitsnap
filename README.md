@@ -138,7 +138,7 @@
 ## Contact
 
 **Developer:** Bora Kocabıyık  
-**Email:** borakocabiyik@hotmail.com  
+**Email:** bora@borak.dev  
 **Website:** [splitsnap.borak.dev](https://splitsnap.borak.dev)  
 
 If you have any questions, feedback, or need support, feel free to reach out via email or open an `Issue` in this repository.
