@@ -1,6 +1,5 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Image } from 'expo-image';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -83,11 +82,6 @@ export default function RegisterScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.inner}>
-            <Image
-              source={require('../../../assets/icon/icon.png')}
-              style={styles.logo}
-              contentFit="contain"
-            />
             <Text style={[styles.h1, { color: t.foreground }]} accessibilityRole="header">
               Hesap Oluştur
             </Text>
@@ -167,11 +161,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     gap: Spacing.five,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    alignSelf: 'center',
   },
   h1: {
     fontSize: 30,

@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
     gap: Spacing.five,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 120,
+    height: 120,
     alignSelf: 'center',
   },
   h1: {
