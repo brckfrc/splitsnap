@@ -20,7 +20,7 @@
     "@tamagui/babel-plugin": "^2.0.0-rc.29",
     "@tamagui/config": "^2.0.0-rc.29",
     "@tamagui/font-inter": "^2.0.0-rc.29",
-    "@tamagui/portal": "2.3.3",
+    "@tamagui/portal": "2.4.0",
     "expo": "^56.0.6",
     "expo-constants": "~56.0.16",
     "expo-dev-client": "~56.0.16",
@@ -58,7 +58,7 @@
     "zustand": "^5.0.12"
   },
   "overrides": {
-    "@tamagui/portal": "2.3.3"
+    "@tamagui/portal": "2.4.0"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
