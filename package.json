@@ -20,7 +20,7 @@
     "@tamagui/babel-plugin": "^2.0.0-rc.29",
     "@tamagui/config": "^2.0.0-rc.29",
     "@tamagui/font-inter": "^2.0.0-rc.29",
-    "@tamagui/portal": "2.4.2",
+    "@tamagui/portal": "2.4.6",
     "expo": "^56.0.6",
     "expo-constants": "~56.0.16",
     "expo-dev-client": "~56.0.16",
@@ -46,19 +46,19 @@
     "react-native-gesture-handler": "~2.32.0",
     "react-native-mmkv": "^4.2.0",
     "react-native-nitro-modules": "^0.36.0",
-    "react-native-reanimated": "4.5.1",
+    "react-native-reanimated": "4.5.2",
     "react-native-safe-area-context": "~5.8.0",
-    "react-native-screens": "4.25.2",
+    "react-native-screens": "4.26.2",
     "react-native-svg": "^15.15.4",
     "react-native-toast-message": "^2.3.3",
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.10.2",
+    "react-native-worklets": "0.11.1",
     "tamagui": "^2.0.0-rc.29",
     "zustand": "^5.0.12"
   },
   "overrides": {
-    "@tamagui/portal": "2.4.2"
+    "@tamagui/portal": "2.4.6"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
