@@ -53,6 +53,17 @@ export default function GroupDetailScreen() {
 
   const { group, members, expenses, settlements } = useGroupAggregates(gid);
 
+  const getPayerDisplay = useCallback((expenseId: string) => {
+    const payers = splitData.getPayers(expenseId);
+    if (payers.length === 0) return '—';
+    if (payers.length === 1) {
+      return payers[0].user?.name ?? '—';
+    }
+    const sorted = [...payers].sort((a, b) => b.amount - a.amount);
+    const mainPayerName = sorted[0].user?.name ?? '—';
+    return `${mainPayerName} + ${payers.length - 1} kişi`;
+  }, []);
+
   const scrollRef = useRef<ScrollView>(null);
   const [isMembersExpanded, setIsMembersExpanded] = useState(false);
 
@@ -81,7 +92,15 @@ export default function GroupDetailScreen() {
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const balance =
-    user ? userNetBalance(user.id, expenses, settlements, (eid) => splitData.getShares(eid)) : 0;
+    user
+      ? userNetBalance(
+          user.id,
+          expenses,
+          settlements,
+          (eid) => splitData.getShares(eid),
+          (eid) => splitData.getPayers(eid),
+        )
+      : 0;
 
   const isOwner = Boolean(user && user.id === group.ownerId);
   const inviteCode = group.inviteCode;
@@ -303,7 +322,7 @@ export default function GroupDetailScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.expTitle, { color: t.foreground }]}>{e.title}</Text>
                       <Text style={[styles.expMeta, { color: t.mutedForeground }]}>
-                        {formatShortDate(e.date)} · {e.paidByUser?.name ?? '—'}
+                        {formatShortDate(e.date)} · {getPayerDisplay(e.id)}
                       </Text>
                     </View>
                     <Text style={[styles.expAmount, { color: t.primary }]}>{formatCurrencyTry(e.amount)}</Text>

@@ -1,4 +1,4 @@
-import type { Expense, ExpenseShare, Group, GroupMember, User } from '@/types';
+import type { Expense, ExpenseShare, ExpensePayer, Group, GroupMember, User } from '@/types';
 
 /** Empty split state for a signed-in user (groups/members/expenses from Supabase). */
 export function buildEmptySplitStateForUser(profile: User) {
@@ -8,5 +8,6 @@ export function buildEmptySplitStateForUser(profile: User) {
     groupMembers: [] as GroupMember[],
     expenses: [] as Expense[],
     expenseShares: [] as ExpenseShare[],
+    expensePayers: [] as ExpensePayer[],
   };
 }

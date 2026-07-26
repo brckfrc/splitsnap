@@ -1,10 +1,11 @@
-import type { Expense, ExpenseShare, GroupMember, Settlement, SettlementSuggestion } from '@/types';
+import type { Expense, ExpenseShare, ExpensePayer, GroupMember, Settlement, SettlementSuggestion } from '@/types';
 
 export function calculateBalances(
   members: GroupMember[],
   expenses: Expense[],
   settlements: Settlement[],
   getShares: (expenseId: string) => ExpenseShare[],
+  getPayers: (expenseId: string) => ExpensePayer[],
 ): Record<string, number> {
   const balances: Record<string, number> = {};
   members.forEach((m) => {
@@ -12,9 +13,13 @@ export function calculateBalances(
   });
 
   expenses.forEach((expense) => {
-    if (balances[expense.paidBy] !== undefined) {
-      balances[expense.paidBy] += expense.amount;
-    }
+    const payers = getPayers(expense.id);
+    payers.forEach((payer) => {
+      if (balances[payer.userId] !== undefined) {
+        balances[payer.userId] += payer.amount;
+      }
+    });
+
     const shares = getShares(expense.id);
     shares.forEach((share) => {
       if (balances[share.userId] !== undefined) {
@@ -82,14 +87,18 @@ export function userNetBalance(
   expenses: Expense[],
   settlements: Settlement[],
   getShares: (expenseId: string) => ExpenseShare[],
+  getPayers: (expenseId: string) => ExpensePayer[],
 ): number {
   let paid = 0;
   let owes = 0;
   expenses.forEach((expense) => {
-    if (expense.paidBy === userId) paid += expense.amount;
+    const payers = getPayers(expense.id);
+    const minePaid = payers.find((p) => p.userId === userId);
+    if (minePaid) paid += minePaid.amount;
+
     const shares = getShares(expense.id);
-    const mine = shares.find((s) => s.userId === userId);
-    if (mine) owes += mine.amount;
+    const mineOwes = shares.find((s) => s.userId === userId);
+    if (mineOwes) owes += mineOwes.amount;
   });
   
   settlements.forEach((settlement) => {

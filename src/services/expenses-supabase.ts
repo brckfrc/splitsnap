@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { mapProfileToUser, unwrapProfile, type ProfileRow } from '@/services/profile-mapper';
-import type { Expense, ExpenseShare } from '@/types';
+import type { Expense, ExpenseShare, ExpensePayer } from '@/types';
 
 type ExpenseRow = {
   id: string;
@@ -40,6 +40,23 @@ type ShareRow = {
   amount: string | number;
   profiles?: ProfileRow | ProfileRow[] | null;
 };
+
+type PayerRow = {
+  expense_id: string;
+  user_id: string;
+  amount: string | number;
+  profiles?: ProfileRow | ProfileRow[] | null;
+};
+
+function mapPayerRow(row: PayerRow): ExpensePayer {
+  const prof = unwrapProfile(row.profiles);
+  return {
+    expenseId: row.expense_id,
+    userId: row.user_id,
+    user: mapProfileToUser(row.user_id, prof),
+    amount: parseAmount(row.amount),
+  };
+}
 
 function parseAmount(v: string | number): number {
   if (typeof v === 'number') return v;
@@ -138,9 +155,22 @@ async function resolveShares(expenseIds: string[]): Promise<ExpenseShare[]> {
   return ((shRows ?? []) as ShareRow[]).map(mapShareRow);
 }
 
+async function resolvePayers(expenseIds: string[]): Promise<ExpensePayer[]> {
+  if (expenseIds.length === 0) return [];
+
+  const { data: payRows, error: pErr } = await supabase
+    .from('expense_payers')
+    .select('expense_id, user_id, amount, profiles:user_id(display_name, email, avatar_url)')
+    .in('expense_id', expenseIds);
+
+  if (pErr) throw new Error(pErr.message);
+  return ((payRows ?? []) as PayerRow[]).map(mapPayerRow);
+}
+
 export async function fetchExpensesForGroupPayload(groupId: string): Promise<{
   expenses: Expense[];
   expenseShares: ExpenseShare[];
+  expensePayers: ExpensePayer[];
 }> {
   const { data: expRows, error: eErr } = await supabase
     .from('expenses')
@@ -152,19 +182,22 @@ export async function fetchExpensesForGroupPayload(groupId: string): Promise<{
   if (eErr) throw new Error(eErr.message);
 
   const rawExpenses = (expRows ?? []) as ExpenseRow[];
-  const [payerById, expenseShares] = await Promise.all([
-    resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by))]),
-    resolveShares(rawExpenses.map((r) => r.id)),
+  const expenseIds = rawExpenses.map((r) => r.id);
+  const [payerById, expenseShares, expensePayers] = await Promise.all([
+    resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by).filter(Boolean))]),
+    resolveShares(expenseIds),
+    resolvePayers(expenseIds),
   ]);
   const expenses = rawExpenses.map((row) => mapExpenseRow(row, payerById));
-  return { expenses, expenseShares };
+  return { expenses, expenseShares, expensePayers };
 }
 
 export async function fetchExpensesForGroupsPayload(groupIds: string[]): Promise<{
   expenses: Expense[];
   expenseShares: ExpenseShare[];
+  expensePayers: ExpensePayer[];
 }> {
-  if (groupIds.length === 0) return { expenses: [], expenseShares: [] };
+  if (groupIds.length === 0) return { expenses: [], expenseShares: [], expensePayers: [] };
 
   const { data: expRows, error: eErr } = await supabase
     .from('expenses')
@@ -176,12 +209,14 @@ export async function fetchExpensesForGroupsPayload(groupIds: string[]): Promise
   if (eErr) throw new Error(eErr.message);
 
   const rawExpenses = (expRows ?? []) as ExpenseRow[];
-  const [payerById, expenseShares] = await Promise.all([
-    resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by))]),
-    resolveShares(rawExpenses.map((r) => r.id)),
+  const expenseIds = rawExpenses.map((r) => r.id);
+  const [payerById, expenseShares, expensePayers] = await Promise.all([
+    resolvePayerProfiles([...new Set(rawExpenses.map((r) => r.paid_by).filter(Boolean))]),
+    resolveShares(expenseIds),
+    resolvePayers(expenseIds),
   ]);
   const expenses = rawExpenses.map((row) => mapExpenseRow(row, payerById));
-  return { expenses, expenseShares };
+  return { expenses, expenseShares, expensePayers };
 }
 
 export type OcrSuggestions = {
@@ -196,11 +231,12 @@ export type CreateExpenseInput = {
   description?: string;
   amount: number;
   expenseDate: string;
-  paidBy: string;
+  paidBy?: string;
   createdBy: string;
   splitType: 'equal' | 'manual';
   icon?: string | null;
   shares: { userId: string; amount: number }[];
+  payers: { userId: string; amount: number }[];
   receiptStoragePath?: string | null;
   ocrSuggestions?: OcrSuggestions | null;
 };
@@ -210,12 +246,17 @@ export async function createExpenseRemote(input: CreateExpenseInput): Promise<vo
   if (!title) throw new Error('empty_title');
   if (input.amount <= 0) throw new Error('invalid_amount');
   if (input.shares.length === 0) throw new Error('no_shares');
+  if (input.payers.length === 0) throw new Error('no_payers');
 
   const dateStr = input.expenseDate.slice(0, 10);
 
   const sharesJson = input.shares
     .filter((s) => s.amount > 0)
     .map((s) => ({ user_id: s.userId, amount: s.amount }));
+
+  const payersJson = input.payers
+    .filter((p) => p.amount > 0)
+    .map((p) => ({ user_id: p.userId, amount: p.amount }));
 
   const ocrJson = input.ocrSuggestions
     ? {
@@ -231,12 +272,13 @@ export async function createExpenseRemote(input: CreateExpenseInput): Promise<vo
     p_description: input.description?.trim() || null,
     p_amount: input.amount,
     p_expense_date: dateStr,
-    p_paid_by: input.paidBy,
+    p_paid_by: input.paidBy ?? null,
     p_split_type: input.splitType,
     p_icon: input.icon ?? null,
     p_shares: sharesJson,
     p_receipt_storage_path: input.receiptStoragePath ?? null,
     p_ocr_suggestions: ocrJson,
+    p_payers: payersJson,
   });
 
   if (error) throw new Error(error.message);
@@ -252,6 +294,7 @@ export type UpdateExpenseInput = {
   splitType: 'equal' | 'manual';
   icon?: string | null;
   shares: { userId: string; amount: number }[];
+  payers: { userId: string; amount: number }[];
   /** Pass a new path to update; omit/null to keep the existing receipt. */
   receiptStoragePath?: string | null;
   ocrSuggestions?: OcrSuggestions | null;
@@ -266,6 +309,10 @@ export async function updateExpenseRemote(input: UpdateExpenseInput): Promise<vo
   const sharesJson = input.shares
     .filter((s) => s.amount > 0)
     .map((s) => ({ user_id: s.userId, amount: s.amount }));
+
+  const payersJson = input.payers
+    .filter((p) => p.amount > 0)
+    .map((p) => ({ user_id: p.userId, amount: p.amount }));
 
   const ocrJson = input.ocrSuggestions
     ? {
@@ -287,6 +334,7 @@ export async function updateExpenseRemote(input: UpdateExpenseInput): Promise<vo
     p_shares: sharesJson,
     p_receipt_storage_path: input.receiptStoragePath ?? null,
     p_ocr_suggestions: ocrJson,
+    p_payers: payersJson,
   });
 
   if (error) throw new Error(error.message);

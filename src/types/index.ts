@@ -34,7 +34,7 @@ export interface Expense {
   description?: string;
   amount: number;
   date: string;
-  paidBy: string;
+  paidBy?: string;
   paidByUser?: User;
   createdBy?: string;
   splitType: 'equal' | 'manual';
@@ -50,6 +50,13 @@ export interface Expense {
 }
 
 export interface ExpenseShare {
+  expenseId: string;
+  userId: string;
+  user?: User;
+  amount: number;
+}
+
+export interface ExpensePayer {
   expenseId: string;
   userId: string;
   user?: User;

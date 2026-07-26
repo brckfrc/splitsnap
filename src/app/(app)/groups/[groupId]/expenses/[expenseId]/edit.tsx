@@ -1,4 +1,4 @@
-import { ArrowLeft, Trash2 } from '@/lib/icons';
+import { ArrowLeft, ChevronDown, Trash2 } from '@/lib/icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
@@ -11,6 +11,7 @@ import { DatePickerModal } from '@/components/ui/date-picker-modal';
 import { Input, KeyboardDoneToolbar, KEYBOARD_ACCESSORY_ID } from '@/components/ui/input';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth-context';
 import { useExpenseShares } from '@/hooks/use-expense-shares';
 import { useTheme } from '@/hooks/use-theme';
 import { getReceiptSignedUrl } from '@/services/receipts';
@@ -25,12 +26,39 @@ export default function EditExpenseScreen() {
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
   const eid = typeof expenseId === 'string' ? expenseId : expenseId?.[0] ?? '';
   const t = useTheme();
+  const { user } = useAuth();
 
   const expense = useSplitDataStore((s) => s.expenses.find((e) => e.id === eid));
   const shares = useExpenseShares(eid);
 
   const { members } = useGroupAggregates(gid);
   const activeMembers = members.filter((m) => !m.leftAt);
+
+  const allPayers = useSplitDataStore((s) => s.expensePayers);
+  const payers = useMemo(
+    () => allPayers.filter((p) => p.expenseId === eid),
+    [allPayers, eid],
+  );
+
+  const [paidBy, setPaidBy] = useState(() => {
+    if (payers.length === 1) return payers[0].userId;
+    if (payers.length > 1) {
+      const sorted = [...payers].sort((a, b) => b.amount - a.amount);
+      return sorted[0].userId;
+    }
+    return user?.id ?? activeMembers[0]?.userId ?? '';
+  });
+  const [payerType, setPayerType] = useState<'single' | 'multiple'>(() => {
+    return payers.length > 1 ? 'multiple' : 'single';
+  });
+  const [payerAmounts, setPayerAmounts] = useState<Record<string, string>>(() => {
+    const obj: Record<string, string> = {};
+    payers.forEach((p) => {
+      obj[p.userId] = String(p.amount);
+    });
+    return obj;
+  });
+  const [showPayerPicker, setShowPayerPicker] = useState(false);
 
   const [title, setTitle] = useState(expense?.title ?? '');
   const [description, setDescription] = useState(expense?.description ?? '');
@@ -135,8 +163,30 @@ export default function EditExpenseScreen() {
       setAmountError('Geçerli bir tutar girin.');
       hasError = true;
     }
-    
+    if (payerType === 'single' && !paidBy) {
+      Alert.alert('Eksik bilgi', 'Ödeyen kişiyi seçin.');
+      hasError = true;
+    }
     if (hasError) return;
+
+    let finalPayerAmounts: Record<string, number> = {};
+    if (payerType === 'single') {
+      finalPayerAmounts = { [paidBy]: num };
+    } else {
+      let sum = 0;
+      for (const m of activeMembers) {
+        const v = parseFloat((payerAmounts[m.userId] ?? '0').replace(',', '.'));
+        if (!Number.isNaN(v) && v > 0) {
+          finalPayerAmounts[m.userId] = v;
+          sum += v;
+        }
+      }
+      if (Math.abs(sum - num) > 0.05) {
+        Alert.alert('Ödeme tutarı uyuşmuyor', 'Ödeyenlerin toplam miktarı, harcama tutarına eşit olmalı.');
+        return;
+      }
+    }
+
     const participantIds = Array.from(selected);
     if (participantIds.length === 0) {
       Alert.alert('Katılımcı', 'En az bir katılımcı seçin.');
@@ -171,6 +221,7 @@ export default function EditExpenseScreen() {
         splitType,
         participantIds,
         manualAmounts,
+        payerAmounts: finalPayerAmounts,
       });
       router.back();
     } catch (e) {
@@ -306,6 +357,119 @@ export default function EditExpenseScreen() {
               />
             </View>
           </View>
+        </Card>
+
+        {/* ── Kim ödedi ─────────────────────────────────────────────────── */}
+        <Card style={{ gap: Spacing.three }}>
+          <Text style={[styles.cardTitle, { color: t.foreground }]}>Kim Ödedi?</Text>
+          <View style={styles.row2}>
+            {(['single', 'multiple'] as const).map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => setPayerType(type)}
+                style={[
+                  styles.splitBox,
+                  {
+                    borderColor: payerType === type ? t.primary : 'transparent',
+                    backgroundColor: payerType === type ? `${t.primary}12` : t.inputBackground,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: payerType === type }}
+              >
+                <Text style={{ color: t.foreground, fontWeight: '600' }}>
+                  {type === 'single' ? 'Tek Kişi' : 'Birden Fazla'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {payerType === 'single' ? (
+            (() => {
+              const payer = activeMembers.find((m) => m.userId === paidBy) ?? activeMembers[0];
+              if (!payer) return null;
+              return (
+                <>
+                  <Pressable
+                    onPress={() => setShowPayerPicker((p) => !p)}
+                    style={[styles.choice, { borderColor: t.primary, backgroundColor: `${t.primary}12` }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ödeyen kişiyi değiştir"
+                  >
+                    <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                      <Text>{payer.user.avatar ?? '👤'}</Text>
+                    </View>
+                    <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{payer.user.name}</Text>
+                    <ChevronDown
+                      size={18}
+                      color={t.mutedForeground}
+                      style={{ transform: [{ rotate: showPayerPicker ? '180deg' : '0deg' }] }}
+                    />
+                  </Pressable>
+                  {showPayerPicker ? (
+                    <View style={{ gap: Spacing.two, marginTop: Spacing.two }}>
+                      {activeMembers
+                        .filter((m) => m.userId !== paidBy)
+                        .map((m) => (
+                          <Pressable
+                            key={m.userId}
+                            onPress={() => { setPaidBy(m.userId); setShowPayerPicker(false); }}
+                            style={[styles.choice, { borderColor: 'transparent', backgroundColor: t.inputBackground }]}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: false }}
+                          >
+                            <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                              <Text>{m.user.avatar ?? '👤'}</Text>
+                            </View>
+                            <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                          </Pressable>
+                        ))}
+                    </View>
+                  ) : null}
+                </>
+              );
+            })()
+          ) : (
+            <View style={{ gap: Spacing.two }}>
+              {activeMembers.map((m) => {
+                const raw = payerAmounts[m.userId] ?? '';
+                const totalPaidOthers = Object.entries(payerAmounts).reduce((sum, [id, val]) => {
+                  if (id === m.userId) return sum;
+                  const pv = parseFloat(val.replace(',', '.'));
+                  return sum + (Number.isNaN(pv) ? 0 : pv);
+                }, 0);
+                const remaining = validTotal - totalPaidOthers;
+                const hasValue = raw.length > 0;
+                const showSuffix = validTotal > 0 && !hasValue;
+                return (
+                  <View key={m.userId} style={{ gap: Spacing.one }}>
+                    <View style={[styles.choice, { backgroundColor: t.inputBackground, borderColor: 'transparent' }]}>
+                      <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                        <Text>{m.user.avatar ?? '👤'}</Text>
+                      </View>
+                      <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                    </View>
+                    <Input
+                      label={`Ödenen Tutar — ${m.user.name}`}
+                      value={raw}
+                      onChangeText={(v) => {
+                        const sanitized = v.replace(/[^0-9.,]/g, '');
+                        setPayerAmounts((prev) => ({ ...prev, [m.userId]: sanitized }));
+                      }}
+                      keyboardType="decimal-pad"
+                      placeholder="0"
+                      suffix={showSuffix && remaining > 0 ? `Kalan: ₺${remaining.toFixed(2)}` : undefined}
+                      onSuffixPress={
+                        showSuffix && remaining > 0
+                          ? () => setPayerAmounts((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))
+                          : undefined
+                      }
+                    />
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </Card>
 
         <Card style={{ gap: Spacing.four }}>

@@ -47,8 +47,10 @@ erDiagram
   PROFILES ||--o{ GROUP_MEMBERS : "user_id"
   GROUPS ||--o{ EXPENSES : "group_id"
   EXPENSES ||--o{ EXPENSE_SHARES : "expense_id"
-  PROFILES ||--o{ EXPENSES : "paid_by"
+  EXPENSES ||--o{ EXPENSE_PAYERS : "expense_id"
+  PROFILES ||--o{ EXPENSES : "paid_by (legacy)"
   PROFILES ||--o{ EXPENSE_SHARES : "user_id"
+  PROFILES ||--o{ EXPENSE_PAYERS : "user_id"
   GROUPS ||--o{ SETTLEMENTS : "group_id"
   PROFILES ||--o{ SETTLEMENTS : "from_user_id"
   PROFILES ||--o{ SETTLEMENTS : "to_user_id"
@@ -107,7 +109,7 @@ erDiagram
     text description
     numeric amount
     date expense_date
-    uuid paid_by FK
+    uuid paid_by FK "nullable (legacy)"
     uuid created_by FK
     text split_type
     text receipt_storage_path
@@ -118,6 +120,12 @@ erDiagram
   }
 
   EXPENSE_SHARES {
+    uuid expense_id PK_FK
+    uuid user_id PK_FK
+    numeric amount
+  }
+
+  EXPENSE_PAYERS {
     uuid expense_id PK_FK
     uuid user_id PK_FK
     numeric amount
@@ -226,7 +234,7 @@ Birincil anahtar: `(group_id, user_id)`.
 | `description` | `text` | nullable | |
 | `amount` | `numeric(12,2)` | not null, check `> 0` | TL cinsinden |
 | `expense_date` | `date` | not null | Uygulama `Expense.date` |
-| `paid_by` | `uuid` | not null, FK → `profiles(id)` | Ödemeyi yapan kişi |
+| `paid_by` | `uuid` | nullable | Ödemeyi yapan kişi (Geriye dönük uyumluluk/Legacy; yeni yapıda `expense_payers` kullanılır) |
 | `created_by` | `uuid` | not null, FK → `profiles(id)` | Harcamayı sisteme giren kişi (farklı olabilir) |
 | `split_type` | `text` | not null, check in (`'equal'`, `'manual'`) | |
 | `icon` | `text` | nullable | Kategori emojisi (örn: 🍔, 🚕) |
@@ -243,6 +251,18 @@ Birincil anahtar: `(group_id, user_id)`.
 | `expense_id` | `uuid` | FK → `expenses(id)` on delete cascade | |
 | `user_id` | `uuid` | FK → `profiles(id)` | |
 | `amount` | `numeric(12,2)` | not null | Kişiye düşen tutar |
+
+Birincil anahtar: `(expense_id, user_id)`.
+
+### 3.6.5 `public.expense_payers`
+
+Harcamayı ödeyen kişi(ler) ve ödedikleri miktarlar.
+
+| Sütun | Tip | Kısıtlama | Not |
+|-------|-----|-----------|-----|
+| `expense_id` | `uuid` | FK → `expenses(id)` on delete cascade | |
+| `user_id` | `uuid` | FK → `profiles(id)` | |
+| `amount` | `numeric(12,2)` | not null | Ödenen tutar |
 
 Birincil anahtar: `(expense_id, user_id)`.
 

@@ -22,11 +22,20 @@ This document tracks the active backlog, future enhancements, and recent updates
 
 ### 🔴 High Priority
 
-- [ ] **Split Payer Support:**
+- [x] **Split Payer Support:**
   - **Description:** Allow multiple users to pay for a single expense (currently limited to a single payer `paidBy`).
   - **Impact:** Requires DB schema modifications and updates to `calculateBalances` algorithm.
 - [ ] **Input Validation:**
   - **Description:** Implement strict client-side validation for email formats, password strength, and maximum expense amounts.
+
+### 🎨 UI Modernization & Liquid Glass Evolution
+
+- [ ] **Card Stack UI for Payer/Split Selection:**
+  - **Description:** Replace long vertical selection forms in `add-expense.tsx` and `edit.tsx` with a gesture-based card stack inside a BottomSheet, allowing users to swipe cards up to participate and enter custom split amounts.
+- [ ] **Liquid Glass Progressive Enhancement (iOS 26+ Compatibility):**
+  - **Description:** Implement dynamic visual refraction and blur transitions using `expo-glass-effect` for native compatibility with the iOS 26 Liquid Glass design language, falling back to static premium glassmorphism on older iOS versions.
+- [ ] **Floating Navigation Tab Bar:**
+  - **Description:** Redesign the bottom tab navigation to float above the screen content with a blurred glass background and rounded corners, matching the floating tab bar style of modern iOS applications, instead of sticking to the bottom screen bezel.
 
 ### 🟡 Medium Priority
 

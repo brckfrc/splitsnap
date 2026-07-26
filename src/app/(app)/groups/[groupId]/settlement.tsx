@@ -45,7 +45,13 @@ export default function SettlementScreen() {
     );
   }
 
-  const balances = calculateBalances(members, expenses, pastSettlements, (eid) => splitData.getShares(eid));
+  const balances = calculateBalances(
+    members,
+    expenses,
+    pastSettlements,
+    (eid) => splitData.getShares(eid),
+    (eid) => splitData.getPayers(eid),
+  );
   const settlements = calculateSettlements(members, balances);
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const myBalance = user ? balances[user.id] ?? 0 : 0;
@@ -53,7 +59,7 @@ export default function SettlementScreen() {
   const myLedger = user
     ? expenses
         .map((e) => {
-          const paid = e.paidBy === user.id ? e.amount : 0;
+          const paid = splitData.getPayers(e.id).find((p) => p.userId === user.id)?.amount ?? 0;
           const myShare = splitData.getShares(e.id).find((s) => s.userId === user.id)?.amount ?? 0;
           if (paid === 0 && myShare === 0) return null;
           return { id: e.id, title: e.title, icon: e.icon as string | null, date: e.date, amount: e.amount, paid, myShare, net: paid - myShare };

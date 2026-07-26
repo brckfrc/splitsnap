@@ -42,6 +42,8 @@ export default function AddExpenseScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const date = dateObj.toISOString().slice(0, 10);
   const [paidBy, setPaidBy] = useState('');
+  const [payerType, setPayerType] = useState<'single' | 'multiple'>('single');
+  const [payerAmounts, setPayerAmounts] = useState<Record<string, string>>({});
   const [splitType, setSplitType] = useState<'equal' | 'manual'>('equal');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [manual, setManual] = useState<Record<string, string>>({});
@@ -190,8 +192,29 @@ export default function AddExpenseScreen() {
       setAmountError(`Tutar en fazla ${MAX_EXPENSE_AMOUNT.toLocaleString('tr-TR')} ₺ olabilir.`);
       hasError = true;
     }
-    if (!paidBy) { Alert.alert('Eksik bilgi', 'Ödeyen kişiyi seçin.'); hasError = true; }
+    if (payerType === 'single' && !paidBy) {
+      Alert.alert('Eksik bilgi', 'Ödeyen kişiyi seçin.');
+      hasError = true;
+    }
     if (hasError) return;
+
+    let finalPayerAmounts: Record<string, number> = {};
+    if (payerType === 'single') {
+      finalPayerAmounts = { [paidBy]: num };
+    } else {
+      let sum = 0;
+      for (const m of activeMembers) {
+        const v = parseFloat((payerAmounts[m.userId] ?? '0').replace(',', '.'));
+        if (!Number.isNaN(v) && v > 0) {
+          finalPayerAmounts[m.userId] = v;
+          sum += v;
+        }
+      }
+      if (Math.abs(sum - num) > 0.05) {
+        Alert.alert('Ödeme tutarı uyuşmuyor', 'Ödeyenlerin toplam miktarı, harcama tutarına eşit olmalı.');
+        return;
+      }
+    }
 
     const participantIds = Array.from(selected);
     if (participantIds.length === 0) { Alert.alert('Katılımcı', 'En az bir katılımcı seçin.'); return; }
@@ -228,12 +251,13 @@ export default function AddExpenseScreen() {
         description,
         amount: num,
         date,
-        paidBy,
+        paidBy: payerType === 'single' ? paidBy : undefined,
         createdBy: user.id,
         splitType,
         icon: displayIcon,
         participantIds,
         manualAmounts,
+        payerAmounts: finalPayerAmounts,
         receiptStoragePath,
         ocrSuggestions: ocrResult ?? undefined,
       });
@@ -432,52 +456,116 @@ export default function AddExpenseScreen() {
         </Card>
 
         {/* ── Kim ödedi ─────────────────────────────────────────────────── */}
-        <Card>
+        <Card style={{ gap: Spacing.three }}>
           <Text style={[styles.cardTitle, { color: t.foreground }]}>Kim Ödedi?</Text>
-          {(() => {
-            const payer = activeMembers.find((m) => m.userId === paidBy) ?? activeMembers[0];
-            if (!payer) return null;
-            return (
-              <>
-                <Pressable
-                  onPress={() => setShowPayerPicker((p) => !p)}
-                  style={[styles.choice, { borderColor: t.primary, backgroundColor: `${t.primary}12` }]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Ödeyen kişiyi değiştir"
-                >
-                  <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                    <Text>{payer.user.avatar ?? '👤'}</Text>
+          <View style={styles.row2}>
+            {(['single', 'multiple'] as const).map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => setPayerType(type)}
+                style={[
+                  styles.splitBox,
+                  {
+                    borderColor: payerType === type ? t.primary : 'transparent',
+                    backgroundColor: payerType === type ? `${t.primary}12` : t.inputBackground,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: payerType === type }}
+              >
+                <Text style={{ color: t.foreground, fontWeight: '600' }}>
+                  {type === 'single' ? 'Tek Kişi' : 'Birden Fazla'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {payerType === 'single' ? (
+            (() => {
+              const payer = activeMembers.find((m) => m.userId === paidBy) ?? activeMembers[0];
+              if (!payer) return null;
+              return (
+                <>
+                  <Pressable
+                    onPress={() => setShowPayerPicker((p) => !p)}
+                    style={[styles.choice, { borderColor: t.primary, backgroundColor: `${t.primary}12` }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ödeyen kişiyi değiştir"
+                  >
+                    <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                      <Text>{payer.user.avatar ?? '👤'}</Text>
+                    </View>
+                    <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{payer.user.name}</Text>
+                    <ChevronDown
+                      size={18}
+                      color={t.mutedForeground}
+                      style={{ transform: [{ rotate: showPayerPicker ? '180deg' : '0deg' }] }}
+                    />
+                  </Pressable>
+                  {showPayerPicker ? (
+                    <View style={{ gap: Spacing.two, marginTop: Spacing.two }}>
+                      {activeMembers
+                        .filter((m) => m.userId !== paidBy)
+                        .map((m) => (
+                          <Pressable
+                            key={m.userId}
+                            onPress={() => { setPaidBy(m.userId); setShowPayerPicker(false); }}
+                            style={[styles.choice, { borderColor: 'transparent', backgroundColor: t.inputBackground }]}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: false }}
+                          >
+                            <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                              <Text>{m.user.avatar ?? '👤'}</Text>
+                            </View>
+                            <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                          </Pressable>
+                        ))}
+                    </View>
+                  ) : null}
+                </>
+              );
+            })()
+          ) : (
+            <View style={{ gap: Spacing.two }}>
+              {activeMembers.map((m) => {
+                const raw = payerAmounts[m.userId] ?? '';
+                const totalPaidOthers = Object.entries(payerAmounts).reduce((sum, [id, val]) => {
+                  if (id === m.userId) return sum;
+                  const pv = parseFloat(val.replace(',', '.'));
+                  return sum + (Number.isNaN(pv) ? 0 : pv);
+                }, 0);
+                const remaining = validTotal - totalPaidOthers;
+                const hasValue = raw.length > 0;
+                const showSuffix = validTotal > 0 && !hasValue;
+                return (
+                  <View key={m.userId} style={{ gap: Spacing.one }}>
+                    <View style={[styles.choice, { backgroundColor: t.inputBackground, borderColor: 'transparent' }]}>
+                      <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                        <Text>{m.user.avatar ?? '👤'}</Text>
+                      </View>
+                      <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                    </View>
+                    <Input
+                      label={`Ödenen Tutar — ${m.user.name}`}
+                      value={raw}
+                      onChangeText={(v) => {
+                        const sanitized = v.replace(/[^0-9.,]/g, '');
+                        setPayerAmounts((prev) => ({ ...prev, [m.userId]: sanitized }));
+                      }}
+                      keyboardType="decimal-pad"
+                      placeholder="0"
+                      suffix={showSuffix && remaining > 0 ? `Kalan: ₺${remaining.toFixed(2)}` : undefined}
+                      onSuffixPress={
+                        showSuffix && remaining > 0
+                          ? () => setPayerAmounts((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))
+                          : undefined
+                      }
+                    />
                   </View>
-                  <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{payer.user.name}</Text>
-                  <ChevronDown
-                    size={18}
-                    color={t.mutedForeground}
-                    style={{ transform: [{ rotate: showPayerPicker ? '180deg' : '0deg' }] }}
-                  />
-                </Pressable>
-                {showPayerPicker ? (
-                  <View style={{ gap: Spacing.two, marginTop: Spacing.two }}>
-                    {activeMembers
-                      .filter((m) => m.userId !== paidBy)
-                      .map((m) => (
-                        <Pressable
-                          key={m.userId}
-                          onPress={() => { setPaidBy(m.userId); setShowPayerPicker(false); }}
-                          style={[styles.choice, { borderColor: 'transparent', backgroundColor: t.inputBackground }]}
-                          accessibilityRole="radio"
-                          accessibilityState={{ selected: false }}
-                        >
-                          <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                            <Text>{m.user.avatar ?? '👤'}</Text>
-                          </View>
-                          <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
-                        </Pressable>
-                      ))}
-                  </View>
-                ) : null}
-              </>
-            );
-          })()}
+                );
+              })}
+            </View>
+          )}
         </Card>
 
         {/* ── Bölüşüm ──────────────────────────────────────────────────── */}

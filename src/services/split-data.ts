@@ -28,7 +28,15 @@ export function clearSplitSessionData() {
 export async function loadExpensesForGroup(groupId: string): Promise<void> {
   const payload = await fetchExpensesForGroupPayload(groupId);
   const settlements = await fetchSettlementsForGroup(groupId);
-  useSplitDataStore.getState().replaceExpensesAndSharesForGroup(groupId, payload.expenses, payload.expenseShares, settlements);
+  useSplitDataStore
+    .getState()
+    .replaceExpensesAndSharesForGroup(
+      groupId,
+      payload.expenses,
+      payload.expenseShares,
+      payload.expensePayers,
+      settlements,
+    );
 }
 
 export async function loadExpensesForAllGroups(groupIds: string[]): Promise<void> {
@@ -36,7 +44,14 @@ export async function loadExpensesForAllGroups(groupIds: string[]): Promise<void
   const payload = await fetchExpensesForGroupsPayload(groupIds);
   const settlementsLists = await Promise.all(groupIds.map((id) => fetchSettlementsForGroup(id)));
   const settlements = settlementsLists.flat();
-  useSplitDataStore.getState().replaceAllExpensesAndShares(payload.expenses, payload.expenseShares, settlements);
+  useSplitDataStore
+    .getState()
+    .replaceAllExpensesAndShares(
+      payload.expenses,
+      payload.expenseShares,
+      payload.expensePayers,
+      settlements,
+    );
 }
 
 export const splitData = {
@@ -45,6 +60,7 @@ export const splitData = {
   getMembers: (groupId: string) => useSplitDataStore.getState().getMembers(groupId),
   getExpenses: (groupId: string) => useSplitDataStore.getState().getExpenses(groupId),
   getShares: (expenseId: string) => useSplitDataStore.getState().getShares(expenseId),
+  getPayers: (expenseId: string) => useSplitDataStore.getState().getPayers(expenseId),
   getSettlements: (groupId: string) => useSplitDataStore.getState().getSettlements(groupId),
 
   loadExpensesForGroup,
@@ -55,12 +71,13 @@ export const splitData = {
     description?: string;
     amount: number;
     date: string;
-    paidBy: string;
+    paidBy?: string;
     createdBy: string;
     splitType: 'equal' | 'manual';
     icon?: string | null;
     participantIds: string[];
     manualAmounts?: Record<string, number>;
+    payerAmounts?: Record<string, number>;
     receiptStoragePath?: string | null;
     ocrSuggestions?: { merchantName?: string; date?: string; total?: number } | null;
   }) => {
@@ -76,6 +93,7 @@ export const splitData = {
       icon,
       participantIds,
       manualAmounts,
+      payerAmounts,
       receiptStoragePath,
       ocrSuggestions,
     } = input;
@@ -98,6 +116,18 @@ export const splitData = {
         .filter((s) => s.amount > 0);
     }
 
+    let payers: { userId: string; amount: number }[] = [];
+    if (payerAmounts && Object.keys(payerAmounts).length > 0) {
+      payers = Object.entries(payerAmounts)
+        .map(([userId, payerAmount]) => ({ userId, amount: payerAmount }))
+        .filter((p) => p.amount > 0);
+    } else if (paidBy) {
+      payers = [{ userId: paidBy, amount }];
+    }
+    if (payers.length === 0) {
+      payers = [{ userId: paidBy || createdBy, amount }];
+    }
+
     await createExpenseRemote({
       groupId,
       title,
@@ -109,6 +139,7 @@ export const splitData = {
       splitType,
       icon,
       shares,
+      payers,
       receiptStoragePath,
       ocrSuggestions,
     });
@@ -126,6 +157,7 @@ export const splitData = {
     splitType: 'equal' | 'manual';
     participantIds: string[];
     manualAmounts?: Record<string, number>;
+    payerAmounts?: Record<string, number>;
     receiptStoragePath?: string | null;
     ocrSuggestions?: { merchantName?: string; date?: string; total?: number } | null;
   }) => {
@@ -149,6 +181,35 @@ export const splitData = {
         })
         .filter((s) => s.amount > 0);
     }
+
+    let payers: { userId: string; amount: number }[] = [];
+    if (input.payerAmounts && Object.keys(input.payerAmounts).length > 0) {
+      payers = Object.entries(input.payerAmounts)
+        .map(([userId, payerAmount]) => ({ userId, amount: payerAmount }))
+        .filter((p) => p.amount > 0);
+    } else {
+      const oldPayers = useSplitDataStore.getState().getPayers(input.expenseId);
+      if (oldPayers.length > 0) {
+        const totalOld = oldPayers.reduce((s, p) => s + p.amount, 0);
+        if (Math.abs(totalOld - input.amount) > 0.01 && totalOld > 0) {
+          payers = oldPayers.map((p) => ({
+            userId: p.userId,
+            amount: Math.round((p.amount / totalOld) * input.amount * 100) / 100,
+          }));
+          const newSum = payers.reduce((s, p) => s + p.amount, 0);
+          const remainder = Math.round((input.amount - newSum) * 100) / 100;
+          if (payers.length > 0) {
+            payers[0].amount += remainder;
+          }
+        } else {
+          payers = oldPayers.map((p) => ({ userId: p.userId, amount: p.amount }));
+        }
+      } else {
+        const selfId = useSplitDataStore.getState().sessionUserId || '';
+        payers = [{ userId: selfId, amount: input.amount }];
+      }
+    }
+
     await updateExpenseRemote({
       expenseId: input.expenseId,
       groupId: input.groupId,
@@ -159,6 +220,7 @@ export const splitData = {
       splitType: input.splitType,
       icon: input.icon,
       shares,
+      payers,
       receiptStoragePath: input.receiptStoragePath,
       ocrSuggestions: input.ocrSuggestions,
     });
