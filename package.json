@@ -22,6 +22,7 @@
     "@tamagui/font-inter": "2.5.1",
     "@tamagui/portal": "2.5.1",
     "expo": "^57.0.0",
+    "expo-blur": "~57.0.2",
     "expo-constants": "~57.0.7",
     "expo-dev-client": "~57.0.9",
     "expo-device": "~57.0.1",

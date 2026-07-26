@@ -62,3 +62,23 @@ export function guessCategoryEmoji(title: string): string {
   return '📝'; // Default receipt emoji
 }
 
+export function formatShortName(fullName: string): string {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length <= 1) return fullName;
+  
+  const firstName = parts[0];
+  const lastPart = parts[parts.length - 1];
+  const middleParts = parts.slice(1, -1);
+  
+  if (middleParts.length === 0) {
+    return `${firstName} ${lastPart.charAt(0).toUpperCase()}.`;
+  }
+  
+  const middleInitials = middleParts
+    .map((p) => `${p.charAt(0).toUpperCase()}.`)
+    .join(' ');
+    
+  return `${firstName} ${middleInitials} ${lastPart.charAt(0).toUpperCase()}.`;
+}
+

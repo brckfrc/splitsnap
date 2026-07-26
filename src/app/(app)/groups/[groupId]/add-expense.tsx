@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, ChevronDown, Image as ImageIcon } from '@/lib/icons';
+import { ArrowLeft, Camera, Check, Image as ImageIcon } from '@/lib/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -6,9 +6,12 @@ import { ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, Style
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { DatePickerModal } from '@/components/ui/date-picker-modal';
 import { Input, KeyboardDoneToolbar, KEYBOARD_ACCESSORY_ID } from '@/components/ui/input';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { HorizontalAvatarPicker } from '@/components/ui/horizontal-avatar-picker';
+import { FormSection, FormSelectionField, AvatarStack } from '@/components/ui/form-selection-card';
+import { MemberAmountCard } from '@/components/ui/member-amount-card';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
@@ -51,7 +54,10 @@ export default function AddExpenseScreen() {
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrResult, setOcrResult] = useState<ReceiptParseResult | null>(null);
   const [currencyWarning, setCurrencyWarning] = useState<string | null>(null);
-  const [showPayerPicker, setShowPayerPicker] = useState(false);
+  const [showPayerBottomSheet, setShowPayerBottomSheet] = useState(false);
+  const [showSplitBottomSheet, setShowSplitBottomSheet] = useState(false);
+  const [focusedPayerField, setFocusedPayerField] = useState<string | null>(null);
+  const [focusedSplitField, setFocusedSplitField] = useState<string | null>(null);
   const [manualIcon, setManualIcon] = useState<string | null>(null);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -323,25 +329,26 @@ export default function AddExpenseScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Harcama bilgileri ─────────────────────────────────────────── */}
-        <Card style={{ gap: Spacing.four }}>
-          <Text style={[styles.cardTitle, { color: t.foreground }]}>Harcama Bilgileri</Text>
-          <View style={styles.titleRow}>
-            <Pressable
-              onPress={() => setShowIconPicker(!showIconPicker)}
-              style={[styles.iconBtnBig, { backgroundColor: t.inputBackground }]}
-              accessibilityRole="button"
-              accessibilityLabel="İkon seç"
-            >
-              <Text style={{ fontSize: 24 }}>{displayIcon}</Text>
-            </Pressable>
-            <View style={{ flex: 1 }}>
-              <Input
-                label="Başlık"
-                value={title}
-                onChangeText={setTitle}
-                placeholder="örn. Akşam Yemeği"
-                error={titleError ?? undefined}
-              />
+        <FormSection title="Harcama Bilgileri">
+          <View style={{ gap: Spacing.two }}>
+            <Text style={{ color: t.foreground, fontSize: 14, fontWeight: '500' }}>Başlık</Text>
+            <View style={styles.titleRow}>
+              <Pressable
+                onPress={() => setShowIconPicker(!showIconPicker)}
+                style={[styles.iconBtnBig, { backgroundColor: t.inputBackground }]}
+                accessibilityRole="button"
+                accessibilityLabel="İkon seç"
+              >
+                <Text style={{ fontSize: 24 }}>{displayIcon}</Text>
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Input
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="örn. Akşam Yemeği"
+                  error={titleError ?? undefined}
+                />
+              </View>
             </View>
           </View>
           {showIconPicker && (
@@ -401,11 +408,10 @@ export default function AddExpenseScreen() {
               />
             </View>
           </View>
-        </Card>
+        </FormSection>
 
         {/* ── Fiş fotoğrafı + OCR ──────────────────────────────────────── */}
-        <Card style={{ gap: Spacing.three }}>
-          <Text style={[styles.cardTitle, { color: t.foreground }]}>Fiş Fotoğrafı (İsteğe bağlı)</Text>
+        <FormSection title="Fiş Fotoğrafı (İsteğe bağlı)">
 
           {receiptUri ? (
             <View style={{ gap: Spacing.three }}>
@@ -453,202 +459,290 @@ export default function AddExpenseScreen() {
               </Pressable>
             </View>
           )}
-        </Card>
+        </FormSection>
 
-        {/* ── Kim ödedi ─────────────────────────────────────────────────── */}
-        <Card style={{ gap: Spacing.three }}>
-          <Text style={[styles.cardTitle, { color: t.foreground }]}>Kim Ödedi?</Text>
-          <View style={styles.row2}>
-            {(['single', 'multiple'] as const).map((type) => (
-              <Pressable
-                key={type}
-                onPress={() => setPayerType(type)}
-                style={[
-                  styles.splitBox,
-                  {
-                    borderColor: payerType === type ? t.primary : 'transparent',
-                    backgroundColor: payerType === type ? `${t.primary}12` : t.inputBackground,
-                  },
-                ]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: payerType === type }}
-              >
-                <Text style={{ color: t.foreground, fontWeight: '600' }}>
-                  {type === 'single' ? 'Tek Kişi' : 'Birden Fazla'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+        <FormSection title="Kim Ödedi">
+          <FormSelectionField
+            value={
+              payerType === 'single'
+                ? (() => {
+                    const payer = activeMembers.find((m) => m.userId === paidBy);
+                    return payer ? (
+                      <AvatarStack avatars={[payer.user.avatar ?? '👤']} label={payer.user.name} />
+                    ) : '';
+                  })()
+                : (() => {
+                    const activePayers = activeMembers.filter((m) => {
+                      const amountStr = payerAmounts[m.userId];
+                      if (!amountStr) return false;
+                      const parsed = parseFloat(amountStr.replace(',', '.'));
+                      return !Number.isNaN(parsed) && parsed > 0;
+                    });
+                    return activePayers.length > 0 ? (
+                      <AvatarStack
+                        avatars={activePayers.map((m) => m.user.avatar ?? '👤')}
+                        label={`${activePayers.length} Kişi Ödedi`}
+                      />
+                    ) : '';
+                  })()
+            }
+            placeholder="Ödeyen Seçin"
+            onPress={() => setShowPayerBottomSheet(true)}
+          />
+        </FormSection>
 
-          {payerType === 'single' ? (
-            (() => {
-              const payer = activeMembers.find((m) => m.userId === paidBy) ?? activeMembers[0];
-              if (!payer) return null;
-              return (
-                <>
-                  <Pressable
-                    onPress={() => setShowPayerPicker((p) => !p)}
-                    style={[styles.choice, { borderColor: t.primary, backgroundColor: `${t.primary}12` }]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Ödeyen kişiyi değiştir"
-                  >
-                    <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                      <Text>{payer.user.avatar ?? '👤'}</Text>
-                    </View>
-                    <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{payer.user.name}</Text>
-                    <ChevronDown
-                      size={18}
-                      color={t.mutedForeground}
-                      style={{ transform: [{ rotate: showPayerPicker ? '180deg' : '0deg' }] }}
-                    />
-                  </Pressable>
-                  {showPayerPicker ? (
-                    <View style={{ gap: Spacing.two, marginTop: Spacing.two }}>
-                      {activeMembers
-                        .filter((m) => m.userId !== paidBy)
-                        .map((m) => (
-                          <Pressable
-                            key={m.userId}
-                            onPress={() => { setPaidBy(m.userId); setShowPayerPicker(false); }}
-                            style={[styles.choice, { borderColor: 'transparent', backgroundColor: t.inputBackground }]}
-                            accessibilityRole="radio"
-                            accessibilityState={{ selected: false }}
-                          >
-                            <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                              <Text>{m.user.avatar ?? '👤'}</Text>
-                            </View>
-                            <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
-                          </Pressable>
-                        ))}
-                    </View>
-                  ) : null}
-                </>
-              );
-            })()
-          ) : (
-            <View style={{ gap: Spacing.two }}>
-              {activeMembers.map((m) => {
-                const raw = payerAmounts[m.userId] ?? '';
-                const totalPaidOthers = Object.entries(payerAmounts).reduce((sum, [id, val]) => {
-                  if (id === m.userId) return sum;
-                  const pv = parseFloat(val.replace(',', '.'));
-                  return sum + (Number.isNaN(pv) ? 0 : pv);
-                }, 0);
-                const remaining = validTotal - totalPaidOthers;
-                const hasValue = raw.length > 0;
-                const showSuffix = validTotal > 0 && !hasValue;
+        <FormSection title="Bölüşüm">
+          <FormSelectionField
+            value={(() => {
+              const activeParticipants = activeMembers.filter((m) => selected.has(m.userId));
+              const label = splitType === 'equal'
+                ? `Eşit (${selected.size} Kişi)`
+                : `Manuel (${selected.size} Kişi)`;
+              return activeParticipants.length > 0 ? (
+                <AvatarStack
+                  avatars={activeParticipants.map((m) => m.user.avatar ?? '👤')}
+                  label={label}
+                />
+              ) : '';
+            })()}
+            onPress={() => setShowSplitBottomSheet(true)}
+          />
+        </FormSection>
+        <View style={{ height: Spacing.four }} />
+
+        {/* ── Kim Ödedi BottomSheet ───────────────────────────────────────── */}
+        <BottomSheet
+          visible={showPayerBottomSheet}
+          onClose={() => setShowPayerBottomSheet(false)}
+          title="Kim Ödedi?"
+        >
+          <View style={{ gap: Spacing.four }}>
+            <View style={[styles.segmentedControl, { backgroundColor: t.inputBackground }]}>
+              {(['single', 'multiple'] as const).map((type) => {
+                const isActive = payerType === type;
                 return (
-                  <View key={m.userId} style={{ gap: Spacing.one }}>
-                    <View style={[styles.choice, { backgroundColor: t.inputBackground, borderColor: 'transparent' }]}>
-                      <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                        <Text>{m.user.avatar ?? '👤'}</Text>
-                      </View>
-                      <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
-                    </View>
-                    <Input
-                      label={`Ödenen Tutar — ${m.user.name}`}
-                      value={raw}
-                      onChangeText={(v) => {
-                        const sanitized = v.replace(/[^0-9.,]/g, '');
-                        setPayerAmounts((prev) => ({ ...prev, [m.userId]: sanitized }));
-                      }}
-                      keyboardType="decimal-pad"
-                      placeholder="0"
-                      suffix={showSuffix && remaining > 0 ? `Kalan: ₺${remaining.toFixed(2)}` : undefined}
-                      onSuffixPress={
-                        showSuffix && remaining > 0
-                          ? () => setPayerAmounts((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))
-                          : undefined
-                      }
-                    />
-                  </View>
+                  <Pressable
+                    key={type}
+                    onPress={() => setPayerType(type)}
+                    style={[
+                      styles.segmentButton,
+                      isActive && {
+                        backgroundColor: t.card,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                  >
+                    <Text style={{ color: t.foreground, fontWeight: '600', fontSize: 14 }}>
+                      {type === 'single' ? '👤 Tek Kişi' : '👥 Birden Fazla'}
+                    </Text>
+                  </Pressable>
                 );
               })}
             </View>
-          )}
-        </Card>
 
-        {/* ── Bölüşüm ──────────────────────────────────────────────────── */}
-        <Card style={{ gap: Spacing.four }}>
-          <Text style={[styles.cardTitle, { color: t.foreground }]}>Nasıl Bölünecek?</Text>
-          <View style={styles.row2}>
-            {(['equal', 'manual'] as const).map((type) => (
-              <Pressable
-                key={type}
-                onPress={() => setSplitType(type)}
-                style={[
-                  styles.splitBox,
-                  {
-                    borderColor: splitType === type ? t.primary : 'transparent',
-                    backgroundColor: splitType === type ? `${t.primary}12` : t.inputBackground,
-                  },
-                ]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: splitType === type }}
-              >
-                <Text style={styles.splitEmoji}>{type === 'equal' ? '⚖️' : '✏️'}</Text>
-                <Text style={{ color: t.foreground, fontWeight: '600' }}>
-                  {type === 'equal' ? 'Eşit' : 'Manuel'}
-                </Text>
-              </Pressable>
-            ))}
+            {payerType === 'single' ? (
+              <ScrollView style={{ maxHeight: 250 }} showsVerticalScrollIndicator={false}>
+                <View style={{ gap: Spacing.two }}>
+                  {activeMembers.map((m) => {
+                    const isSelected = paidBy === m.userId;
+                    return (
+                      <Pressable
+                        key={m.userId}
+                        onPress={() => {
+                          setPaidBy(m.userId);
+                          setShowPayerBottomSheet(false);
+                        }}
+                        style={[
+                          styles.choice,
+                          {
+                            borderColor: isSelected ? t.primary : 'transparent',
+                            backgroundColor: isSelected ? `${t.primary}12` : t.inputBackground,
+                          },
+                        ]}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: isSelected }}
+                      >
+                        <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
+                          <Text>{m.user.avatar ?? '👤'}</Text>
+                        </View>
+                        <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
+                        {isSelected && <Check size={18} color={t.primary} />}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            ) : (
+              <View style={{ gap: Spacing.three }}>
+                {/* Horizontal Avatar Picker for multiple payers selection */}
+                <HorizontalAvatarPicker
+                  members={activeMembers}
+                  selectedIds={new Set(Object.keys(payerAmounts).filter((id) => parseFloat((payerAmounts[id] ?? '0').replace(',', '.')) > 0))}
+                  onToggle={(userId) => {
+                    setPayerAmounts((prev) => {
+                      const copy = { ...prev };
+                      const currentVal = parseFloat((copy[userId] ?? '0').replace(',', '.'));
+                      if (currentVal > 0) {
+                        copy[userId] = '';
+                      } else {
+                        copy[userId] = '0';
+                      }
+                      return copy;
+                    });
+                  }}
+                  onSelectAll={() => {
+                    setPayerAmounts(() => {
+                      const copy: Record<string, string> = {};
+                      activeMembers.forEach((m) => {
+                        copy[m.userId] = '0';
+                      });
+                      return copy;
+                    });
+                  }}
+                  onClearAll={() => setPayerAmounts({})}
+                />
+
+                <View style={[styles.inlineDivider, { backgroundColor: t.border }]} />
+
+                {/* Vertical inputs list for active payers */}
+                <ScrollView style={{ maxHeight: 220 }} showsVerticalScrollIndicator={false}>
+                  <View style={{ gap: Spacing.one }}>
+                    {activeMembers
+                      .filter((m) => {
+                        const copy = { ...payerAmounts };
+                        return copy[m.userId] !== undefined;
+                      })
+                      .map((m) => {
+                        const raw = payerAmounts[m.userId] ?? '';
+                        const totalPaidOthers = Object.entries(payerAmounts).reduce((sum, [id, val]) => {
+                          if (id === m.userId) return sum;
+                          const pv = parseFloat(val.replace(',', '.'));
+                          return sum + (Number.isNaN(pv) ? 0 : pv);
+                        }, 0);
+                        const remaining = validTotal - totalPaidOthers;
+                        const hasValue = raw.length > 0 && raw !== '0';
+                        const showSuffix = validTotal > 0 && !hasValue;
+                        return (
+                          <MemberAmountCard
+                            key={m.userId}
+                            member={m}
+                            value={raw === '0' ? '' : raw}
+                            isFocused={focusedPayerField === m.userId}
+                            onFocus={() => setFocusedPayerField(m.userId)}
+                            onBlur={() => setFocusedPayerField(null)}
+                            onChangeText={(v) => {
+                              const sanitized = v.replace(/[^0-9.,]/g, '');
+                              setPayerAmounts((prev) => ({ ...prev, [m.userId]: sanitized }));
+                            }}
+                            remainingAmount={showSuffix && remaining > 0 ? remaining : 0}
+                            onFillRemaining={() => setPayerAmounts((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))}
+                          />
+                        );
+                      })}
+                  </View>
+                </ScrollView>
+
+                <Button onPress={() => setShowPayerBottomSheet(false)}>Tamam</Button>
+              </View>
+            )}
           </View>
+        </BottomSheet>
 
-          <Text style={{ color: t.mutedForeground, fontSize: 13, fontWeight: '600' }}>Katılımcılar</Text>
-          <View style={{ gap: Spacing.two }}>
-            {activeMembers.map((m) => {
-              const on = selected.has(m.userId);
-              return (
-                <View key={m.userId} style={{ gap: Spacing.two }}>
+        {/* ── Bölüşüm BottomSheet ─────────────────────────────────────────── */}
+        <BottomSheet
+          visible={showSplitBottomSheet}
+          onClose={() => setShowSplitBottomSheet(false)}
+          title="Nasıl Bölünecek?"
+        >
+          <View style={{ gap: Spacing.four }}>
+            <View style={[styles.segmentedControl, { backgroundColor: t.inputBackground }]}>
+              {(['equal', 'manual'] as const).map((type) => {
+                const isActive = splitType === type;
+                return (
                   <Pressable
-                    onPress={() => toggleParticipant(m.userId)}
+                    key={type}
+                    onPress={() => setSplitType(type)}
                     style={[
-                      styles.choice,
-                      {
-                        borderColor: on ? t.primary : 'transparent',
-                        backgroundColor: on ? `${t.primary}12` : t.inputBackground,
+                      styles.segmentButton,
+                      isActive && {
+                        backgroundColor: t.card,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
                       },
                     ]}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: on }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
                   >
-                    <View style={[styles.avatar, { backgroundColor: `${t.primary}18` }]}>
-                      <Text>{m.user.avatar ?? '👤'}</Text>
-                    </View>
-                    <Text style={{ color: t.foreground, fontWeight: '600', flex: 1 }}>{m.user.name}</Text>
-                    {on && splitType === 'equal' && amount ? (
-                      <Text style={{ color: t.primary, fontWeight: '700' }}>₺{perEqual.toFixed(2)}</Text>
-                    ) : null}
+                    <Text style={{ color: t.foreground, fontWeight: '600', fontSize: 14 }}>
+                      {type === 'equal' ? '⚖️ Eşit' : '✏️ Manuel'}
+                    </Text>
                   </Pressable>
-                  {on && splitType === 'manual' ? (
-                    (() => {
-                      const raw = manual[m.userId] ?? '';
-                      const memberVal = parseFloat((raw || '0').replace(',', '.'));
-                      const remaining = validTotal - (manualTotal - (Number.isNaN(memberVal) ? 0 : memberVal));
-                      const hasValue = raw.length > 0;
-                      const showSuffix = validTotal > 0 && !hasValue;
-                      return (
-                        <Input
-                          label={`Pay — ${m.user.name}`}
-                          value={raw}
-                          onChangeText={(v) => handleManualInput(m.userId, v)}
-                          keyboardType="decimal-pad"
-                          placeholder="0"
-                          suffix={showSuffix ? `Kalan: ₺${remaining.toFixed(2)}` : undefined}
-                          onSuffixPress={
-                            showSuffix && remaining > 0
-                              ? () => setManual((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))
-                              : undefined
-                          }
-                        />
-                      );
-                    })()
-                  ) : null}
-                </View>
-              );
-            })}
+                );
+              })}
+            </View>
+
+            {/* Horizontal Avatar Picker for participant selection */}
+            <HorizontalAvatarPicker
+              members={activeMembers}
+              selectedIds={selected}
+              onToggle={(userId) => toggleParticipant(userId)}
+              onSelectAll={() => setSelected(new Set(activeMembers.map((m) => m.userId)))}
+              onClearAll={() => setSelected(new Set())}
+            />
+
+            <View style={[styles.inlineDivider, { backgroundColor: t.border }]} />
+
+            {splitType === 'equal' ? (
+              <View style={{ gap: Spacing.four }}>
+                <Text style={{ color: t.mutedForeground, fontSize: 13, textAlign: 'center', marginVertical: Spacing.two }}>
+                  {selected.size > 0 && amount
+                    ? `Kişi başı düşen pay: ₺${perEqual.toFixed(2)}`
+                    : 'Katılımcıları seçin ve tutar girin.'}
+                </Text>
+                <Button onPress={() => setShowSplitBottomSheet(false)}>Tamam</Button>
+              </View>
+            ) : (
+              <View style={{ gap: Spacing.four }}>
+                <ScrollView style={{ maxHeight: 220 }} showsVerticalScrollIndicator={false}>
+                  <View style={{ gap: Spacing.one }}>
+                    {activeMembers
+                      .filter((m) => selected.has(m.userId))
+                      .map((m) => {
+                        const raw = manual[m.userId] ?? '';
+                        const memberVal = parseFloat((raw || '0').replace(',', '.'));
+                        const remaining = validTotal - (manualTotal - (Number.isNaN(memberVal) ? 0 : memberVal));
+                        const hasValue = raw.length > 0;
+                        const showSuffix = validTotal > 0 && !hasValue;
+                        return (
+                          <MemberAmountCard
+                            key={m.userId}
+                            member={m}
+                            value={raw}
+                            isFocused={focusedSplitField === m.userId}
+                            onFocus={() => setFocusedSplitField(m.userId)}
+                            onBlur={() => setFocusedSplitField(null)}
+                            onChangeText={(v) => handleManualInput(m.userId, v)}
+                            remainingAmount={showSuffix && remaining > 0 ? remaining : 0}
+                            onFillRemaining={() => setManual((prev) => ({ ...prev, [m.userId]: remaining.toFixed(2) }))}
+                          />
+                        );
+                      })}
+                  </View>
+                </ScrollView>
+                <Button onPress={() => setShowSplitBottomSheet(false)}>Tamam</Button>
+              </View>
+            )}
           </View>
-        </Card>
+        </BottomSheet>
 
         {/* ── Footer butonları ─────────────────────────────────────────── */}
         <View style={styles.footerBtns}>
@@ -748,7 +842,7 @@ const styles = StyleSheet.create({
   },
   splitEmoji: { fontSize: 28 },
   footerBtns: { flexDirection: 'row', gap: Spacing.three, marginTop: Spacing.two },
-  titleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.three },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   iconBtnBig: {
     width: 48,
     height: 48,
@@ -765,5 +859,64 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    padding: 3,
+    height: 44,
+    alignItems: 'stretch',
+  },
+  segmentButton: {
+    flex: 1,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: Spacing.one,
+  },
+  inlineRowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    borderRadius: 14,
+    borderWidth: 2,
+  },
+  inlineUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    flex: 1,
+  },
+  kalanBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 2,
+  },
+  inlineInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 40,
+    width: 110,
+    paddingHorizontal: Spacing.three,
+  },
+  inlineInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  inlineDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: 0,
+    marginBottom: 0,
+    opacity: 0.6,
   },
 });

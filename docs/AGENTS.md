@@ -64,7 +64,7 @@
 
 ## Important Locations
 
-- `ROADMAP.md` — Post-release backlog and active development updates (English). The primary document for tracking features.
+- `ROADMAP.md` — Post-release backlog and active development updates (English). The primary document for tracking features. Backlog items are grouped logically into 🚀 Core Features & Logic, 🎨 UI/UX Polish & Modernization, and 🐛 Bugs & Performance, prioritized with `[High]`, `[Medium]`, or `[Low]` prefixes. Completed sprint logs are moved to the `## Recent Updates` section at the bottom. **CRITICAL: Agents must unconditionally keep this document and session walkthroughs up-to-date after completing tasks.**
 - `design/figma_template/` — Figma-aligned **reference UI** (Vite/React prototype; not the production app). Use for layout/tokens when implementing `src/app/`. Screenshots: `design/figma_screenshots/`.
 - `docs/archive/SplitSnap Tanıtım Raporu.md` — original university report
 - `docs/DATABASE.md` — PostgreSQL / Supabase ER diyagramı, tablolar, RLS stratejisi ve backend planı (tek kaynak)

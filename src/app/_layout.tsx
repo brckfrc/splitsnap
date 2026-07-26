@@ -2,15 +2,17 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider, Theme } from 'tamagui';
 
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AppToast } from '@/components/app-toast';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { storeHydrated } from '@/stores/split-data-store';
 import { tamaguiConfig } from '../../tamagui.config';
 
+// Force Metro cache refresh
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function SplashGate() {
@@ -42,18 +44,20 @@ export default function RootLayout() {
   }
 
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme={themeName}>
-      <Theme name={themeName}>
-        <SafeAreaProvider>
-          <AuthProvider>
-            <SplashGate />
-            <NavigationThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack screenOptions={{ headerShown: false }} />
-              <AppToast />
-            </NavigationThemeProvider>
-          </AuthProvider>
-        </SafeAreaProvider>
-      </Theme>
-    </TamaguiProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TamaguiProvider config={tamaguiConfig} defaultTheme={themeName}>
+        <Theme name={themeName}>
+          <SafeAreaProvider>
+            <AuthProvider>
+              <SplashGate />
+              <NavigationThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <Stack screenOptions={{ headerShown: false }} />
+                <AppToast />
+              </NavigationThemeProvider>
+            </AuthProvider>
+          </SafeAreaProvider>
+        </Theme>
+      </TamaguiProvider>
+    </GestureHandlerRootView>
   );
 }
