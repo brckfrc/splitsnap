@@ -93,7 +93,46 @@
 - Receipt uploads: validate size/format before Storage.
 - Equal-split math: watch currency rounding.
 
+## Release Notes Guidelines (What's New)
+
+- **Tone & Style:** Keep release notes concise, user-benefit focused, and strictly non-technical. Avoid jargon such as library names (e.g. Tamagui, Supabase), SDK versions (e.g. SDK 57), or specific code references (e.g. hooks, state). Emojis should be omitted.
+- **Structure (All headers are optional):**
+  ```text
+  Features:
+  • [Description of a brand-new user-facing feature]
+
+  Improvements:
+  • [Description of user-facing performance or UI benefit]
+
+  Bug Fixes:
+  • [Description of fixed behavior and its user impact]
+  ```
+- **Current Templates:**
+  - **Turkish (Current primary app language):**
+    ```text
+    Yenilikler:
+    • Yeni logo tasarımı ile giriş ve kayıt ekranlarındaki görsel kimlik güncellendi.
+
+    İyileştirmeler:
+    • Daha akıcı ve hızlı bir uygulama deneyimi için altyapı ve performans optimizasyonları yapıldı.
+
+    Hata Düzeltmeleri:
+    • Harcama ve grup detaylarının anlık olarak senkronize edilmesini engelleyen bir bağlantı sorunu giderildi.
+    ```
+  - **English (Future language support):**
+    ```text
+    Features:
+    • Updated visual identity on login and registration screens with the new logo design.
+
+    Improvements:
+    • Performance improvements and code optimization for a smoother, faster app experience.
+
+    Bug Fixes:
+    • Fixed an issue where group details and expenses occasionally failed to synchronize in real-time.
+    ```
+
 ## Project Layout (from README)
+
 
 - **Routes / screens:** [`src/app/`](../src/app/) — Expo Router (file-based routing)
 - **UI components:** [`src/components/`](../src/components/)
