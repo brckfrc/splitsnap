@@ -1,87 +1,35 @@
-import { ChevronRight, Key, LogOut, Monitor, Moon, Sun, Trash2, User as UserIcon } from '@/lib/icons';
+import { Check, ChevronRight, Key, LogOut, Monitor, Moon, Sun, User as UserIcon } from '@/lib/icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme as useNativeColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppBottomBar } from '@/components/app-bottom-bar';
 import { Card } from '@/components/ui/card';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
-import { deleteAccount } from '@/services/account';
-import { useAppSettingsStore, type AppThemeMode } from '@/stores/app-settings-store';
+import { useAppSettingsStore } from '@/stores/app-settings-store';
 
 export default function ProfileScreen() {
   const t = useTheme();
   const { user, signOutApp } = useAuth();
   const { themeMode, setThemeMode } = useAppSettingsStore();
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Hesabı Sil',
-      'Hesabınız ve kişisel bilgileriniz kalıcı olarak silinecek. Gruplardaki ortak harcama kayıtları "Silinmiş Kullanıcı" olarak korunur. Bu işlem geri alınamaz.',
-      [
-        { text: 'Vazgeç', style: 'cancel' },
-        {
-          text: 'Devam Et',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Son Onay', 'Hesabınız silinecek ve tekrar giriş yapamayacaksınız. Emin misiniz?', [
-              { text: 'Vazgeç', style: 'cancel' },
-              {
-                text: 'Hesabı Sil',
-                style: 'destructive',
-                onPress: async () => {
-                  setDeleting(true);
-                  try {
-                    await deleteAccount();
-                    await signOutApp();
-                  } catch (e) {
-                    const msg = e instanceof Error ? e.message : 'Hesap silinemedi.';
-                    Alert.alert('Hata', msg);
-                  } finally {
-                    setDeleting(false);
-                  }
-                },
-              },
-            ]);
-          },
-        },
-      ],
-    );
-  };
+  const [themeSheetVisible, setThemeSheetVisible] = useState(false);
 
   const handleThemePress = () => {
-    const options = ['İptal', 'Cihaz Ayarı (Sistem)', 'Açık', 'Koyu'];
-    const actions: AppThemeMode[] = ['system', 'system', 'light', 'dark'];
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex: 0,
-          title: 'Uygulama Teması',
-          message: 'Uygulamanın genel görünümünü seçin.',
-        },
-        (buttonIndex) => {
-          if (buttonIndex !== 0) {
-            setThemeMode(actions[buttonIndex]);
-          }
-        }
-      );
-    } else {
-      Alert.alert('Uygulama Teması', 'Uygulamanın genel görünümünü seçin.', [
-        { text: 'Cihaz Ayarı', onPress: () => setThemeMode('system') },
-        { text: 'Açık', onPress: () => setThemeMode('light') },
-        { text: 'Koyu', onPress: () => setThemeMode('dark') },
-        { text: 'İptal', style: 'cancel' },
-      ]);
-    }
+    setThemeSheetVisible(true);
   };
 
-  const themeLabel = themeMode === 'light' ? 'Açık' : themeMode === 'dark' ? 'Koyu' : 'Sistem';
+  const systemScheme = useNativeColorScheme();
+  const themeLabel =
+    themeMode === 'light'
+      ? 'Açık'
+      : themeMode === 'dark'
+      ? 'Koyu'
+      : `Sistem (${systemScheme === 'dark' ? 'Koyu' : 'Açık'})`;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
@@ -155,7 +103,7 @@ export default function ProfileScreen() {
           </Pressable>
         </Card>
 
-        {/* TEHLİKELİ ALAN (DANGER ZONE) */}
+        {/* GÜVENLİK */}
         <Text style={[styles.sectionTitle, { color: t.mutedForeground, marginTop: Spacing.four }]}>GÜVENLİK</Text>
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           <Pressable
@@ -172,25 +120,85 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.listLabel, { color: t.destructive, fontWeight: '600' }]}>Çıkış Yap</Text>
           </Pressable>
-          <View style={[styles.divider, { backgroundColor: t.border }]} />
-          <Pressable
-            disabled={deleting}
-            style={({ pressed }) => [
-              styles.listItem,
-              pressed && { backgroundColor: `${t.destructive}1A` },
-              deleting && { opacity: 0.5 },
-            ]}
-            onPress={handleDeleteAccount}
-          >
-            <View style={[styles.iconBox, { backgroundColor: t.destructive }]}>
-              <Trash2 size={16} color={t.destructiveForeground} />
-            </View>
-            <Text style={[styles.listLabel, { color: t.destructive, fontWeight: '600' }]}>
-              {deleting ? 'Hesap Siliniyor…' : 'Hesabı Sil'}
-            </Text>
-          </Pressable>
         </Card>
       </ScrollView>
+
+      <BottomSheet
+        visible={themeSheetVisible}
+        onClose={() => setThemeSheetVisible(false)}
+        title="Uygulama Teması"
+      >
+        <View style={{ gap: Spacing.one }}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.themeOption,
+              themeMode === 'system' && { backgroundColor: t.accent },
+              pressed && { backgroundColor: t.accent },
+            ]}
+            onPress={() => {
+              setThemeMode('system');
+              setThemeSheetVisible(false);
+            }}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.primary }]}>
+              <Monitor size={16} color={t.primaryForeground} />
+            </View>
+            <Text style={[styles.themeOptionText, { color: t.foreground }]}>
+              Sistem ({systemScheme === 'dark' ? 'Koyu' : 'Açık'})
+            </Text>
+            {themeMode === 'system' && <Check size={18} color={t.primary} />}
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.themeOption,
+              themeMode === 'light' && { backgroundColor: t.accent },
+              pressed && { backgroundColor: t.accent },
+            ]}
+            onPress={() => {
+              setThemeMode('light');
+              setThemeSheetVisible(false);
+            }}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.primary }]}>
+              <Sun size={16} color={t.primaryForeground} />
+            </View>
+            <Text style={[styles.themeOptionText, { color: t.foreground }]}>Açık</Text>
+            {themeMode === 'light' && <Check size={18} color={t.primary} />}
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.themeOption,
+              themeMode === 'dark' && { backgroundColor: t.accent },
+              pressed && { backgroundColor: t.accent },
+            ]}
+            onPress={() => {
+              setThemeMode('dark');
+              setThemeSheetVisible(false);
+            }}
+          >
+            <View style={[styles.iconBox, { backgroundColor: t.primary }]}>
+              <Moon size={16} color={t.primaryForeground} />
+            </View>
+            <Text style={[styles.themeOptionText, { color: t.foreground }]}>Koyu</Text>
+            {themeMode === 'dark' && <Check size={18} color={t.primary} />}
+          </Pressable>
+
+          <View style={[styles.sheetDivider, { backgroundColor: t.border }]} />
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.sheetCancel,
+              pressed && { backgroundColor: t.accent },
+            ]}
+            onPress={() => setThemeSheetVisible(false)}
+          >
+            <Text style={[styles.sheetCancelText, { color: t.destructive }]}>Vazgeç</Text>
+          </Pressable>
+        </View>
+      </BottomSheet>
+      <AppBottomBar />
     </SafeAreaView>
   );
 }
@@ -258,6 +266,33 @@ const styles = StyleSheet.create({
   },
   chevron: {
     opacity: 0.5,
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.three,
+    borderRadius: 12,
+  },
+  themeOptionText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: Spacing.one,
+  },
+  sheetCancel: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.four,
+    borderRadius: 12,
+    marginTop: Spacing.two,
+  },
+  sheetCancelText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sheetDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: Spacing.two,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

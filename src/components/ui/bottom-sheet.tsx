@@ -55,6 +55,10 @@ export function BottomSheet({
   const gestureStartY = useSharedValue(0);
 
   const gesture = Gesture.Pan()
+    // Only activate on ~12px downward drag; let upward drags (negative Y) fail the
+    // gesture so an inner ScrollView can scroll freely.
+    .activeOffsetY(12)
+    .failOffsetY(-12)
     .onBegin(() => {
       // Kullanıcı animasyon devam ederken dokunursa animasyonla savaşmasın.
       cancelAnimation(translateY);

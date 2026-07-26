@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CreateGroupModal } from '@/components/modals/create-group-modal';
+import { AppBottomBar } from '@/components/app-bottom-bar';
 import { JoinGroupModal } from '@/components/modals/join-group-modal';
 import { Button } from '@/components/ui/button';
 import { PressableCard } from '@/components/ui/card';
@@ -240,6 +241,7 @@ export default function GroupsListScreen() {
         error={joinError}
         submitting={joinSubmitting}
       />
+      <AppBottomBar />
     </SafeAreaView>
   );
 }

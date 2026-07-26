@@ -252,7 +252,7 @@ export default function GroupDetailScreen() {
                   styles.memberRow,
                   left && { opacity: 0.55 },
                   isMe && {
-                    backgroundColor: t.background === '#252525' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.12)',
+                    backgroundColor: t.background === '#000000' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
                     borderRadius: 8,
                     paddingHorizontal: Spacing.three,
                     paddingVertical: Spacing.two,

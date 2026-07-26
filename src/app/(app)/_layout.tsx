@@ -1,7 +1,5 @@
 import { Redirect, Stack } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-
-import { AppBottomBar } from '@/components/app-bottom-bar';
 import { useAuth } from '@/contexts/auth-context';
 import { href } from '@/lib/href';
 
@@ -22,8 +20,10 @@ export default function AppShellLayout() {
 
   return (
     <View style={styles.root}>
-      <Stack screenOptions={{ headerShown: false }} />
-      <AppBottomBar />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="groups/index" options={{ animation: 'none' }} />
+        <Stack.Screen name="profile" options={{ animation: 'none' }} />
+      </Stack>
     </View>
   );
 }

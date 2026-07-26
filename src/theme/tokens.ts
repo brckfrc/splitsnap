@@ -12,7 +12,7 @@ export const Radii = {
 } as const;
 
 export const LightTokens = {
-  background: '#ffffff',
+  background: '#f2f2f7',
   foreground: '#252525',
   card: '#ffffff',
   cardForeground: '#252525',
@@ -26,7 +26,7 @@ export const LightTokens = {
   accentForeground: '#030213',
   destructive: '#d4183d',
   destructiveForeground: '#ffffff',
-  border: 'rgba(0, 0, 0, 0.1)',
+  border: 'rgba(0, 0, 0, 0.08)',
   inputBackground: '#f3f3f5',
   ring: '#b0b0b0',
   positive: '#16a34a',
@@ -34,25 +34,25 @@ export const LightTokens = {
 } as const;
 
 export const DarkTokens = {
-  background: '#252525',
-  foreground: '#fafafa',
-  card: '#252525',
-  cardForeground: '#fafafa',
-  primary: '#fafafa',
-  primaryForeground: '#2a2a2a',
-  secondary: '#3a3a3a',
-  secondaryForeground: '#fafafa',
-  muted: '#3a3a3a',
-  mutedForeground: '#a3a3a3',
-  accent: '#3a3a3a',
-  accentForeground: '#fafafa',
-  destructive: '#f87171',
-  destructiveForeground: '#450a0a',
-  border: '#3a3a3a',
-  inputBackground: '#3a3a3a',
-  ring: '#6b6b6b',
-  positive: '#4ade80',
-  positiveMuted: 'rgba(74, 222, 128, 0.12)',
+  background: '#000000',
+  foreground: '#ffffff',
+  card: '#121214',
+  cardForeground: '#ffffff',
+  primary: '#ffffff',
+  primaryForeground: '#000000',
+  secondary: '#1b1b1f',
+  secondaryForeground: '#e4e4e7',
+  muted: '#1c1c1e',
+  mutedForeground: '#8e8e93',
+  accent: '#2c2c2e',
+  accentForeground: '#ffffff',
+  destructive: '#ff453a',
+  destructiveForeground: '#ffffff',
+  border: '#1c1c1e',
+  inputBackground: '#1c1c1e',
+  ring: '#3a3a3c',
+  positive: '#34c759',
+  positiveMuted: 'rgba(52, 199, 89, 0.12)',
 } as const;
 
 export type TokenScheme = typeof LightTokens | typeof DarkTokens;

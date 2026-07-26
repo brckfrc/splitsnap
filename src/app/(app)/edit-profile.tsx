@@ -1,4 +1,4 @@
-import { ArrowLeft } from '@/lib/icons';
+import { ArrowLeft, Trash2 } from '@/lib/icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -111,13 +111,9 @@ export default function EditProfileScreen() {
             <Text style={[styles.infoValue, { color: t.foreground }]}>{user?.email ?? '—'}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: t.mutedForeground }]}>Kullanıcı Kimliği</Text>
-            <Text style={[styles.infoValue, { color: t.mutedForeground, fontSize: 12 }]}>{user?.id ?? '—'}</Text>
-          </View>
+
 
           <Button
-            size="lg"
             loading={loading}
             onPress={onSave}
             accessibilityLabel="Değişiklikleri kaydet"
@@ -125,6 +121,22 @@ export default function EditProfileScreen() {
           >
             Kaydet
           </Button>
+
+          <View style={[styles.dangerDivider, { backgroundColor: t.border }]} />
+
+          <Text style={[styles.dangerLabel, { color: t.mutedForeground }]}>TEHLİKELİ ALAN</Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.deleteBtn,
+              pressed && { backgroundColor: `${t.destructive}1A` },
+            ]}
+            onPress={() => router.push('/delete-account' as never)}
+          >
+            <Trash2 size={16} color={t.destructive} />
+            <Text style={[styles.deleteBtnText, { color: t.destructive }]}>
+              Hesabı Kapat ve Sil
+            </Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -171,5 +183,30 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 16,
+  },
+  dangerDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: Spacing.four,
+    marginTop: Spacing.six,
+  },
+  dangerLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: Spacing.two,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    borderWidth: 1,
+    borderColor: '#ff453a33', // faint red border
+    paddingVertical: Spacing.three,
+    borderRadius: 12,
+  },
+  deleteBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

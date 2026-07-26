@@ -14,7 +14,7 @@ This document tracks the active backlog, future enhancements, and recent updates
 ### 🚀 Core Features & Logic
 
 - [ ] **[High] Onboarding & Verification Flow Upgrade:**
-  - **Description:** Re-enable email confirmation in Supabase and handle the unconfirmed session UX state gracefully. Display a modern email verification waiting screen, followed by a profile customization wizard (avatar picker, display name, currency preferences).
+  - **Description:** Re-enable email confirmation in Supabase and handle the unconfirmed session UX state gracefully. Display a modern email verification waiting screen, followed by a profile customization wizard (avatar picker, display name, currency preferences, and UI theme selection). The avatar picker UI/logic must be shared and editable from the Profile/Kişisel Bilgiler screen as well.
 - [ ] **[High] Input Validation:**
   - **Description:** Implement strict client-side validation for email formats, password strength, and maximum expense amounts.
 - [ ] **[Medium] Localization (en / tr):**
@@ -34,10 +34,7 @@ This document tracks the active backlog, future enhancements, and recent updates
 
 ### 🎨 UI/UX Polish & Modernization
 
-- [ ] **[High] Theme & Colors Modernization (AMOLED Dark & iOS Light):**
-  - **Description:** Restructure tokens in `tokens.ts` to implement true black backgrounds `#000000` with dark card overlays for energy efficiency, and iOS-style layered light mode backgrounds `#f2f2f7` with pure white cards for depth.
-- [ ] **[Medium] Floating Navigation Tab Bar:**
-  - **Description:** Redesign the bottom tab navigation to float above the screen content with a blurred glass background and rounded corners, matching the floating tab bar style of modern iOS applications.
+
 - [ ] **[Medium] Card Stack UI for Payer/Split Selection:**
   - **Description:** Fine-tune swipe animations and gestures for the new custom BottomSheets, ensuring ultra-smooth card-stack style sliding interactions.
 - [ ] **[Low] Liquid Glass Progressive Enhancement (iOS 26+ Compatibility):**
@@ -63,10 +60,19 @@ This document tracks the active backlog, future enhancements, and recent updates
 ## Recent Updates
 
 ### 📅 July 2026 — Sprint #2: Split Payer & Premium UI Upgrade
+- **Floating Island Navigation:** Replaced the default bottom tab bar with a custom floating capsule (Dynamic Island style), mounted per top-level screen (Gruplarım, Profil) with route transitions disabled (`animation: 'none'`) so it renders instantly and stays absent on pushed deep screens. The active pill can be dragged across the icons to switch tabs.
+- **Prominent Center Add Button:** The center `+` action now renders as a filled circular button using theme `primary`/`primaryForeground` colors, making it visually distinct from the flat Home/Settings icons while adapting automatically to light and dark themes.
+- **Quick-Add Expense Group Picker:** Tapping the center `+` opens a "Grup Seç" bottom sheet (reusing the shared `BottomSheet`) with rich rows (initials avatar, member count, group total), sorted by most-recent activity, showing the top 5 groups with a "Tüm gruplar" expander. Single-group users skip straight to the expense form; users with no groups get a toast.
+- **Haptic UI Enhancements:** Integrated `expo-haptics` for premium tactile feedback when swiping the active pill across the navigation icons.
+- **UI Scaling & Polish:** Converted the tab bar into a compact pill shape matching modern iOS trends, and scaled up the active pill (68x52) and icons (28px) for a robust, satisfying visual balance.
+- **Dedicated Delete Account Flow:** Moved account deletion out of an inline alert into a two-step screen (warning + consequences, then password re-authentication) accessible from the Profile → Edit Profile "Danger Zone".
+- **Bug Fixes:** Fixed a runtime crash when drag-releasing the pill onto the center `+` (a JS helper was being called synchronously inside a Reanimated worklet); pill positions are now precomputed. Added `activeOffsetY`/`failOffsetY` to `BottomSheet` so inner scroll views coexist with drag-to-dismiss.
 - **Split Payer Support:** Implemented multiple payers support in both add and edit screens with real-time balance calculations.
 - **Premium BottomSheet UI:** Refactored bottom sheets with gesture handlers, spring physics, and linear backdrop opacity interpolation.
 - **Form Visual Enhancements:** Integrated `AvatarStack` for overlapping avatar circles, native segmented control tabs, and card-based nested amount inputs (`MemberAmountCard`) with focus outlines.
 - **Performance Refactoring:** Extracted custom helpers (`formatShortName`) and reused components to prevent code repetition.
+- **Profile Theme Selection UX:** Streamlined theme selection options and added dynamic OS-resolved theme feedback (e.g. "Sistem (Koyu)") on the Profile screen.
+- **Theme & Colors Modernization:** Implemented AMOLED True Black background (#000000) with elevated dark gray cards (#121214) to prevent black smearing, and transitioned Light Mode to an iOS-style layered canvas (#f2f2f7) with pure white cards.
 
 ### 📅 July 2026 — Sprint #1: Expo SDK 57 & Tamagui Upgrade
 - **Expo SDK 57 Upgrade:** Upgraded to SDK 57 (React Native 0.86, React 19.2.3) for improved stability.

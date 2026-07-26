@@ -7,7 +7,7 @@
 - Backend: **Supabase** (`@supabase/supabase-js`). Do not write custom backend or server code. All Auth, DB, and Storage operations must go through the Supabase client.
 - Database schema changes require a migration plan in [`docs/DATABASE.md`](./DATABASE.md) (or an update to that file) before implementation.
 - Receipt OCR: **hybrid** approach. Image→text: **on-device** via `expo-text-extractor` (Apple Vision, installed Week 8). Text→JSON: **Supabase Edge Function `parse-receipt`** → `gpt-4o-mini` (key stored as Supabase secret `OPENAI_API_KEY` — never in client bundle, never `EXPO_PUBLIC_`). Falls back to local heuristic when the edge function is unavailable. Supabase Edge Functions are permitted for the OCR/LLM proxy (they are part of the Supabase platform, not a custom server).
-- **Do not create git commits.** All commits are made by the developer manually. Agents may stage changes and suggest commit messages, but must never run `git commit`.
+- **Do not create git commits, and do not modify the staging area.** All staging and commits are done by the developer manually. Agents must never run `git commit`, `git add`, or any command that changes what is staged (`git reset`, `git restore --staged`, `git stash`, etc.). Leave edits as unstaged working-tree changes and suggest commit messages instead.
 - Never commit `.env` files or Supabase keys. Commit **`.env.example`** only (placeholders). Use **`EXPO_PUBLIC_`** prefixed vars in `.env` for client-safe values.
 
 ## Environment Variables
