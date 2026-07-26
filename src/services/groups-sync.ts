@@ -15,10 +15,16 @@ let appStateSub: { remove: () => void } | null = null;
 let lastAppState: AppStateStatus = AppState.currentState;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
-function teardownChannel() {
+async function teardownChannel() {
   if (channel) {
-    void supabase.removeChannel(channel);
+    await supabase.removeChannel(channel);
     channel = null;
+  }
+  const existing = supabase.getChannels().find(
+    (c) => c.topic === `realtime:${CHANNEL}` || c.topic === CHANNEL
+  );
+  if (existing) {
+    await supabase.removeChannel(existing);
   }
 }
 
@@ -38,7 +44,7 @@ function scheduleReload() {
   }, 300);
 }
 
-export function stopGroupsBackgroundSync() {
+export async function stopGroupsBackgroundSync() {
   if (reloadTimer) {
     clearTimeout(reloadTimer);
     reloadTimer = null;
@@ -47,21 +53,15 @@ export function stopGroupsBackgroundSync() {
     appStateSub.remove();
     appStateSub = null;
   }
-  teardownChannel();
+  await teardownChannel();
 }
 
 /**
  * Initial fetch, Realtime on `groups` / `group_members`, refetch on AppState active and on resubscribe.
  */
 export async function syncGroupsForSessionUser(_profile: User): Promise<void> {
-  stopGroupsBackgroundSync();
+  await stopGroupsBackgroundSync();
   lastAppState = AppState.currentState;
-
-  try {
-    await reloadGroupsAndExpenses();
-  } catch {
-    /* keep previous store data on failure */
-  }
 
   channel = supabase
     .channel(CHANNEL)
@@ -80,6 +80,12 @@ export async function syncGroupsForSessionUser(_profile: User): Promise<void> {
         scheduleReload();
       }
     });
+
+  try {
+    await reloadGroupsAndExpenses();
+  } catch {
+    /* keep previous store data on failure */
+  }
 
   appStateSub = AppState.addEventListener('change', (next) => {
     if (lastAppState.match(/inactive|background/) && next === 'active') {

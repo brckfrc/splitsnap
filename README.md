@@ -24,12 +24,8 @@
 
 ## Project Tracking
 
-- **Final Report:** [📄 SplitSnap_Final_Raporu.pdf](docs/school/SplitSnap_Final_Raporu.pdf)
-- **Primary document:** [`ROADMAP.md`](ROADMAP.md) — weekly progress, notes, embedded screenshots, and video links.
-- **Screenshots:** PNGs are organized by week under [`docs/roadmap-screenshots/`](docs/roadmap-screenshots/) (useful for quick browsing).
-- **Weekly Progress Videos:** [YouTube Playlist (all weeks)](https://youtube.com/playlist?list=PLfh_d_SOW477Ie0rM6Yj5QWix_al3jvDc&si=DfWwp8XzHfQsel_b)
-  - [Week 1](https://youtu.be/uZ3RfGsreec?si=huxHxwlchSmuWuN4) • [Week 2](https://youtu.be/ErOGMI0s7SE) • [Week 3](https://youtu.be/WzUGQyE3S0g) • [Week 4](https://youtu.be/bfmGb2MThas) • [Week 5](https://youtu.be/tjnbJSpax2M)  
-  - [Week 6](https://youtu.be/FsKxH_ItLFo) • [Week 7](https://youtu.be/hHDUEYARdsk) • [Week 8](https://youtu.be/fyO_hSsueec) • [Week 9](https://youtu.be/fsI8G6Z_4Z8) • [Week 10](https://youtu.be/Pwte_m7p3B4)
+- **Primary Document:** [`ROADMAP.md`](ROADMAP.md) — post-release backlog, active tasks, and recent updates.
+- **Archived School Project:** [School Archive](docs/school/) & [Screenshots](docs/roadmap-screenshots/) (Final report, logs, videos).
 
 
 ## Key Features
@@ -80,7 +76,7 @@
 
 ## Requirements
 
-- **Node.js** 20.19+ (Expo SDK 56)
+- **Node.js** 20.19+ (Expo SDK 57)
 - **macOS + Xcode** for iOS Simulator
 - **Supabase** project (URL + publishable/anon key)
 

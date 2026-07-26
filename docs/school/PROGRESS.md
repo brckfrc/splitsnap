@@ -364,3 +364,15 @@ Fiş okuma işleminde (Hafta 8), karmaşık ve hata yapmaya çok meyilli olan sa
 - [ ] **Auth rate limiting UX:** çok fazla başarısız deneme için client-side feedback / cooldown
 - [ ] **Üretim Auth e-postası: custom domain + SMTP (hosted Supabase)** — Zorunlu değil; MVP’de built-in gönderici veya e-posta onayı kapalı test yeterli. Ürün büyüyünce veya `429: email rate limit exceeded` (built-in ~2 e-posta/saat) sorununda: ürün subdomain’i veya kök domain (`splitsnap.borak.dev`, ileride ayrı alan adı) için DNS, Dashboard’da **Custom SMTP** (Resend, SendGrid, Postmark vb.), redirect / site URL ve e-posta şablonlarındaki linklerin aynı domainle uyumu
 - [x] **Davet kodu + tıklanabilir davet linki + Associated Domains (Hafta 10):** `Share.share` artık `https://splitsnap.borak.dev/invite/<KOD>` paylaşıyor. `src/app/invite/[code].tsx` universal link handler'ı eklendi — giriş yapılmışsa anında `joinByInviteCode`, yapılmamışsa `pendingInviteStore` (MMKV) → `/login` → groups mount'ta otomatik katılım. AASA `applinks:splitsnap.borak.dev` + `webcredentials:splitsnap.borak.dev` aktif; website'de `/invite/*` fallback sayfası Cloudflare Pages'te yayında.
+
+---
+
+## Temmuz 2026 — Expo SDK 57 & Tamagui Yükseltmesi
+
+**Durum:** Tamamlandı
+
+**Yapılan Değişiklikler:**
+- **Expo SDK 57 Yükseltmesi:** Proje en güncel kararlı sürüm olan Expo SDK 57 (React Native 0.86, React 19.2.3) seviyesine çekildi.
+- **Tamagui Paket Hizalaması:** `@tamagui/portal` ve diğer tamagui bağımlılıkları `2.5.1` sürümüne sabitlendi ve `package.json` overrides'ına eklenerek, kütüphanenin `node_modules` altında çift yüklenmesinden kaynaklanan `Can't find Tamagui configuration` / `no parent theme context was found` runtime çökmesi giderildi.
+- **Realtime Yarış Durumu (Race Condition) Çözümü:** `groups-sync.ts` dosyasında, Fast Refresh sırasında global referansın sıfırlanıp Supabase client registry'sinde asılı kalan kanalların çakışma yaratması sorunu çözüldü. Artık kanal silme asenkron olarak `await` ediliyor ve `supabase.getChannels()` listesinden de uyuşan tüm eski abonelikler başarıyla temizleniyor.
+

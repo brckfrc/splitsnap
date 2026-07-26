@@ -3,7 +3,7 @@
 ## Must-Follow Constraints
 
 - This project **ships for iOS only**. Do not add Android-specific features, dependencies, or branching logic for Android as a supported target. The Expo template may still include `android` / `web` blocks in `app.json` and scripts like `npm run android` / `npm run web` — treat those as **template defaults**, not product requirements (see `README.md`).
-- Framework: **Expo SDK 56** (React Native 0.85) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
+- Framework: **Expo SDK 57** (React Native 0.86) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
 - Backend: **Supabase** (`@supabase/supabase-js`). Do not write custom backend or server code. All Auth, DB, and Storage operations must go through the Supabase client.
 - Database schema changes require a migration plan in [`docs/DATABASE.md`](./DATABASE.md) (or an update to that file) before implementation.
 - Receipt OCR: **hybrid** approach. Image→text: **on-device** via `expo-text-extractor` (Apple Vision, installed Week 8). Text→JSON: **Supabase Edge Function `parse-receipt`** → `gpt-4o-mini` (key stored as Supabase secret `OPENAI_API_KEY` — never in client bundle, never `EXPO_PUBLIC_`). Falls back to local heuristic when the edge function is unavailable. Supabase Edge Functions are permitted for the OCR/LLM proxy (they are part of the Supabase platform, not a custom server).
@@ -21,7 +21,7 @@
 
 | Layer | Package | Purpose |
 |-------|---------|---------|
-| Framework | Expo SDK 56 | React Native 0.85, TypeScript built-in |
+| Framework | Expo SDK 57 | React Native 0.86, TypeScript built-in |
 | Navigation | Expo Router | File-based routing under **`src/app/`** |
 | Backend | @supabase/supabase-js | Auth, PostgreSQL, Storage |
 | Auth session storage | @react-native-async-storage/async-storage | Default `auth.storage` for Supabase (official Expo tutorial pattern) |
@@ -64,25 +64,17 @@
 
 ## Important Locations
 
-- `ROADMAP.md` — 10-week checklist (**Turkish**). Agents: only `[x]` on weekly items and additions under `### Ekstra`. **Do not** edit content under `### Haftalık Notlar`, `### Video Linki`, or `### Ekran Görselleri` (student / instructor only).
+- `ROADMAP.md` — Post-release backlog and active development updates (English). The primary document for tracking features.
 - `design/figma_template/` — Figma-aligned **reference UI** (Vite/React prototype; not the production app). Use for layout/tokens when implementing `src/app/`. Screenshots: `design/figma_screenshots/`.
 - `docs/archive/SplitSnap Tanıtım Raporu.md` — original university report
 - `docs/DATABASE.md` — PostgreSQL / Supabase ER diyagramı, tablolar, RLS stratejisi ve backend planı (tek kaynak)
-- `docs/PROGRESS.md` — detailed weekly log
+- `docs/school/ROADMAP.md` & `docs/school/PROGRESS.md` — Archived school project checklist and weekly logs. Kept purely for historical reference and must not be modified.
 - `docs/OPTIMIZATION-PROMPT.md` — optimization audit prompt
 - `docs/SECURITY-PROMPT.md` — security audit prompt
 
-## ROADMAP.md Rules
+## Archive Rules
 
-- Weekly checklist items mirror the report and **must not be edited, reordered, or removed** (wording).
-- Allowed for agents: `- [ ]` → `- [x]` for completed items; new bullets under **`### Ekstra`** for out-of-plan work.
-- **Human-only sections (agents must not add, remove, or change text here):** under each week, **`### Haftalık Notlar`**, **`### Video Linki`**, and **`### Ekran Görselleri`** — used for weekly narrative, demo links, and screenshot references for the course instructor.
-
-### When not to tick `ROADMAP.md`
-
-- **Do not** mark a weekly item `[x]` based only on **mock data**, **placeholder UI**, or a **template/scaffold** that does not meet the milestone as written in the report (e.g. groups/expenses without Supabase-backed persistence and the intended flows).
-- **Do not** update `ROADMAP.md` to “catch up” appearances when the implementation is exploratory or incomplete relative to that week’s definition.
-- Record that work in **`docs/PROGRESS.md`** instead (what exists, what is mock, what is missing). Optional short note under the relevant week’s **`### Ekstra`** in `ROADMAP.md` is allowed if it helps reviewers (without ticking the formal checklist items).
+- The school documentation under `docs/school/` is archived and **must not be updated or modified** by agents. These files are frozen for course submission reference.
 
 ## Change Safety Rules
 

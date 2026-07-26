@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // MMKV cache will show stale data while this refreshes in background.
       syncGroupsForSessionUser(profile).catch(() => {});
     } else {
-      stopGroupsBackgroundSync();
+      void stopGroupsBackgroundSync();
       stopExpensesBackgroundSync();
       clearSplitSessionData();
       setUser(null);
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         void syncGroupsForSessionUser(profile);
         return;
       }
-      stopGroupsBackgroundSync();
+      void stopGroupsBackgroundSync();
       stopExpensesBackgroundSync();
       clearSplitSessionData();
       setUser(null);
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOutApp = useCallback(async () => {
-    stopGroupsBackgroundSync();
+    void stopGroupsBackgroundSync();
     stopExpensesBackgroundSync();
     clearSplitSessionData();
     await authSignOut();
