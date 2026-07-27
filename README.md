@@ -31,46 +31,46 @@
 ## Key Features
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/mockup/1.png" width="220" align="right" style="margin-left: 20px;">
+  <img src="docs/store-assets/v1.2.0/mockup/1.png" width="220" align="right" style="margin-left: 20px;">
   <br><br><br>
   <h3>🏘 Groups & Shared Expenses</h3>
-  <p>Create groups with your friends, roommates, or travel buddies. Track all shared expenses instantly from a single screen. Say goodbye to complicated math!</p>
+  <p>Create groups with your friends, roommates, or travel buddies. The home screen opens on a single summary: what you are owed, what you owe, how much you have spent this month, and the latest activity across every group. Tap a balance to see exactly which groups it came from.</p>
 </div>
 <br clear="both"/>
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/mockup/2.png" width="220" align="left" style="margin-right: 20px;">
+  <img src="docs/store-assets/v1.2.0/mockup/2.png" width="220" align="left" style="margin-right: 20px;">
   <br><br><br>
   <h3>📸 AI-Powered Receipt Scanning</h3>
-  <p>Snap a photo of your receipt or pick one from your gallery. Thanks to AI integration, the expense amount, date, and merchant name are filled in automatically.</p>
+  <p>Snap a photo of your receipt or pick one from your gallery. The text is read on device, then an AI pass fills in the amount, date, and merchant name for you. If an image turns out not to be a readable receipt, the app tells you instead of quietly guessing.</p>
 </div>
 <br clear="both"/>
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/mockup/3.png" width="220" align="right" style="margin-left: 20px;">
+  <img src="docs/store-assets/v1.2.0/mockup/3.png" width="220" align="right" style="margin-left: 20px;">
   <br><br><br>
   <h3>💸 Fair & Flexible Splitting</h3>
-  <p>Split expenses equally among group members or enter exact amounts manually. Our interface calculates the remaining balance in real-time, leaving zero room for error!</p>
+  <p>Split an expense equally or type exact amounts per person. When more than one person chipped in, record every payer on the same expense instead of faking it with a second entry. The remaining balance updates as you type, so a split can never quietly fail to add up.</p>
 </div>
 <br clear="both"/>
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/mockup/4.png" width="220" align="left" style="margin-right: 20px;">
+  <img src="docs/store-assets/v1.2.0/mockup/4.png" width="220" align="left" style="margin-right: 20px;">
   <br><br><br>
   <h3>📊 Detailed Settlement Summary</h3>
-  <p>"Who owes whom, and how much?" Get the answer on a single screen. Our algorithm minimizes the debt network, ensuring you settle up with the fewest possible transactions.</p>
+  <p>"Who owes whom, and how much?" Get the answer on a single screen. Our algorithm minimizes the debt network, ensuring you settle up with the fewest possible transactions, and tapping any line opens the full breakdown behind it.</p>
 </div>
 <br clear="both"/>
 <br>
 
 <div>
-  <img src="docs/roadmap-screenshots/apple/mockup/5.png" width="220" align="right" style="margin-left: 20px;">
+  <img src="docs/store-assets/v1.2.0/mockup/5.png" width="220" align="right" style="margin-left: 20px;">
   <br><br><br>
-  <h3>🌙 Dark Mode</h3>
-  <p>A flawless dark mode experience that is easy on the eyes and seamlessly synchronizes with your system theme.</p>
+  <h3>🌗 Light & Dark</h3>
+  <p>Both themes are built as first-class citizens rather than one being an afterthought, and the app follows your system setting automatically.</p>
 </div>
 <br clear="both"/>
 

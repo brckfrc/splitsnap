@@ -126,6 +126,90 @@ eas device:list
 
 ---
 
+## Ekran Görüntüleri
+
+### Nerede duruyor
+
+```
+docs/store-assets/<sürüm>/
+  raw/      → App Store Connect'e yüklenen ham kareler
+  mockup/   → README'de kullanılan, cihaz giydirmeli hâlleri
+```
+
+`docs/roadmap-screenshots/` bunlarla karıştırılmamalı; orası okul projesinin haftalık geliştirme günlüğü ve `docs/school/ROADMAP.md` tarafından kullanılıyor.
+
+### Boyut
+
+Tek boyut yeterli: **1320 × 2868** (6.9", iPhone 17 / 16 Pro Max'in tam çözünürlüğü). Apple 1290×2796 ve 1260×2736'yı da kabul ediyor, ve verdiğin bu tek seti küçük cihazlara kendisi ölçekliyor. Yerelleştirme başına **en fazla 10** kare yüklenebilir.
+
+**İlk 3 kare** arama sonuçlarında ve yükleme sayfasında görünen tek karelerdir; gerisini çoğu kullanıcı hiç görmez.
+
+### ⚠️ Alfa kanalı tuzağı
+
+Simülatörün kaydettiği PNG'lerde alfa kanalı bulunur ve **App Store Connect saydamlık içeren görselleri reddeder**. Yüklemeden önce mutlaka kontrol et:
+
+```bash
+sips -g hasAlpha ekran.png          # "hasAlpha: yes" ise temizlenmeli
+```
+
+Temizleme (boyutu ve PNG formatını korur, repoda ImageMagick yok ama ffmpeg var):
+
+```bash
+ffmpeg -y -i girdi.png -pix_fmt rgb24 cikti.png
+```
+
+Toplu iş için `while read` döngüsü kullan; **zsh dizileri 1'den başladığı için** `for i in $(seq …)` ile dizi indekslemek isimleri bir kaydırır.
+
+### İçerik kuralları
+
+Yaş sınırımız **4+** ve ankette her şeye "No" dedik. Ekran görüntülerindeki içerik bununla tutarlı olmak zorunda. Özellikle fiş fotoğraflarına dikkat: gerçek bir masada çekilen karede **sigara paketi, küllük, alkol** gibi nesneler görünürse reddedilme veya yaş sınırının yükseltilmesi riski var. Fiş fotoğrafını temiz bir yüzeyde çek.
+
+### Demo verisi
+
+Ekran görüntüleri için gerçekçi veri üreten betikler `supabase/seed-local/` altında (gitignore'lu, repoya girmez):
+
+| Betik | İşi |
+|---|---|
+| `screenshot-seed.sql` | 5 test hesabı için 3 grup, harcamalar, ödeşme kaydı oluşturur |
+| `screenshot-refresh-dates.sql` | Tarihleri bugüne kaydırır; "Bu ayki harcaman" ve "Bugün / Dün" etiketleri tazelenir |
+| `screenshot-teardown.sql` | Hepsini siler |
+
+Hesaplar panelden **Authentication > Users > Add user** ile ("Auto Confirm User" işaretli) açılır. Kare çekmeden önce `screenshot-refresh-dates.sql` çalıştır.
+
+Fiş fotoğrafı ve manuel bölüşüm SQL ile kurulamıyor, o iki kare için uygulamada elle harcama eklemek gerekiyor. Simülatörde kamera olmadığından fiş görselini simülatör penceresine sürükleyip bırak, Fotoğraflar'a düşer, sonra "Galeriden Seç" ile al.
+
+### v1.2.0 kare listesi
+
+App Store'a `01`–`10` gidiyor (sınır zaten 10). `11` yedek: profil ekranı bilgi olarak iyi ama görsel olarak zayıf, açık temayı ana sayfa karesi çok daha iyi anlatıyor.
+
+| # | Kare | Store | README |
+|---|---|---|---|
+| 01 | Ana sayfa özeti (koyu) | ✅ | ✅ mockup/1 |
+| 02 | Fiş tarama ve otomatik doldurma | ✅ | ✅ mockup/2 |
+| 03 | Ödeşme özeti | ✅ | ✅ mockup/4 |
+| 04 | Ödeşmede harcama detay sheet'i | ✅ | |
+| 05 | Grup detayı | ✅ | |
+| 06 | Çoklu ödeyen seçici | ✅ | ✅ mockup/3 |
+| 07 | Tam ekran fiş | ✅ | |
+| 08 | Alacak dökümü sheet'i | ✅ | |
+| 09 | Hızlı ekle grup seçici | ✅ | |
+| 10 | Ana sayfa (açık tema) | ✅ | ✅ mockup/5 |
+| 11 | Profil (açık tema) | | |
+
+README'nin beş bölümü sırasıyla gruplar, fiş tarama, bölüşüm, ödeşme ve tema anlatıyor; `mockup/` numaraları bu sırayı takip ediyor, ham kare numaralarını değil.
+
+### Yayın öncesi kontrol listesi
+
+1. `screenshot-refresh-dates.sql` çalıştırıldı mı
+2. Rahatsız Etmeyin açık mı (bildirim şeridi kareye girmesin)
+3. Tüm kareler 1320×2868 mi
+4. `hasAlpha: no` mu
+5. Fotoğraflarda 4+ ile çelişen bir nesne var mı
+6. İlk 3 kare en güçlü özellikleri mi anlatıyor
+7. Kareler bittiğinde `screenshot-teardown.sql` (veri bir sonraki sürümde tekrar kullanılacaksa atla)
+
+---
+
 ## App Store Connect — Yapılan Ayarlar
 
 ### App Information

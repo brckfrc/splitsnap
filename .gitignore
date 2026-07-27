@@ -47,3 +47,6 @@ app-example
 
 # log files
 /logs
+
+# local-only SQL scratch (screenshot seed data, ad-hoc fixes)
+supabase/seed-local/

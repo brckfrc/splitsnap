@@ -3,7 +3,7 @@
 This document tracks the active backlog, future enhancements, and recent updates for SplitSnap.
 
 ## Active Status
-- **Current Version:** `v1.2.0` (Build 13, pending submission; `v1.1.0` / Build 12 is live)
+- **Current Version:** `v1.2.0` (Build 13, pending submission). `v1.0.0` is the version live on the App Store: `v1.1.0` / Build 12 was submitted but its review was cancelled before approval, so it never shipped and its changes are folded into the 1.2.0 release notes.
 - **Framework:** Expo SDK 57 (React Native 0.86.0) + React 19 + TypeScript
 - **Backend:** Supabase (Auth, DB, Edge Functions, Storage)
 
@@ -80,6 +80,9 @@ This document tracks the active backlog, future enhancements, and recent updates
 
 - [ ] **[Medium] Auth Screens Modernization (Giriş/Kayıt):**
   - **Description:** Redesign the login and register screens with a more modern, polished look — stronger brand presence (logo/wordmark), refined typography and spacing, layered card/gradient backgrounds consistent with the new theme, and smoother field/CTA styling. Keep the shared validation, password strength meter, and AutoFill/eye-toggle behavior intact.
+- [ ] **[Low] Privacy Policy & Terms Link on the Register Screen:**
+  - **Description:** The privacy policy exists at [splitsnap.borak.dev/privacy](https://splitsnap.borak.dev/privacy) and is linked from App Store Connect, but nothing in the app itself points to it: a user can create an account without ever being shown where the data handling, the OpenAI OCR step or the account deletion behaviour are described. Add a small line under the register CTA ("Kaydolarak Gizlilik Politikası'nı kabul etmiş olursunuz") linking out to it, and consider a matching entry in Profil. No consent checkbox is needed; Apple doesn't require one for a free app with no subscription, so this is about discoverability rather than compliance.
+  - **Related fix, unblocked and worth doing first:** section 5 of the published policy still describes deletion as **Profil → Hesabı Sil**, which stopped being the path when the dedicated deletion screen landed. It is now **Profil → Profili Düzenle → Tehlikeli Alan → Hesabı Sil**. A reviewer checking the policy against the app would hit that mismatch. The site lives outside this repo, so this is a website edit.
 - [ ] **[Medium] Card Stack UI for Payer/Split Selection:**
   - **Description:** Fine-tune swipe animations and gestures for the new custom BottomSheets, ensuring ultra-smooth card-stack style sliding interactions.
 - [ ] **[Low] Liquid Glass Progressive Enhancement (iOS 26+ Compatibility):**
@@ -200,6 +203,7 @@ These touch nothing else and can be picked up in any order or in parallel: `Sett
 ## Recent Updates
 
 ### 📅 July 2026 — Sprint #2: Split Payer & Premium UI Upgrade
+- **Editing an Expense Was Completely Broken (`invalid input syntax for type uuid: ""`):** Saving *any* edit failed with a raw Postgres error. The permission check in `update_expense_with_shares` read `coalesce(_owner_id, '') <> _uid`; since `_owner_id` is a `uuid`, COALESCE resolved to `uuid` and the empty-string literal was coerced to `uuid` at **plan** time, so the statement raised before any value was ever compared. That made the failure unconditional rather than an edge case, and it shipped in the multi-payer migration (`20260726172500`) where the RPC was rewritten. Adding an expense was unaffected because `create_expense_with_shares` has no equivalent check. Fixed in `20260727051500_fix_expense_update_owner_check.sql` with `_owner_id is distinct from _uid`, which handles a null owner correctly without a cast (the old COALESCE was presumably guarding exactly that case). Server-side only, no client change or rebuild needed. **Caught while seeding screenshot data, i.e. one commit before submitting 1.2.0.**
 - **AI Spend Is Now Bounded (`parse-receipt`):** The receipt-parsing edge function had authentication but no budget: being a signed-in user was the only requirement for making an OpenAI call, with no size ceiling and no call ceiling, so cost was effectively unbounded.
   - **Two ceilings, both tunable without a deploy.** `20260727012000_ai_usage_quota.sql` adds `app_config` (a key/value table) holding `ai_daily_limit` (50 per user) and `ai_global_daily_limit` (500 project-wide). Either can be changed with a single `UPDATE` from the Supabase SQL editor, no migration and no function redeploy. The project-wide ceiling matters because a per-user limit alone is meaningless while signup is open and email confirmation is off: someone scripting account creation would simply get 50 calls per account. At current gpt-4o-mini pricing the global ceiling caps worst-case spend around 0.20 USD/day.
   - **Counter design.** `ai_usage` holds one row per user per day. Both it and `app_config` have RLS enabled with **no policies at all**, so they're unreachable from PostgREST entirely; only the `SECURITY DEFINER` `consume_ai_quota()` touches them, and it resolves the caller from `auth.uid()` itself rather than trusting an argument. The increment is a single atomic upsert so concurrent calls can't both read an under-limit count and proceed. Limit lookups `coalesce` to safe defaults, so a missing config row fails closed rather than into unlimited spend. Rejected calls still increment, so probing for the ceiling isn't free.
