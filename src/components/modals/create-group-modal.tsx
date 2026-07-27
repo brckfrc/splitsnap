@@ -1,9 +1,11 @@
-import { StyleSheet, Text } from 'react-native';
-import { Sheet, XStack } from 'tamagui';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Input, KeyboardDoneToolbar } from '@/components/ui/input';
+import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { MAX_GROUP_DESCRIPTION_LENGTH, MAX_GROUP_NAME_LENGTH } from '@/utils/validation';
 
 type Props = {
   visible: boolean;
@@ -31,62 +33,49 @@ export function CreateGroupModal({
   const t = useTheme();
 
   return (
-    <Sheet
-      modal
-      open={visible}
-      onOpenChange={(open: boolean) => {
-        if (!open) onClose();
-      }}
-      snapPoints={[50, 88]}
-      snapPointsMode="percent"
-      position={0}
-      dismissOnOverlayPress
-      dismissOnSnapToBottom
-      moveOnKeyboardChange
-    >
-      <Sheet.Overlay bg="rgba(0,0,0,0.45)" />
-      <Sheet.Frame
-        p="$5"
-        gap="$4"
-        bg={t.card}
-        borderTopLeftRadius={16}
-        borderTopRightRadius={16}
-        borderWidth={1}
-        borderColor={t.border}
-      >
-        <KeyboardDoneToolbar />
-        <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header">
-          Yeni Grup
-        </Text>
-        <Input label="Grup adı" value={name} onChangeText={onChangeName} placeholder="Örn. Hafta sonu gezisi" />
+    <BottomSheet visible={visible} onClose={onClose} title="Yeni Grup">
+      <KeyboardDoneToolbar />
+      <View style={styles.body}>
+        <Input
+          label="Grup adı"
+          value={name}
+          onChangeText={onChangeName}
+          placeholder="Örn. Hafta sonu gezisi"
+          maxLength={MAX_GROUP_NAME_LENGTH}
+        />
         <Input
           label="Açıklama (isteğe bağlı)"
           value={description}
           onChangeText={onChangeDescription}
           placeholder="Kısa not"
           multiline
+          maxLength={MAX_GROUP_DESCRIPTION_LENGTH}
         />
         {error ? (
           <Text style={{ color: t.destructive }} accessibilityRole="alert">
             {error}
           </Text>
         ) : null}
-        <XStack gap="$3" mt="$2">
+        <View style={styles.actions}>
           <Button variant="secondary" flex={1} onPress={onClose} disabled={submitting}>
             İptal
           </Button>
           <Button flex={1} loading={submitting} onPress={onSubmit} disabled={!name.trim() || submitting}>
             Oluştur
           </Button>
-        </XStack>
-      </Sheet.Frame>
-    </Sheet>
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
+  body: {
+    gap: Spacing.four,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    marginTop: Spacing.two,
   },
 });

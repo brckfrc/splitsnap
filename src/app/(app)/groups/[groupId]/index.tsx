@@ -1,6 +1,6 @@
-import { ArrowLeft, ArrowUpRight, Receipt, TrendingUp, UserPlus } from '@/lib/icons';
+import { ArrowLeft, ArrowUpDown, ArrowUpRight, Receipt, TrendingUp, UserPlus } from '@/lib/icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,6 +13,7 @@ import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
 import { href } from '@/lib/href';
 import { splitData } from '@/services/split-data';
+import { sortExpenses, type ExpenseSortKey } from '@/utils/expense';
 import { formatCurrencyTry, formatShortDate } from '@/utils/format';
 import { userNetBalance } from '@/utils/settlement';
 
@@ -52,6 +53,11 @@ export default function GroupDetailScreen() {
   const gid = typeof groupId === 'string' ? groupId : groupId?.[0] ?? '';
 
   const { group, members, expenses, settlements } = useGroupAggregates(gid);
+
+  // Default to the date the money was spent — this list reads as a ledger.
+  // Sorting by entry date is opt-in, for finding what was just typed in.
+  const [sortKey, setSortKey] = useState<ExpenseSortKey>('spent');
+  const sortedExpenses = useMemo(() => sortExpenses(expenses, sortKey), [expenses, sortKey]);
 
   const getPayerDisplay = useCallback((expenseId: string) => {
     const payers = splitData.getPayers(expenseId);
@@ -102,17 +108,33 @@ export default function GroupDetailScreen() {
         )
       : 0;
 
-  const isOwner = Boolean(user && user.id === group.ownerId);
   const inviteCode = group.inviteCode;
   const groupName = group.name;
 
+  // Any active member can invite. This was owner-only before, but that was never
+  // a real restriction: every participant can read `invite_code` through RLS and
+  // already has it in the local store, and `join_group_by_invite` accepts a valid
+  // code from any authenticated user. Restricting it would have to be enforced
+  // server-side to mean anything, and in practice whoever is standing next to the
+  // new person should be able to add them.
+  const canInvite = Boolean(
+    inviteCode && user && members.some((m) => m.userId === user.id && !m.leftAt),
+  );
+
   async function shareInviteCode() {
     if (!inviteCode) return;
-    const url = `https://splitsnap.borak.dev/invite/${inviteCode.toUpperCase()}`;
+    const code = inviteCode.toUpperCase();
+    const url = `https://splitsnap.borak.dev/invite/${code}`;
+    const inviter = user?.name?.trim();
     try {
+      // Only `message` — passing `url` as well makes iOS hand the share sheet two
+      // separate items, and single-text-field targets (WhatsApp, Notes) append the
+      // URL a second time. Plain-text URLs still get linkified and previewed.
       await Share.share({
-        url,   // iOS — link olarak paylaşılır (Messages, WhatsApp vs. önizleme gösterir)
-        message: `SplitSnap — "${groupName}" grubuna katılmak için:\n${url}`,
+        message:
+          `${inviter ? `${inviter} seni` : 'Seni'} "${groupName}" grubuna davet etti 💸\n\n` +
+          `${url}\n\n` +
+          `Uygulamadan katılmak için kod: ${code}`,
       });
     } catch {
       /* kullanıcı iptal */
@@ -135,17 +157,17 @@ export default function GroupDetailScreen() {
             <Text
               style={[
                 styles.headerTitleText,
-                isOwner && inviteCode ? styles.headerTitleTextBesideShare : null,
+                canInvite ? styles.headerTitleTextBesideShare : null,
               ]}
-              selectable={Boolean(isOwner && inviteCode)}
+              selectable={canInvite}
               accessibilityLabel={
-                isOwner && inviteCode ? `Grup ${group.name}, davet kodu ${inviteCode}` : undefined
+                canInvite ? `Grup ${group.name}, davet kodu ${inviteCode}` : undefined
               }
             >
               <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header" numberOfLines={1}>
                 {group.name}
               </Text>
-              {isOwner && inviteCode ? (
+              {canInvite && inviteCode ? (
                 <>
                   {'\n'}
                   <Text style={[styles.inviteHint, { color: t.mutedForeground }]}>#{inviteCode.toUpperCase()}</Text>
@@ -158,7 +180,7 @@ export default function GroupDetailScreen() {
                 </>
               ) : null}
             </Text>
-            {isOwner && inviteCode ? (
+            {canInvite ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Davet kodunu paylaş"
@@ -294,7 +316,27 @@ export default function GroupDetailScreen() {
           )}
         </Card>
 
-        <Text style={[styles.sectionTitle, { color: t.foreground, marginTop: Spacing.five }]}>Harcamalar</Text>
+        <View style={[styles.expensesHeader, { marginTop: Spacing.five }]}>
+          <Text style={[styles.sectionTitle, { color: t.foreground }]}>Harcamalar</Text>
+          {expenses.length > 1 ? (
+            <Pressable
+              onPress={() => setSortKey((k) => (k === 'spent' ? 'entered' : 'spent'))}
+              hitSlop={8}
+              style={styles.sortBtn}
+              accessibilityRole="button"
+              accessibilityLabel={
+                sortKey === 'spent'
+                  ? 'Harcama tarihine göre sıralı, eklenme tarihine geç'
+                  : 'Eklenme tarihine göre sıralı, harcama tarihine geç'
+              }
+            >
+              <ArrowUpDown size={14} color={t.mutedForeground} />
+              <Text style={[styles.sortLabel, { color: t.mutedForeground }]}>
+                {sortKey === 'spent' ? 'Harcama tarihi' : 'Eklenme tarihi'}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
         {expenses.length === 0 ? (
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: Spacing.seven, gap: Spacing.four }}>
             <Text style={{ fontSize: 48 }}>🧾</Text>
@@ -307,7 +349,7 @@ export default function GroupDetailScreen() {
           </View>
         ) : (
           <View style={{ gap: Spacing.three }}>
-            {expenses.map((e) => (
+            {sortedExpenses.map((e) => (
               <Pressable
                 key={e.id}
                 onPress={() => router.push(href(`/groups/${gid}/expenses/${e.id}/edit`))}
@@ -322,7 +364,10 @@ export default function GroupDetailScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.expTitle, { color: t.foreground }]}>{e.title}</Text>
                       <Text style={[styles.expMeta, { color: t.mutedForeground }]}>
-                        {formatShortDate(e.date)} · {getPayerDisplay(e.id)}
+                        {sortKey === 'entered'
+                          ? `Eklendi ${formatShortDate(e.createdAt ?? e.date)}`
+                          : formatShortDate(e.date)}{' '}
+                        · {getPayerDisplay(e.id)}
                       </Text>
                     </View>
                     <Text style={[styles.expAmount, { color: t.primary }]}>{formatCurrencyTry(e.amount)}</Text>
@@ -394,6 +439,18 @@ const styles = StyleSheet.create({
   actionButtonFill: { alignSelf: 'stretch', width: '100%' },
   body: { paddingHorizontal: Spacing.five, paddingTop: Spacing.five, gap: Spacing.three },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: Spacing.two },
+  expensesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sortBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.two,
+  },
+  sortLabel: { fontSize: 12, fontWeight: '600' },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   avatar: {
     width: 36,

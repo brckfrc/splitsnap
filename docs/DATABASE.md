@@ -321,6 +321,45 @@ Grup bazlı değişiklik geçmişi. UI'da kullanıcı dostu bir "etkinlik akış
 
 `activity_log` ile aynı sütun yapısı; `pg_cron` job’u (P6) eski satırları buraya taşır. RLS: yalnızca `is_group_participant` ile okuma (canlı tablo ile aynı mantık) veya servis rolü ile taşıma.
 
+### 3.10 `public.ai_usage`
+
+`parse-receipt` edge function’ı, oturum açmış kullanıcı adına OpenAI’a istek atar. Bu tablo, o isteklerin **günlük sayacıdır**; fonksiyon para harcamadan önce kotayı tüketmek zorundadır.
+
+| Sütun | Tip | Not |
+|-------|-----|-----|
+| `user_id` | `uuid not null` | `auth.users(id)`, `on delete cascade` |
+| `usage_date` | `date not null` | Varsayılan `current_date` |
+| `call_count` | `int not null` | Varsayılan `0` |
+
+**PK:** `(user_id, usage_date)`.
+
+**RLS:** Açık, **politika yok**. Yani PostgREST üzerinden hiçbir istemci okuyamaz/yazamaz; tabloya yalnızca §6’daki `consume_ai_quota()` (SECURITY DEFINER) dokunur.
+
+**Not:** Reddedilen çağrılar da sayacı artırır. Tavanın nerede olduğunu yoklamak bedava olmamalı, aksi hâlde limitin hemen altında oturmak kolaylaşır.
+
+### 3.11 `public.app_config`
+
+Sunucu tarafı ayarlanabilir değerler. Limitleri fonksiyonun içine gömmek yerine burada tutuyoruz; böylece tavan **migration ve edge function deploy’u olmadan**, tek `UPDATE` ile yükseltilebilir:
+
+```sql
+update public.app_config set value = 100 where key = 'ai_daily_limit';
+```
+
+| Sütun | Tip | Not |
+|-------|-----|-----|
+| `key` | `text primary key` | |
+| `value` | `int not null` | |
+| `updated_at` | `timestamptz not null` | Varsayılan `now()` |
+
+**Başlangıç satırları:**
+
+| `key` | `value` | Anlamı |
+|-------|---------|--------|
+| `ai_daily_limit` | `50` | Kullanıcı başına günlük AI çağrısı |
+| `ai_global_daily_limit` | `500` | Proje geneli günlük tavan (devre kesici) |
+
+**RLS:** Açık, **politika yok** — `ai_usage` ile aynı gerekçe.
+
 ---
 
 ## 4. İndeksler
@@ -338,6 +377,7 @@ Grup bazlı değişiklik geçmişi. UI'da kullanıcı dostu bir "etkinlik akış
 | `settlements` | `(group_id)` where `deleted_at is null` | partial | Grup ödemelerini listeleme |
 | `activity_log` | `(group_id, created_at desc)` | btree | Etkinlik akışı (son olaylar önce) |
 | `activity_log` | `(entity_type, entity_id)` | btree | Belirli bir kaydın geçmişini çekme |
+| `ai_usage` | `(usage_date)` | btree | Proje geneli günlük toplam; PK `user_id` ile başladığı için tarih-only sorguya hizmet edemez |
 
 `activity_log_archive` için aynı `(group_id, created_at desc)` indeksi önerilir. Taşıma: **§1.1 P6** (`pg_cron`).
 
@@ -521,6 +561,7 @@ Bu sayede `group_members` tablosuna doğrudan INSERT politikası gerekmez (trigg
 | `send_friend_request_by_code(code text)` | RPC | `SECURITY DEFINER`; kod → `to_user_id`, `from_user_id = auth.uid()`, `pending` satırı; kendine / mükerrer pending engeli |
 | `add_owner_as_member()` | `AFTER INSERT ON groups` | `group_members` satırı: `user_id = new.owner_id`, `role = 'admin'` |
 | `set_updated_at()` | `BEFORE UPDATE ON profiles, expenses` | `updated_at = now()` |
+| `consume_ai_quota()` | RPC | `SECURITY DEFINER`; `ai_usage` sayacını **tek atomik upsert** ile artırır, ardından kullanıcı ve proje geneli tavanlarını `app_config`'ten okuyup karşılaştırır. Kota içindeyse `true`, aşıldıysa `false` döner. Yalnızca `authenticated` çalıştırabilir; `parse-receipt` edge function'ı OpenAI'a gitmeden önce çağırır ve `false` gelirse **429** döner. Atomik upsert, eşzamanlı iki çağrının ikisinin birden limit altı okuma yapmasını engeller. Config satırı silinirse `coalesce` ile güvenli tavana (50 / 500) düşer, yani sınırsız harcamaya *fail-open* olmaz |
 
 ### Kod üretimi (grup + kullanıcı)
 
@@ -711,3 +752,4 @@ Yeni migration veya politika eklendiğinde bu tabloya bir satır ekleyin.
 
 | 2026-05-05 | Hafta 7 migration: [`supabase/migrations/20260505000000_emoji_usage_stats.sql`](../supabase/migrations/20260505000000_emoji_usage_stats.sql) — `get_emoji_usage_stats()` RPC fonksiyonu; platform genelinde harcama `title` → `icon` eşleşme istatistiklerini döndürür (dinamik emoji haritası). |
 | 2026-05-29 | Hafta 8 migration: [`supabase/migrations/20260529000000_week8_receipts.sql`](../supabase/migrations/20260529000000_week8_receipts.sql) — `receipts` private bucket, storage RLS (`receipts_insert` / `receipts_select`), `create_expense_with_shares` ve `update_expense_with_shares` RPC'leri `p_receipt_storage_path` + `p_ocr_suggestions` parametreleriyle genişletildi (11 param, geriye uyumlu). |
+| 2026-07-27 | AI kota migration'ı: [`supabase/migrations/20260727012000_ai_usage_quota.sql`](../supabase/migrations/20260727012000_ai_usage_quota.sql) — `ai_usage` günlük sayaç tablosu, `app_config` ayarlanabilir limit tablosu (`ai_daily_limit` 50, `ai_global_daily_limit` 500), `consume_ai_quota()` RPC. İkisinde de RLS açık ve politika yok. `parse-receipt` edge function'ı artık `Authorization` başlığı, gövde boyutu tavanı (64 KB) ve metin kırpması (6000 karakter) da uyguluyor. |

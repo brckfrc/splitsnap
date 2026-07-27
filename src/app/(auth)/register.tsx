@@ -6,10 +6,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordStrengthMeter } from '@/components/ui/password-strength-meter';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { href } from '@/lib/href';
 import { signUp } from '@/services/auth';
+import {
+  validateDisplayName,
+  validateEmail,
+  validateNewPassword,
+} from '@/utils/validation';
 
 export default function RegisterScreen() {
   const t = useTheme();
@@ -28,24 +34,13 @@ export default function RegisterScreen() {
     setEmailError(null);
     setPasswordError(null);
 
-    const emailValue = email.trim();
-    const nameValue = name.trim();
-    let hasError = false;
-
-    if (!nameValue || nameValue.length < 2) {
-      setNameError('Ad Soyad en az 2 karakter olmalıdır.');
-      hasError = true;
-    }
-    if (!emailValue || !/\S+@\S+\.\S+/.test(emailValue)) {
-      setEmailError('Geçerli bir e-posta adresi girin.');
-      hasError = true;
-    }
-    if (!password || password.length < 6) {
-      setPasswordError('Şifre en az 6 karakter olmalıdır.');
-      hasError = true;
-    }
-
-    if (hasError) return;
+    const nameErr = validateDisplayName(name);
+    const emailErr = validateEmail(email);
+    const passwordErr = validateNewPassword(password);
+    if (nameErr) setNameError(nameErr);
+    if (emailErr) setEmailError(emailErr);
+    if (passwordErr) setPasswordError(passwordErr);
+    if (nameErr || emailErr || passwordErr) return;
 
     setLoading(true);
     try {
@@ -117,11 +112,12 @@ export default function RegisterScreen() {
                 onChangeText={setPassword}
                 placeholder="••••••••"
                 secureTextEntry
-                autoComplete="new-password"
-                textContentType="newPassword"
-                passwordRules="minlength: 6;"
+                secureToggle
+                autoComplete="password"
+                textContentType="password"
                 error={passwordError ?? undefined}
               />
+              <PasswordStrengthMeter password={password} />
               {error ? (
                 <Text style={{ color: t.destructive }} accessibilityRole="alert">
                   {error}

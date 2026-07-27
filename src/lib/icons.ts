@@ -13,13 +13,18 @@
 /* eslint-disable import/no-unresolved -- Metro resolver handles these subpaths at runtime; see metro.config.js */
 export { default as ArrowLeft } from 'lucide-react-native/icons/arrow-left';
 export { default as ArrowRight } from 'lucide-react-native/icons/arrow-right';
+export { default as ArrowUpDown } from 'lucide-react-native/icons/arrow-up-down';
 export { default as ArrowUpRight } from 'lucide-react-native/icons/arrow-up-right';
 export { default as Camera } from 'lucide-react-native/icons/camera';
 export { default as Check } from 'lucide-react-native/icons/check';
 export { default as ChevronDown } from 'lucide-react-native/icons/chevron-down';
 export { default as ChevronRight } from 'lucide-react-native/icons/chevron-right';
+export { default as CircleX } from 'lucide-react-native/icons/circle-x';
+export { default as Eye } from 'lucide-react-native/icons/eye';
+export { default as EyeOff } from 'lucide-react-native/icons/eye-off';
 export { default as House } from 'lucide-react-native/icons/house';
 export { default as Image } from 'lucide-react-native/icons/image';
+export { default as Info } from 'lucide-react-native/icons/info';
 export { default as Key } from 'lucide-react-native/icons/key';
 export { default as LogOut } from 'lucide-react-native/icons/log-out';
 export { default as Monitor } from 'lucide-react-native/icons/monitor';
@@ -33,3 +38,5 @@ export { default as User } from 'lucide-react-native/icons/user';
 export { default as UserPlus } from 'lucide-react-native/icons/user-plus';
 export { default as Users } from 'lucide-react-native/icons/users';
 export { default as Plus } from 'lucide-react-native/icons/plus';
+export { default as X } from 'lucide-react-native/icons/x';
+export { default as ZoomIn } from 'lucide-react-native/icons/zoom-in';

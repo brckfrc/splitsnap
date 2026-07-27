@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { href } from '@/lib/href';
 import { signIn } from '@/services/auth';
+import { validateEmail, validateLoginPassword } from '@/utils/validation';
 
 export default function LoginScreen() {
   const t = useTheme();
@@ -25,19 +26,11 @@ export default function LoginScreen() {
     setEmailError(null);
     setPasswordError(null);
 
-    const emailValue = email.trim();
-    let hasError = false;
-
-    if (!emailValue || !/\S+@\S+\.\S+/.test(emailValue)) {
-      setEmailError('Geçerli bir e-posta adresi girin.');
-      hasError = true;
-    }
-    if (!password || password.length < 6) {
-      setPasswordError('Şifre en az 6 karakter olmalıdır.');
-      hasError = true;
-    }
-
-    if (hasError) return;
+    const emailErr = validateEmail(email);
+    const passwordErr = validateLoginPassword(password);
+    if (emailErr) setEmailError(emailErr);
+    if (passwordErr) setPasswordError(passwordErr);
+    if (emailErr || passwordErr) return;
 
     setLoading(true);
     try {
@@ -95,6 +88,7 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 placeholder="••••••••"
                 secureTextEntry
+                secureToggle
                 autoComplete="current-password"
                 textContentType="password"
                 error={passwordError ?? undefined}

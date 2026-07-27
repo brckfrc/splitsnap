@@ -88,6 +88,7 @@ function mapExpenseRow(row: ExpenseRow, payerById: Map<string, ProfileRow>): Exp
     paidByUser,
     createdBy: row.created_by,
     splitType: row.split_type === 'manual' ? 'manual' : 'equal',
+    createdAt: row.created_at,
     icon: row.icon,
     receiptImageUrl: row.receipt_storage_path ?? undefined,
     ocrSuggestions: mapOcrSuggestions(row.ocr_suggestions),

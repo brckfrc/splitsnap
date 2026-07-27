@@ -7,6 +7,7 @@
  * Bucket: private → reads always via createSignedUrl.
  */
 
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 import { supabase } from '@/lib/supabase';
@@ -30,6 +31,11 @@ function generateFilename(): string {
  * Resize the image to MAX_DIMENSION × JPEG_QUALITY, upload to the receipts
  * bucket, and return the storage path (not a public URL).
  *
+ * The body must be an ArrayBuffer, not a Blob: supabase-js wraps a Blob in a
+ * FormData, and React Native's FormData can only serialise `{ uri, name, type }`
+ * parts — a Blob is spread into a plain object, so the request goes out without
+ * the actual image bytes and the stored object ends up unusable.
+ *
  * Throws if the upload fails — caller should catch and decide whether to
  * proceed without a receipt or surface the error.
  */
@@ -38,18 +44,18 @@ export async function uploadReceipt(localUri: string, groupId: string): Promise<
   const resized = await ImageManipulator.manipulateAsync(
     localUri,
     [{ resize: { width: MAX_DIMENSION } }],
-    { compress: JPEG_QUALITY, format: ImageManipulator.SaveFormat.JPEG },
+    { compress: JPEG_QUALITY, format: ImageManipulator.SaveFormat.JPEG, base64: true },
   );
 
-  // Fetch the local file as a Blob (works with Expo development builds)
-  const response = await fetch(resized.uri);
-  const blob = await response.blob();
+  if (!resized.base64) throw new Error('receipt_encode_failed');
+  const bytes = decodeBase64(resized.base64);
+  if (bytes.byteLength === 0) throw new Error('receipt_empty');
 
   const storagePath = `${groupId}/${generateFilename()}`;
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(storagePath, blob, { contentType: 'image/jpeg', upsert: false });
+    .upload(storagePath, bytes, { contentType: 'image/jpeg', upsert: false });
 
   if (error) throw new Error(error.message);
   return storagePath;

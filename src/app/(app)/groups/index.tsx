@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CreateGroupModal } from '@/components/modals/create-group-modal';
 import { AppBottomBar } from '@/components/app-bottom-bar';
+import { DashboardSummary } from '@/components/dashboard/dashboard-summary';
 import { JoinGroupModal } from '@/components/modals/join-group-modal';
 import { Button } from '@/components/ui/button';
 import { PressableCard } from '@/components/ui/card';
@@ -21,7 +22,9 @@ import { groupsService } from '@/services/groups';
 import { useSplitDataStore } from '@/services/split-data';
 import { pendingInviteStore } from '@/stores/pending-invite-store';
 import type { Group } from '@/types';
-import { formatCurrencyTry } from '@/utils/format';
+import { formatCurrencyTry, getGreeting } from '@/utils/format';
+import { looksLikeInviteBlob, parseInviteCode } from '@/utils/invite';
+import { validateGroupName } from '@/utils/validation';
 
 const EMPTY_GROUPS: Group[] = [];
 
@@ -102,7 +105,12 @@ export default function GroupsListScreen() {
   }
 
   async function submitCreate() {
-    if (!user || !newName.trim()) return;
+    if (!user) return;
+    const nameErr = validateGroupName(newName);
+    if (nameErr) {
+      setCreateError(nameErr);
+      return;
+    }
     setCreateError(undefined);
     setCreateSubmitting(true);
     try {
@@ -119,12 +127,19 @@ export default function GroupsListScreen() {
     }
   }
 
+  function handleChangeJoinCode(value: string) {
+    setJoinError(undefined);
+    // Auto-extract the code when a full invite message/link is pasted;
+    // leave manual keystrokes untouched.
+    setJoinCode(looksLikeInviteBlob(value) ? parseInviteCode(value) : value);
+  }
+
   async function submitJoin() {
     if (!user) return;
     setJoinError(undefined);
     setJoinSubmitting(true);
     try {
-      await groupsService.joinByInviteCode(joinCode.trim());
+      await groupsService.joinByInviteCode(parseInviteCode(joinCode));
       setJoinOpen(false);
       setJoinCode('');
     } catch (e) {
@@ -135,6 +150,7 @@ export default function GroupsListScreen() {
   }
 
   const firstName = user?.name.split(' ')[0] ?? '';
+  const greeting = getGreeting();
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.background }]} edges={['top']}>
@@ -142,9 +158,9 @@ export default function GroupsListScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             <Text style={[styles.title, { color: t.foreground }]} accessibilityRole="header">
-              Gruplarım
+              Anasayfa
             </Text>
-            <Text style={[styles.sub, { color: t.mutedForeground }]}>Merhaba, {firstName} 👋</Text>
+            <Text style={[styles.sub, { color: t.mutedForeground }]}>{greeting}, {firstName} 👋</Text>
           </View>
           <View style={styles.headerActions}>
             <Button variant="secondary" size="sm" onPress={() => setJoinOpen(true)} accessibilityLabel="Gruba katıl">
@@ -162,6 +178,12 @@ export default function GroupsListScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} />}
       >
+        {groups.length > 0 && (
+          <>
+            <DashboardSummary />
+            <Text style={[styles.groupsHeader, { color: t.foreground }]}>Gruplarım</Text>
+          </>
+        )}
         {groups.length === 0 ? (
           <View style={styles.empty} accessibilityLabel="Grup yok">
             <Text style={styles.emptyEmoji}>🏖️</Text>
@@ -232,7 +254,7 @@ export default function GroupsListScreen() {
       <JoinGroupModal
         visible={joinOpen}
         code={joinCode}
-        onChangeCode={setJoinCode}
+        onChangeCode={handleChangeJoinCode}
         onClose={() => {
           setJoinOpen(false);
           setJoinError(undefined);
@@ -267,6 +289,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.five,
     paddingTop: Spacing.five,
     gap: Spacing.four,
+  },
+  groupsHeader: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: Spacing.two,
   },
   cardRow: {
     flexDirection: 'row',

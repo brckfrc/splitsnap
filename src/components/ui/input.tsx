@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   InputAccessoryView,
   Keyboard,
@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 
+import { CircleX, Eye, EyeOff } from '@/lib/icons';
 import { Radii, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -25,11 +26,31 @@ export type InputProps = TextInputProps & {
   suffix?: string;
   /** Called when the suffix text is pressed. */
   onSuffixPress?: () => void;
+  /** Show a clear (✕) button on the right while the field has a value. */
+  clearable?: boolean;
+  /** Show an eye toggle to reveal/hide the value (for password fields). */
+  secureToggle?: boolean;
 };
 
-export function Input({ label, error, suffix, onSuffixPress, style, accessibilityLabel, ...rest }: InputProps) {
+export function Input({
+  label,
+  error,
+  suffix,
+  onSuffixPress,
+  clearable,
+  secureToggle,
+  secureTextEntry,
+  style,
+  accessibilityLabel,
+  ...rest
+}: InputProps) {
   const t = useTheme();
+  const [revealed, setRevealed] = useState(false);
   const isMultiline = Boolean(rest.multiline);
+  const showClear = Boolean(clearable && !isMultiline && rest.value && rest.editable !== false);
+  // When the eye toggle is on, this component owns the secure state so the user
+  // can reveal the value; otherwise honor the caller's secureTextEntry prop.
+  const effectiveSecure = secureToggle ? !revealed : secureTextEntry;
 
   return (
     <View style={styles.wrapper}>
@@ -51,6 +72,7 @@ export function Input({ label, error, suffix, onSuffixPress, style, accessibilit
           placeholderTextColor={t.mutedForeground}
           accessibilityLabel={accessibilityLabel ?? label}
           style={[styles.input, { color: t.foreground }, style]}
+          secureTextEntry={effectiveSecure}
           // Single-line: "Done" key closes keyboard directly
           returnKeyType={isMultiline ? undefined : (rest.returnKeyType ?? 'done')}
           onSubmitEditing={isMultiline ? undefined : (rest.onSubmitEditing ?? (() => Keyboard.dismiss()))}
@@ -58,6 +80,32 @@ export function Input({ label, error, suffix, onSuffixPress, style, accessibilit
           inputAccessoryViewID={isMultiline && Platform.OS === 'ios' ? KEYBOARD_ACCESSORY_ID : undefined}
           {...rest}
         />
+        {secureToggle ? (
+          <Pressable
+            onPress={() => setRevealed((v) => !v)}
+            hitSlop={8}
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Şifreyi gizle' : 'Şifreyi göster'}
+          >
+            {revealed ? (
+              <EyeOff size={18} color={t.mutedForeground} />
+            ) : (
+              <Eye size={18} color={t.mutedForeground} />
+            )}
+          </Pressable>
+        ) : null}
+        {showClear ? (
+          <Pressable
+            onPress={() => rest.onChangeText?.('')}
+            hitSlop={8}
+            style={styles.clearBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Temizle"
+          >
+            <CircleX size={18} color={t.mutedForeground} />
+          </Pressable>
+        ) : null}
         {suffix ? (
           <Pressable
             onPress={onSuffixPress}
@@ -129,6 +177,12 @@ const styles = StyleSheet.create({
   suffix: {
     fontSize: 14,
     paddingRight: Spacing.four,
+  },
+  clearBtn: {
+    paddingHorizontal: Spacing.three,
+  },
+  iconBtn: {
+    paddingHorizontal: Spacing.three,
   },
   error: {
     fontSize: 13,

@@ -1,14 +1,16 @@
-import { ArrowLeft, Camera, Check, Image as ImageIcon } from '@/lib/icons';
+import { ArrowLeft, Camera, Check, Image as ImageIcon, ZoomIn } from '@/lib/icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 import { Button } from '@/components/ui/button';
 import { DatePickerModal } from '@/components/ui/date-picker-modal';
 import { Input, KeyboardDoneToolbar, KEYBOARD_ACCESSORY_ID } from '@/components/ui/input';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { ImageViewerModal } from '@/components/ui/image-viewer-modal';
 import { HorizontalAvatarPicker } from '@/components/ui/horizontal-avatar-picker';
 import { FormSection, FormSelectionField, AvatarStack } from '@/components/ui/form-selection-card';
 import { MemberAmountCard } from '@/components/ui/member-amount-card';
@@ -18,14 +20,12 @@ import { useAuth } from '@/contexts/auth-context';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 import { useTheme } from '@/hooks/use-theme';
 import { uploadReceipt } from '@/services/receipts';
-import { parseReceipt, type ReceiptParseResult } from '@/services/receipt-parse';
+import { parseReceipt, type ReceiptScan } from '@/services/receipt-parse';
 import { splitData } from '@/services/split-data';
-import { guessCategoryEmoji } from '@/utils/format';
+import { formatCurrency, guessCategoryEmoji } from '@/utils/format';
+import { parseAmount, validateAmount, validateExpenseTitle } from '@/utils/validation';
 
 const EMOJI_LIST = ['📝', '🍔', '🛒', '🚕', '🏠', '🎮', '🏥', '👕', '🐾', '🍻', '🎁', '✈️', '☕️', '🍿', '🎬'];
-
-const MAX_EXPENSE_AMOUNT = 1_000_000;
-const MAX_TITLE_LENGTH = 100;
 
 export default function AddExpenseScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -52,7 +52,8 @@ export default function AddExpenseScreen() {
   const [manual, setManual] = useState<Record<string, string>>({});
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
-  const [ocrResult, setOcrResult] = useState<ReceiptParseResult | null>(null);
+  const [ocrScan, setOcrScan] = useState<ReceiptScan | null>(null);
+  const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
   const [currencyWarning, setCurrencyWarning] = useState<string | null>(null);
   const [showPayerBottomSheet, setShowPayerBottomSheet] = useState(false);
   const [showSplitBottomSheet, setShowSplitBottomSheet] = useState(false);
@@ -84,28 +85,54 @@ export default function AddExpenseScreen() {
   // Receipt capture + OCR autofill
   // -------------------------------------------------------------------------
 
+  /** Values the last scan wrote into the form, so a replacement receipt can
+   *  overwrite them without clobbering anything the user typed. */
+  const autofilledRef = useRef<{ title?: string; amount?: string }>({});
+  /** Set once the user picks a date themselves; OCR stops touching it after. */
+  const dateTouchedRef = useRef(false);
+
   async function handleReceiptPicked(uri: string) {
     setReceiptUri(uri);
-    setOcrResult(null);
+    setOcrScan(null);
     setCurrencyWarning(null);
     setOcrLoading(true);
     try {
-      const result = await parseReceipt(uri);
-      setOcrResult(result);
+      const scan = await parseReceipt(uri);
+      setOcrScan(scan);
+      if (scan.status !== 'filled') return;
+
+      const result = scan.result;
       // Detect non-TL currency — skip amount autofill and warn user
       const isForeignCurrency = result.currency != null && result.currency !== 'TRY';
       if (isForeignCurrency) {
-        setCurrencyWarning(`Bu fiş ${result.currency} cinsinden — tutarı kendiniz girin.`);
+        setCurrencyWarning(`Bu fiş ${result.currency} cinsinden, tutarı kendiniz girin.`);
       }
-      // Autofill only empty fields so the user's own input is never overwritten
-      if (result.merchantName && !title.trim()) setTitle(result.merchantName);
-      if (!isForeignCurrency && result.total && !amount) setAmount(String(result.total));
-      if (result.date) {
+
+      // A field may be (re)filled while it is empty or still holds the value a
+      // previous scan put there — anything the user typed since is theirs.
+      const auto = autofilledRef.current;
+
+      if (result.merchantName && (!title.trim() || title === auto.title)) {
+        setTitle(result.merchantName);
+        auto.title = result.merchantName;
+      }
+
+      if (!isForeignCurrency && result.total != null) {
+        const next = String(result.total);
+        if (!amount || amount === auto.amount) {
+          setAmount(next);
+          auto.amount = next;
+        }
+      }
+
+      // The date field is never empty (it defaults to today), so ownership is
+      // tracked by whether the user has opened the picker rather than by value.
+      if (result.date && !dateTouchedRef.current) {
         const d = new Date(result.date);
         if (!isNaN(d.getTime()) && d <= new Date()) setDateObj(d);
       }
     } catch {
-      // OCR/parse failed silently — user fills manually
+      setOcrScan({ status: 'failed', result: {} });
     } finally {
       setOcrLoading(false);
     }
@@ -137,10 +164,55 @@ export default function AddExpenseScreen() {
 
   function removeReceipt() {
     setReceiptUri(null);
-    setOcrResult(null);
+    setOcrScan(null);
     setOcrLoading(false);
     setCurrencyWarning(null);
+    // Undo what the discarded receipt filled in, but keep the user's own edits.
+    // The date is left alone: it has no empty state, so snapping it back to
+    // today would just be another arbitrary value.
+    const auto = autofilledRef.current;
+    if (auto.title && title === auto.title) setTitle('');
+    if (auto.amount && amount === auto.amount) setAmount('');
+    autofilledRef.current = {};
   }
+
+  /** Status line shown under the receipt thumbnail once the scan settles. */
+  const ocrNotice: { tone: 'ok' | 'warn'; text: string } | null = (() => {
+    if (!ocrScan) return null;
+    if (currencyWarning) return { tone: 'warn', text: currencyWarning };
+
+    switch (ocrScan.status) {
+      case 'no_text':
+        return {
+          tone: 'warn',
+          text: 'Görüntüde okunabilir yazı bulunamadı. Fiş fotoğrafı olduğundan emin olun, bilgileri elle girebilirsiniz.',
+        };
+      case 'empty':
+        return {
+          tone: 'warn',
+          text: 'Fiş bilgileri okunamadı. Tutar ve tarihi elle girin.',
+        };
+      case 'failed':
+        return {
+          tone: 'warn',
+          text: 'Fiş okunamadı. Fotoğraf yine de eklendi, bilgileri elle girin.',
+        };
+      case 'filled': {
+        const { total, date, merchantName } = ocrScan.result;
+        const detail = [
+          total != null ? formatCurrency(total) : null,
+          date,
+          merchantName,
+        ]
+          .filter(Boolean)
+          .join(' · ');
+        if (total == null) {
+          return { tone: 'warn', text: `Fiş okundu (${detail}) ama tutar bulunamadı, elle girin.` };
+        }
+        return { tone: 'ok', text: `Otomatik dolduruldu: ${detail}` };
+      }
+    }
+  })();
 
   // -------------------------------------------------------------------------
   // Manual split helpers
@@ -180,22 +252,18 @@ export default function AddExpenseScreen() {
   async function submit() {
     setTitleError(null);
     setAmountError(null);
-    const num = parseFloat(amount.replace(',', '.'));
+    const num = parseAmount(amount);
     if (!user) { Alert.alert('Oturum', 'Giriş yapmanız gerekir.'); return; }
 
     let hasError = false;
-    if (!title.trim()) {
-      setTitleError('Başlık gerekli.');
-      hasError = true;
-    } else if (title.trim().length > MAX_TITLE_LENGTH) {
-      setTitleError(`Başlık en fazla ${MAX_TITLE_LENGTH} karakter olabilir.`);
+    const titleErr = validateExpenseTitle(title);
+    if (titleErr) {
+      setTitleError(titleErr);
       hasError = true;
     }
-    if (Number.isNaN(num) || num <= 0) {
-      setAmountError('Geçerli bir tutar girin.');
-      hasError = true;
-    } else if (num > MAX_EXPENSE_AMOUNT) {
-      setAmountError(`Tutar en fazla ${MAX_EXPENSE_AMOUNT.toLocaleString('tr-TR')} ₺ olabilir.`);
+    const amountErr = validateAmount(amount).error;
+    if (amountErr) {
+      setAmountError(amountErr);
       hasError = true;
     }
     if (payerType === 'single' && !paidBy) {
@@ -247,7 +315,14 @@ export default function AddExpenseScreen() {
         try {
           receiptStoragePath = await uploadReceipt(receiptUri, gid);
         } catch {
-          // Upload failure is non-blocking — save expense without receipt
+          // Non-blocking: the expense is still worth saving, but say so —
+          // silently dropping the receipt made this look like a viewer bug.
+          Toast.show({
+            type: 'error',
+            text1: 'Fiş yüklenemedi',
+            text2: 'Harcama kaydedildi ama fiş fotoğrafı yüklenemedi.',
+            position: 'bottom',
+          });
         }
       }
 
@@ -265,7 +340,7 @@ export default function AddExpenseScreen() {
         manualAmounts,
         payerAmounts: finalPayerAmounts,
         receiptStoragePath,
-        ocrSuggestions: ocrResult ?? undefined,
+        ocrSuggestions: ocrScan?.status === 'filled' ? ocrScan.result : undefined,
       });
       router.back();
     } catch (e) {
@@ -403,7 +478,11 @@ export default function AddExpenseScreen() {
                 visible={showDatePicker}
                 value={dateObj}
                 maximumDate={new Date()}
-                onConfirm={(d) => { setDateObj(d); setShowDatePicker(false); }}
+                onConfirm={(d) => {
+                  dateTouchedRef.current = true;
+                  setDateObj(d);
+                  setShowDatePicker(false);
+                }}
                 onCancel={() => setShowDatePicker(false)}
               />
             </View>
@@ -415,21 +494,34 @@ export default function AddExpenseScreen() {
 
           {receiptUri ? (
             <View style={{ gap: Spacing.three }}>
-              <View style={styles.receiptThumbWrap}>
+              <Pressable
+                style={[styles.receiptThumbWrap, { backgroundColor: t.inputBackground }]}
+                onPress={() => setReceiptViewerOpen(true)}
+                disabled={ocrLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Fişi tam ekran aç"
+              >
                 <Image source={{ uri: receiptUri }} style={styles.receiptThumb} resizeMode="cover" />
                 {ocrLoading ? (
                   <View style={styles.ocrOverlay}>
                     <ActivityIndicator color="#fff" />
                     <Text style={styles.ocrOverlayText}>Fiş okunuyor…</Text>
                   </View>
-                ) : null}
-              </View>
+                ) : (
+                  <View style={styles.receiptZoomBadge}>
+                    <ZoomIn size={16} color="#fff" />
+                  </View>
+                )}
+              </Pressable>
 
-              {!ocrLoading && ocrResult ? (
-                <Text style={{ color: currencyWarning ? '#D97706' : t.mutedForeground, fontSize: 13 }}>
-                  {currencyWarning
-                    ? `⚠️ ${currencyWarning}`
-                    : `✓ Otomatik dolduruldu${ocrResult.total ? ` — ₺${ocrResult.total.toFixed(2)}` : ''}${ocrResult.date ? ` | ${ocrResult.date}` : ''}${ocrResult.merchantName ? ` | ${ocrResult.merchantName}` : ''}`}
+              {!ocrLoading && ocrNotice ? (
+                <Text
+                  style={{
+                    color: ocrNotice.tone === 'warn' ? '#D97706' : t.mutedForeground,
+                    fontSize: 13,
+                  }}
+                >
+                  {ocrNotice.tone === 'warn' ? `⚠️ ${ocrNotice.text}` : `✓ ${ocrNotice.text}`}
                 </Text>
               ) : null}
 
@@ -446,7 +538,9 @@ export default function AddExpenseScreen() {
                 accessibilityLabel="Kamerayla çek"
               >
                 <Camera size={24} color={t.mutedForeground} />
-                <Text style={{ color: t.foreground, fontWeight: '600', fontSize: 13 }}>Kamerayla Çek</Text>
+                <Text style={[styles.uploadHalfLabel, { color: t.foreground }]} numberOfLines={2}>
+                  Kamerayla Çek
+                </Text>
               </Pressable>
               <Pressable
                 onPress={() => void pickFromGallery()}
@@ -455,7 +549,9 @@ export default function AddExpenseScreen() {
                 accessibilityLabel="Galeriden seç"
               >
                 <ImageIcon size={24} color={t.mutedForeground} />
-                <Text style={{ color: t.foreground, fontWeight: '600', fontSize: 13 }}>Galeriden Seç</Text>
+                <Text style={[styles.uploadHalfLabel, { color: t.foreground }]} numberOfLines={2}>
+                  Galeriden Seç
+                </Text>
               </Pressable>
             </View>
           )}
@@ -754,6 +850,12 @@ export default function AddExpenseScreen() {
           </Button>
         </View>
       </ScrollView>
+
+      <ImageViewerModal
+        visible={receiptViewerOpen}
+        uri={receiptUri}
+        onClose={() => setReceiptViewerOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -777,11 +879,23 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: 160,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
   receiptThumb: {
     width: '100%',
-    height: 160,
-    borderRadius: 10,
+    height: '100%',
+  },
+  receiptZoomBadge: {
+    position: 'absolute',
+    right: Spacing.two,
+    bottom: Spacing.two,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   ocrOverlay: {
     ...StyleSheet.absoluteFill,
@@ -793,13 +907,24 @@ const styles = StyleSheet.create({
   },
   ocrOverlayText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   uploadHalf: {
+    // flex (not width: '50%') keeps the two halves equal without the row gap
+    // pushing their combined width past the container.
     flex: 1,
+    flexBasis: 0,
+    minWidth: 0,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderRadius: 12,
     paddingVertical: Spacing.four,
+    paddingHorizontal: Spacing.two,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.two,
+  },
+  uploadHalfLabel: {
+    fontWeight: '600',
+    fontSize: 13,
+    textAlign: 'center',
   },
   textArea: {
     borderRadius: 12,

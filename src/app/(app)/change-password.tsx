@@ -1,20 +1,22 @@
 import { ArrowLeft } from '@/lib/icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordStrengthMeter } from '@/components/ui/password-strength-meter';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
+import { validateLoginPassword, validateNewPassword } from '@/utils/validation';
 
 export default function ChangePasswordScreen() {
   const t = useTheme();
-  const { user } = useAuth();
+  const { user, signOutApp } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -34,17 +36,17 @@ export default function ChangePasswordScreen() {
 
     let hasError = false;
 
-    if (!currentPassword || currentPassword.length < 6) {
-      setCurrentPasswordError('Mevcut şifrenizi girin (en az 6 karakter).');
+    const currentErr = validateLoginPassword(currentPassword);
+    if (currentErr) {
+      setCurrentPasswordError(currentErr);
       hasError = true;
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      setNewPasswordError('Yeni şifre en az 6 karakter olmalıdır.');
+    const newErr = validateNewPassword(newPassword);
+    if (newErr) {
+      setNewPasswordError(newErr);
       hasError = true;
-    }
-
-    if (newPassword && currentPassword && newPassword === currentPassword) {
+    } else if (newPassword === currentPassword) {
       setNewPasswordError('Yeni şifre mevcut şifreden farklı olmalıdır.');
       hasError = true;
     }
@@ -79,14 +81,23 @@ export default function ChangePasswordScreen() {
         return;
       }
 
+      // Dismiss the keyboard first so the bottom toast isn't pushed up over
+      // the keyboard (which made it appear mid-screen).
+      Keyboard.dismiss();
       Toast.show({
         type: 'success',
         text1: 'Şifre Değiştirildi',
-        text2: 'Yeni şifreniz başarıyla kaydedildi.',
+        text2: 'Lütfen yeni şifrenizle tekrar giriş yapın.',
         position: 'bottom',
+        visibilityTime: 5000,
       });
 
-      router.back();
+      // Sign out and route back to the login screen so the user re-authenticates
+      // with the NEW password. Logging in is the flow where iOS/password managers
+      // reliably offer to UPDATE the saved credential (change-password screens
+      // don't trigger that heuristic). The (app) layout guard redirects to
+      // /login automatically once the user becomes null.
+      await signOutApp();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Bir hata oluştu.';
       setError(msg);
@@ -129,6 +140,7 @@ export default function ChangePasswordScreen() {
             onChangeText={setCurrentPassword}
             placeholder="••••••••"
             secureTextEntry
+            secureToggle
             autoComplete="current-password"
             textContentType="password"
             error={currentPasswordError ?? undefined}
@@ -142,17 +154,13 @@ export default function ChangePasswordScreen() {
             onChangeText={setNewPassword}
             placeholder="••••••••"
             secureTextEntry
-            autoComplete="new-password"
-            textContentType="newPassword"
-            passwordRules="minlength: 6;"
+            secureToggle
+            autoComplete="password"
+            textContentType="password"
             error={newPasswordError ?? undefined}
           />
 
-          {newPassword.length > 0 && newPassword.length < 6 && !newPasswordError && (
-            <Text style={[styles.strengthHint, { color: t.mutedForeground }]}>
-              Şifre en az 6 karakter olmalıdır ({newPassword.length}/6)
-            </Text>
-          )}
+          <PasswordStrengthMeter password={newPassword} />
 
           <Input
             label="Yeni Şifre (Tekrar)"
@@ -160,8 +168,9 @@ export default function ChangePasswordScreen() {
             onChangeText={setConfirmPassword}
             placeholder="••••••••"
             secureTextEntry
-            autoComplete="new-password"
-            textContentType="newPassword"
+            secureToggle
+            autoComplete="password"
+            textContentType="password"
             error={confirmPasswordError ?? undefined}
           />
 
@@ -210,9 +219,5 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     marginVertical: Spacing.one,
-  },
-  strengthHint: {
-    fontSize: 13,
-    marginTop: -Spacing.two,
   },
 });

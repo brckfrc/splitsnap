@@ -11,6 +11,7 @@ import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
+import { validateDisplayName } from '@/utils/validation';
 
 export default function EditProfileScreen() {
   const t = useTheme();
@@ -24,8 +25,9 @@ export default function EditProfileScreen() {
     setNameError(null);
     const trimmed = name.trim();
 
-    if (!trimmed || trimmed.length < 2) {
-      setNameError('Ad Soyad en az 2 karakter olmalıdır.');
+    const nameErr = validateDisplayName(name);
+    if (nameErr) {
+      setNameError(nameErr);
       return;
     }
 

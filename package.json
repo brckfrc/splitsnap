@@ -1,7 +1,7 @@
 {
   "name": "splitsnap",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -21,6 +21,7 @@
     "@tamagui/config": "2.5.1",
     "@tamagui/font-inter": "2.5.1",
     "@tamagui/portal": "2.5.1",
+    "base64-arraybuffer": "^1.0.2",
     "expo": "^57.0.0",
     "expo-blur": "~57.0.2",
     "expo-constants": "~57.0.7",

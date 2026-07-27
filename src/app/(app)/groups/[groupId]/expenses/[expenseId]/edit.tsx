@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Trash2 } from '@/lib/icons';
+import { ArrowLeft, Check, Trash2, ZoomIn } from '@/lib/icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { DatePickerModal } from '@/components/ui/date-picker-modal';
 import { Input, KeyboardDoneToolbar, KEYBOARD_ACCESSORY_ID } from '@/components/ui/input';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { ImageViewerModal } from '@/components/ui/image-viewer-modal';
 import { HorizontalAvatarPicker } from '@/components/ui/horizontal-avatar-picker';
 import { FormSection, FormSelectionField, AvatarStack } from '@/components/ui/form-selection-card';
 import { MemberAmountCard } from '@/components/ui/member-amount-card';
@@ -20,6 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { getReceiptSignedUrl } from '@/services/receipts';
 import { splitData, useSplitDataStore } from '@/services/split-data';
 import { guessCategoryEmoji } from '@/utils/format';
+import { parseAmount, validateAmount, validateExpenseTitle } from '@/utils/validation';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 
 const EMOJI_LIST = ['📝', '🍔', '🛒', '🚕', '🏠', '🎮', '🏥', '👕', '🐾', '🍻', '🎁', '✈️', '☕️', '🍿', '🎬'];
@@ -95,10 +97,14 @@ export default function EditExpenseScreen() {
   const displayIcon = manualIcon ?? guessCategoryEmoji(title);
 
   const [receiptSignedUrl, setReceiptSignedUrl] = useState<string | null>(null);
+  const [receiptFailed, setReceiptFailed] = useState(false);
+  const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
   useEffect(() => {
-    if (expense?.receiptImageUrl) {
-      void getReceiptSignedUrl(expense.receiptImageUrl).then(setReceiptSignedUrl);
-    }
+    if (!expense?.receiptImageUrl) return;
+    void getReceiptSignedUrl(expense.receiptImageUrl).then((url) => {
+      setReceiptSignedUrl(url);
+      setReceiptFailed(!url);
+    });
   }, [expense?.receiptImageUrl]);
 
   function handleManualInput(userId: string, raw: string) {
@@ -158,15 +164,17 @@ export default function EditExpenseScreen() {
   async function save() {
     setTitleError(null);
     setAmountError(null);
-    const num = parseFloat(amount.replace(',', '.'));
-    
+    const num = parseAmount(amount);
+
     let hasError = false;
-    if (!title.trim()) {
-      setTitleError('Başlık gerekli.');
+    const titleErr = validateExpenseTitle(title);
+    if (titleErr) {
+      setTitleError(titleErr);
       hasError = true;
     }
-    if (Number.isNaN(num) || num <= 0) {
-      setAmountError('Geçerli bir tutar girin.');
+    const amountErr = validateAmount(amount).error;
+    if (amountErr) {
+      setAmountError(amountErr);
       hasError = true;
     }
     if (payerType === 'single' && !paidBy) {
@@ -279,14 +287,32 @@ export default function EditExpenseScreen() {
         contentContainerStyle={[styles.body, { paddingBottom: APP_TAB_BAR_CONTENT_INSET + Spacing.five }]}
         keyboardShouldPersistTaps="handled"
       >
-        {expense.receiptImageUrl ? (
+        {/*
+          A receipt that can't be fetched or decoded is treated as no receipt at
+          all: expenses uploaded before the ArrayBuffer upload fix point at
+          zero-byte objects that will never load, and an error row for them is
+          noise the user can't act on (there is no re-upload UI here).
+        */}
+        {expense.receiptImageUrl && !receiptFailed ? (
           <FormSection title="Fiş">
             {receiptSignedUrl ? (
-              <Image
-                source={{ uri: receiptSignedUrl }}
-                style={{ width: '100%', height: 180, borderRadius: 10 }}
-                resizeMode="cover"
-              />
+              <Pressable
+                onPress={() => setReceiptViewerOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Fişi tam ekran aç"
+              >
+                <View style={[styles.receiptPreview, { backgroundColor: t.inputBackground }]}>
+                  <Image
+                    source={{ uri: receiptSignedUrl }}
+                    style={styles.receiptPreviewImage}
+                    resizeMode="cover"
+                    onError={() => setReceiptFailed(true)}
+                  />
+                  <View style={styles.receiptZoomBadge}>
+                    <ZoomIn size={16} color="#fff" />
+                  </View>
+                </View>
+              </Pressable>
             ) : (
               <Text style={{ color: t.mutedForeground, fontSize: 13 }}>Fiş yükleniyor…</Text>
             )}
@@ -657,12 +683,39 @@ export default function EditExpenseScreen() {
           </Button>
         </View>
       </ScrollView>
+
+      <ImageViewerModal
+        visible={receiptViewerOpen}
+        uri={receiptSignedUrl}
+        onClose={() => setReceiptViewerOpen(false)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  receiptPreview: {
+    width: '100%',
+    height: 180,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  receiptPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  receiptZoomBadge: {
+    position: 'absolute',
+    right: Spacing.two,
+    bottom: Spacing.two,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
   topBar: {
     flexDirection: 'row',

@@ -38,6 +38,12 @@ export interface Expense {
   paidByUser?: User;
   createdBy?: string;
   splitType: 'equal' | 'manual';
+  /**
+   * When the row was inserted, as opposed to `date` (when the money was spent).
+   * Optional only because expenses cached in MMKV before this field was mapped
+   * won't carry it until the next sync — fall back to `date`.
+   */
+  createdAt?: string;
   icon?: string | null;
   receiptImageUrl?: string;
   ocrSuggestions?: {

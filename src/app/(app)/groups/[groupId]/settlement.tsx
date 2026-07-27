@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, ArrowRight, Check, ChevronDown } from '@/lib/icons';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronRight } from '@/lib/icons';
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ExpenseLedgerSheet, type LedgerEntry } from '@/components/settlement/expense-ledger-sheet';
 import { APP_TAB_BAR_CONTENT_INSET } from '@/constants/layout';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
@@ -23,6 +24,7 @@ export default function SettlementScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(true);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -56,7 +58,7 @@ export default function SettlementScreen() {
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const myBalance = user ? balances[user.id] ?? 0 : 0;
 
-  const myLedger = user
+  const myLedger: LedgerEntry[] = user
     ? expenses
         .map((e) => {
           const paid = splitData.getPayers(e.id).find((p) => p.userId === user.id)?.amount ?? 0;
@@ -67,6 +69,10 @@ export default function SettlementScreen() {
         .filter((e): e is NonNullable<typeof e> => e !== null)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     : [];
+
+  const detailEntry = myLedger.find((e) => e.id === detailId) ?? null;
+  const nameFor = (userId: string) =>
+    members.find((m) => m.userId === userId)?.user.name ?? 'Bilinmeyen';
 
   async function handleSettle(fromUserId: string, toUserId: string, amount: number) {
     Alert.alert(
@@ -176,7 +182,7 @@ export default function SettlementScreen() {
                       onPress={() => handleSettle(s.from.id, s.to.id, s.amount)}
                       variant="secondary"
                     >
-                      Ödendi
+                      {user?.id === s.from.id ? 'Öde' : 'Ödendi'}
                     </Button>
                   )}
                 </View>
@@ -232,11 +238,20 @@ export default function SettlementScreen() {
             </Pressable>
             {ledgerOpen && (
               <Card style={{ gap: 0, overflow: 'hidden' }}>
+                {/*
+                  Only the date and total go on the meta line. "Ödedi X · Payı Y"
+                  used to live here too and got truncated on most rows; it is in
+                  the detail sheet now, where it has room to be readable.
+                */}
                 {myLedger.map((entry, idx) => (
-                  <View
+                  <Pressable
                     key={entry.id}
-                    style={[
+                    onPress={() => setDetailId(entry.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${entry.title} detayı`}
+                    style={({ pressed }) => [
                       styles.ledgerRow,
+                      pressed && { backgroundColor: t.accent },
                       idx < myLedger.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.border },
                     ]}
                   >
@@ -244,12 +259,9 @@ export default function SettlementScreen() {
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={{ color: t.foreground, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>
                         {entry.title}
-                        <Text style={{ color: t.mutedForeground, fontWeight: '400' }}>{' '}({formatCurrencyTry(entry.amount)})</Text>
                       </Text>
                       <Text style={{ color: t.mutedForeground, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                        {formatShortDate(entry.date)}
-                        {entry.paid > 0 ? `  ·  Ödedi ${formatCurrencyTry(entry.paid)}` : ''}
-                        {entry.myShare > 0 ? `  ·  Payı ${formatCurrencyTry(entry.myShare)}` : ''}
+                        {formatShortDate(entry.date)}  ·  {formatCurrencyTry(entry.amount)}
                       </Text>
                     </View>
                     <Text
@@ -261,7 +273,8 @@ export default function SettlementScreen() {
                     >
                       {entry.net > 0.01 ? '+' : ''}{formatCurrencyTry(entry.net)}
                     </Text>
-                  </View>
+                    <ChevronRight size={16} color={t.mutedForeground} />
+                  </Pressable>
                 ))}
                 <View style={[styles.ledgerRow, styles.ledgerFooter, { borderTopColor: t.border, backgroundColor: `${t.foreground}08` }]}>
                   <Text style={{ flex: 1, color: t.mutedForeground, fontSize: 12, fontWeight: '600' }}>
@@ -273,12 +286,25 @@ export default function SettlementScreen() {
                       return `${sub > 0.01 ? '+' : ''}${formatCurrencyTry(sub)}`;
                     })()}
                   </Text>
+                  {/* Keeps the total aligned with the rows' net column, which is
+                      inset by the chevron the footer doesn't have. */}
+                  <View style={{ width: 16 }} />
                 </View>
               </Card>
             )}
           </>
         )}
       </ScrollView>
+
+      <ExpenseLedgerSheet
+        entry={detailEntry}
+        payers={detailEntry ? splitData.getPayers(detailEntry.id) : []}
+        shares={detailEntry ? splitData.getShares(detailEntry.id) : []}
+        currentUserId={user?.id ?? ''}
+        groupId={gid}
+        nameFor={nameFor}
+        onClose={() => setDetailId(null)}
+      />
     </SafeAreaView>
   );
 }

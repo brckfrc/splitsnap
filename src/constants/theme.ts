@@ -2,8 +2,6 @@
  * App theme: design tokens from design/src/styles/theme.css + layout constants.
  */
 
-import '@/global.css';
-
 import { Platform } from 'react-native';
 
 import { DarkTokens, LightTokens, Radii, type TokenScheme } from '@/theme/tokens';

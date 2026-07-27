@@ -151,6 +151,7 @@ export default function DeleteAccountScreen() {
                 label="Mevcut Şifreniz"
                 placeholder="••••••••"
                 secureTextEntry
+                secureToggle
                 value={password}
                 onChangeText={setPassword}
                 autoCapitalize="none"

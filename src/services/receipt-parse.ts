@@ -10,7 +10,7 @@
  *                             receipts. Works offline, no API key needed.
  *
  * parseReceipt(imageUri) is the top-level helper used by the UI:
- *   image URI → OCR text → parseReceiptText() → ReceiptParseResult
+ *   image URI → OCR text → parseReceiptText() → ReceiptScan
  */
 
 import { supabase } from '@/lib/supabase';
@@ -22,6 +22,34 @@ export type ReceiptParseResult = {
   total?: number;
   currency?: string; // ISO 4217: "TRY", "EUR", "USD", "GBP" … null if unclear
 };
+
+/**
+ * Outcome of a full scan. Lets the UI tell apart "we filled your form" from
+ * "that image probably isn't a receipt", instead of claiming success for an
+ * empty result.
+ */
+export type ReceiptScanStatus =
+  /** At least one usable field was recognised. */
+  | 'filled'
+  /** Text was read, but nothing receipt-like could be parsed out of it. */
+  | 'empty'
+  /** OCR found no readable text at all — likely not a receipt photo. */
+  | 'no_text'
+  /** OCR itself failed (unsupported device, unreadable file). */
+  | 'failed';
+
+export type ReceiptScan = {
+  status: ReceiptScanStatus;
+  result: ReceiptParseResult;
+};
+
+/**
+ * `currency` is deliberately excluded: a stray "$" or "TL" can appear in any
+ * text, so on its own it is not evidence that the image was a receipt.
+ */
+function hasUsableFields(r: ReceiptParseResult): boolean {
+  return Boolean(r.merchantName || r.date || r.total != null);
+}
 
 // ---------------------------------------------------------------------------
 // Local heuristic parser (Faz 4 fallback — works without API key)
@@ -117,15 +145,29 @@ export function parseReceiptTextLocal(rawText: string): ReceiptParseResult {
 // ---------------------------------------------------------------------------
 
 /**
+ * Mirrors the edge function's own cap so a long receipt is shaped here rather
+ * than server-side. Head and tail are kept because the merchant name is at the
+ * top of a receipt and the total at the bottom.
+ */
+const MAX_TEXT_CHARS = 6_000;
+
+function clampText(text: string): string {
+  if (text.length <= MAX_TEXT_CHARS) return text;
+  const half = Math.floor(MAX_TEXT_CHARS / 2);
+  return `${text.slice(0, half)}\n[...]\n${text.slice(-half)}`;
+}
+
+/**
  * Sends OCR text to the "parse-receipt" Supabase Edge Function which calls
- * gpt-4o-mini for structured JSON output. Falls back to local heuristic
- * transparently if the function is unavailable (key not deployed, offline, error).
+ * gpt-4o-mini for structured JSON output. Falls back to the local heuristic
+ * transparently on any failure: function not deployed, offline, provider error,
+ * or the caller's daily AI quota being spent (429).
  */
 export async function parseReceiptText(rawText: string): Promise<ReceiptParseResult> {
   try {
     const { data, error } = await supabase.functions.invoke<ReceiptParseResult>(
       'parse-receipt',
-      { body: { text: rawText } },
+      { body: { text: clampText(rawText) } },
     );
     if (error || !data) throw new Error(error?.message ?? 'no_data');
     return data;
@@ -141,10 +183,21 @@ export async function parseReceiptText(rawText: string): Promise<ReceiptParseRes
 
 /**
  * Full pipeline: image URI → on-device OCR → parse (LLM or heuristic).
- * Throws only if OCR itself fails (device not supported, file unreadable).
- * Parse errors are swallowed and fall back to local heuristic.
+ * Never throws — every failure mode is reported through `status` so the UI can
+ * warn the user instead of silently pretending the scan worked.
  */
-export async function parseReceipt(imageUri: string): Promise<ReceiptParseResult> {
-  const text = await extractReceiptText(imageUri);
-  return parseReceiptText(text);
+export async function parseReceipt(imageUri: string): Promise<ReceiptScan> {
+  let text: string;
+  try {
+    text = await extractReceiptText(imageUri);
+  } catch {
+    return { status: 'failed', result: {} };
+  }
+
+  if (text.trim().length === 0) {
+    return { status: 'no_text', result: {} };
+  }
+
+  const result = await parseReceiptText(text);
+  return { status: hasUsableFields(result) ? 'filled' : 'empty', result };
 }
