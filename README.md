@@ -76,7 +76,7 @@
 
 ## Requirements
 
-- **Node.js** 20.19+ (Expo SDK 57)
+- **Node.js** 20.19+ (Expo SDK 57). The version this project is built and released with is pinned in [`.nvmrc`](.nvmrc).
 - **macOS + Xcode** for iOS Simulator
 - **Supabase** project (URL + publishable/anon key)
 
@@ -85,6 +85,7 @@
 1. **Install dependencies**
 
    ```bash
+   nvm use        # or: fnm use — reads .nvmrc
    npm install
    ```
 
@@ -124,6 +125,8 @@
    Or: `npx expo run:ios`
 
    First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone). The same flow works on a **physical iPhone** (USB or network) with a dev client — not Expo Go.
+
+   To deploy to a device running an **iOS beta**, use `npm run ios:device`, which points the build at `Xcode-beta.app` through `DEVELOPER_DIR` while leaving `npm run ios` on the stable toolchain. See [`docs/dev/DEVELOPMENT_WORKFLOW.md`](docs/dev/DEVELOPMENT_WORKFLOW.md) for the toolchain split and how to clear the build cache when switching between simulator and device.
 
 ## Learn more
 

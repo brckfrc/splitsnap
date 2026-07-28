@@ -2,11 +2,15 @@
   "name": "splitsnap",
   "main": "expo-router/entry",
   "version": "1.2.0",
+  "engines": {
+    "node": ">=20.19.4"
+  },
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:device": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer expo run:ios --device",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
