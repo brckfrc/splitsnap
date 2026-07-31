@@ -3,7 +3,8 @@
 
 # --- mirrors .gitignore ---
 .env
-.env*.local
+.env.*
+!.env.example
 node_modules/
 .expo/
 dist/

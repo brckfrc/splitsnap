@@ -31,7 +31,7 @@
 | OCR (Week 8) | expo-text-extractor + Supabase Edge Function `parse-receipt` | On-device Apple Vision → raw text; Edge Function → gpt-4o-mini → structured JSON (`merchantName`, `date`, `total`, `currency`). Local regex fallback when offline. `expo-doc-vision` does not exist — ignore any reference to it. |
 | Image resize | expo-image-manipulator (installed) | Resize receipt images before upload (~1600px, jpeg q0.7) |
 | Image Picker | expo-image-picker | Receipt photo capture/selection |
-| UI system | tamagui + @tamagui/babel-plugin | `TamaguiProvider`, themes/tokens in [`tamagui.config.ts`](../../tamagui.config.ts); **Sheet** for bottom modals; **Inter** via `expo-font` in root layout. Root `package.json` must list **`@tamagui/portal`** (same version as `tamagui`) + **`overrides`** so npm hoists a **single** `@tamagui/portal` — otherwise `Sheet` modal resolves a nested copy and **`PortalDispatchContext` is null** at runtime. **Do not** add a second `PortalProvider` in `_layout` (duplicate `shouldAddRootHost` breaks portals). |
+| UI system | tamagui + @tamagui/babel-plugin | `TamaguiProvider`, themes/tokens in [`tamagui.config.ts`](../tamagui.config.ts); **Sheet** for bottom modals; **Inter** via `expo-font` in root layout. Root `package.json` must list **`@tamagui/portal`** (same version as `tamagui`) + **`overrides`** so npm hoists a **single** `@tamagui/portal` — otherwise `Sheet` modal resolves a nested copy and **`PortalDispatchContext` is null** at runtime. **Do not** add a second `PortalProvider` in `_layout` (duplicate `shouldAddRootHost` breaks portals). |
 | Icons | lucide-react-native + react-native-svg | Import icons from **`@/lib/icons`** (not from the barrel). Metro resolver in `metro.config.js` maps `lucide-react-native/icons/<name>` → individual ESM file; only used icons are bundled (~19 vs 1700). String `color` avoids Tamagui Variable → SVG warnings. |
 
 ## Validation Before Finishing
@@ -51,12 +51,12 @@
   - Signed-in shell: `src/app/(app)/` (tabs + stack under one layout); auth: `src/app/(auth)/`
   - Root layout: `src/app/_layout.tsx` — wraps the tree with **TamaguiProvider** + **Theme** (system light/dark) and loads **Inter** fonts before hiding the splash screen.
 - Reusable UI: `src/components/` — shared primitives under `ui/`; `useTheme()` in [`src/hooks/use-theme.ts`](../src/hooks/use-theme.ts) reads Tamagui theme values (with fallbacks to [`src/theme/tokens.ts`](../src/theme/tokens.ts)).
-- Babel: root [`babel.config.js`](../../babel.config.js) must keep **`react-native-reanimated/plugin` last** and include `@tamagui/babel-plugin` pointing at `tamagui.config.ts`.
+- Babel: root [`babel.config.js`](../babel.config.js) must keep **`react-native-reanimated/plugin` last** and include `@tamagui/babel-plugin` pointing at `tamagui.config.ts`.
 - Supabase API calls: wrap in `src/services/` — screens must not import the raw client for data access (groups: [`groups-supabase.ts`](../src/services/groups-supabase.ts), sync: [`groups-sync.ts`](../src/services/groups-sync.ts))
 - Types: `src/types/`
 - Zustand stores: `src/stores/` (ör. `split-data-store.ts`); yeni slice’lar burada
 - **Localization:** Şu an UI string’leri **Türkçe** sabit; **en / tr** i18n planı `docs/PROGRESS.md` backlog’unda — yeni ekranlarda çeviri katmanı yoksa Türkçe ile devam et veya i18n eklendiğinde anahtarları ortak sözlüğe taşı
-- **Türkçe başlık yazım kuralı:** Ekran başlıkları, section başlıkları ve kart başlıkları (`sectionTitle`, `cardTitle`, `topTitle`, `section` stillerindeki `Text` bileşenleri) **Her Kelimenin İlk Harfi Büyük** olarak yazılır — örn. "Üye Bakiyeleri", "Harcama Dökümüm", "Önerilen Ödemeler". İstisna: `profile.tsx` ALL CAPS settings stili (`HESAP`, `UYGULAMA`, `GÜVENLİK`) kasıtlıdır, dokunma.
+- **Türkçe başlık yazım kuralı:** Ekran başlıkları, section başlıkları ve kart başlıkları (`sectionTitle`, `cardTitle`, `topTitle`, `section` stillerindeki `Text` bileşenleri) **Her Kelimenin İlk Harfi Büyük** olarak yazılır — örn. "Üye Bakiyeleri", "Bakiye Dökümünüz", "Önerilen Ödemeler". İstisna: `profile.tsx` ALL CAPS settings stili (`HESAP`, `UYGULAMA`, `GÜVENLİK`) kasıtlıdır, dokunma.
 - **Zustand + React 19:** `useSyncExternalStore` requires stable snapshots. Do **not** use `useSplitDataStore((s) => ({ ... }))` or selectors that call `getMembers` / `getExpenses` / `getShares` (they `.filter()` → new array every read → infinite loop / “getSnapshot should be cached”). Use root slices + `useMemo`, or [`useGroupAggregates`](../src/hooks/use-group-aggregates.ts) and [`useExpenseShares`](../src/hooks/use-expense-shares.ts). For multi-field objects with stable inner refs, `useShallow` from `zustand/react/shallow` is also valid.
 - Utils: `src/utils/`
 - Supabase client factory: `src/lib/supabase.ts` (read env from `process.env.EXPO_PUBLIC_*`)
@@ -66,15 +66,15 @@
 
 - `ROADMAP.md` — Post-release backlog and active development updates (English). The primary document for tracking features. Backlog items are grouped logically into 🚀 Core Features & Logic, 🎨 UI/UX Polish & Modernization, and 🐛 Bugs & Performance, prioritized with `[High]`, `[Medium]`, or `[Low]` prefixes. Completed sprint logs are moved to the `## Recent Updates` section at the bottom. **CRITICAL: Agents must unconditionally keep this document and session walkthroughs up-to-date after completing tasks.**
 - `design/figma_template/` — Figma-aligned **reference UI** (Vite/React prototype; not the production app). Use for layout/tokens when implementing `src/app/`. Screenshots: `design/figma_screenshots/`.
-- `docs/archive/SplitSnap Tanıtım Raporu.md` — original university report
+- `docs/archive/school/SplitSnap Tanıtım Raporu.md` — original university report
 - `docs/DATABASE.md` — PostgreSQL / Supabase ER diyagramı, tablolar, RLS stratejisi ve backend planı (tek kaynak)
-- `docs/school/ROADMAP.md` & `docs/school/PROGRESS.md` — Archived school project checklist and weekly logs. Kept purely for historical reference and must not be modified.
+- `docs/archive/school/ROADMAP.md` & `docs/archive/school/PROGRESS.md` — Archived school project checklist and weekly logs. Kept purely for historical reference and must not be modified.
 - `docs/OPTIMIZATION-PROMPT.md` — optimization audit prompt
 - `docs/SECURITY-PROMPT.md` — security audit prompt
 
 ## Archive Rules
 
-- The school documentation under `docs/school/` is archived and **must not be updated or modified** by agents. These files are frozen for course submission reference.
+- The school documentation under `docs/archive/school/` is archived and **must not be updated or modified** by agents. These files are frozen for course submission reference.
 
 ## Change Safety Rules
 
@@ -85,8 +85,9 @@
 
 ## Known Gotchas
 
-- **Tamagui portals / Sheet:** `TamaguiProvider` already wraps `PortalProvider` (`shouldAddRootHost`). If Metro still throws `PortalDispatchContext cannot be null`, the usual cause is **two physical copies** of `@tamagui/portal` under `node_modules` (e.g. nested under `@tamagui/sheet`). Fix: direct dep + `overrides` in [`package.json`](../../package.json) so only **one** `@tamagui/portal` exists at the repo root. Never add a **second** `PortalProvider` in `_layout`. For **Lucide** / native SVG, `useTheme()` must resolve Tamagui variables to strings — [`use-theme.ts`](../src/hooks/use-theme.ts) uses `getVariableValue` so `color={t.primary}` is never an object.
+- **Tamagui portals / Sheet:** `TamaguiProvider` already wraps `PortalProvider` (`shouldAddRootHost`). If Metro still throws `PortalDispatchContext cannot be null`, the usual cause is **two physical copies** of `@tamagui/portal` under `node_modules` (e.g. nested under `@tamagui/sheet`). Fix: direct dep + `overrides` in [`package.json`](../package.json) so only **one** `@tamagui/portal` exists at the repo root. Never add a **second** `PortalProvider` in `_layout`. For **Lucide** / native SVG, `useTheme()` must resolve Tamagui variables to strings — [`use-theme.ts`](../src/hooks/use-theme.ts) uses `getVariableValue` so `color={t.primary}` is never an object.
 - **Expo Go** does not load this project reliably — **MMKV / Nitro** need a **development build**. Use `npm run ios` or `npx expo run:ios`.
+- **Two Xcode toolchains:** the simulator uses stable Xcode (`npm run ios`), the physical iPhone on the iOS 27 beta uses Xcode-beta (`npm run ios:device`). Both share one DerivedData directory (keyed by workspace path, not Xcode version), so alternating between them can produce Swift/module mismatch errors unrelated to your code — clear with `rm -rf ~/Library/Developer/Xcode/DerivedData/SplitSnap-*`, then `npx expo prebuild --clean`. Details: [`DEVELOPMENT_WORKFLOW.md`](./DEVELOPMENT_WORKFLOW.md).
 - **Storage roles:** AsyncStorage = Supabase auth session (tutorial default). MMKV = app/Zustand persistence. Do not store the same session in two backends without an explicit migration plan.
 - **OCR package:** `expo-text-extractor` (installed, Week 8). Earlier notes mention `expo-doc-vision` — that package does not exist; ignore any reference to it.
 - Path aliases in `tsconfig.json` must stay in sync with Metro if you add them.
@@ -146,7 +147,8 @@
 | Command | Description |
 |--------|-------------|
 | `npm start` | Start Metro (use with dev build on simulator/device) |
-| `npm run ios` | Build and run iOS dev client |
+| `npm run ios` | Build and run iOS dev client (stable Xcode → iOS 26 Simulator) |
+| `npm run ios:device` | Same, but on a **physical iPhone** via Xcode-beta (`DEVELOPER_DIR`) — needed while the device runs the iOS 27 beta |
 | `npm run check` | **Typecheck + lint** — run before commits / PRs |
 | `npm run typecheck` | `tsc --noEmit` (strict TS) |
 | `npm run lint` | ESLint via Expo |

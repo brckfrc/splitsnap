@@ -25,7 +25,7 @@
 ## Project Tracking
 
 - **Primary Document:** [`ROADMAP.md`](ROADMAP.md) — post-release backlog, active tasks, and recent updates.
-- **Archived School Project:** [School Archive](docs/school/) & [Screenshots](docs/roadmap-screenshots/) (Final report, logs, videos).
+- **Archived School Project:** [School Archive](docs/archive/school/) & [Screenshots](docs/archive/roadmap-screenshots/) (Final report, logs, videos).
 
 
 ## Key Features
@@ -126,7 +126,7 @@
 
    First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone). The same flow works on a **physical iPhone** (USB or network) with a dev client — not Expo Go.
 
-   To deploy to a device running an **iOS beta**, use `npm run ios:device`, which points the build at `Xcode-beta.app` through `DEVELOPER_DIR` while leaving `npm run ios` on the stable toolchain. See [`docs/dev/DEVELOPMENT_WORKFLOW.md`](docs/dev/DEVELOPMENT_WORKFLOW.md) for the toolchain split and how to clear the build cache when switching between simulator and device.
+   To deploy to a device running an **iOS beta**, use `npm run ios:device`, which points the build at `Xcode-beta.app` through `DEVELOPER_DIR` while leaving `npm run ios` on the stable toolchain. See [`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md) for the toolchain split and how to clear the build cache when switching between simulator and device.
 
 ## Learn more
 

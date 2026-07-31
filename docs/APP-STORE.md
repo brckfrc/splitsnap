@@ -136,7 +136,7 @@ docs/store-assets/<sürüm>/
   mockup/   → README'de kullanılan, cihaz giydirmeli hâlleri
 ```
 
-`docs/roadmap-screenshots/` bunlarla karıştırılmamalı; orası okul projesinin haftalık geliştirme günlüğü ve `docs/school/ROADMAP.md` tarafından kullanılıyor.
+`docs/archive/roadmap-screenshots/` bunlarla karıştırılmamalı; orası okul projesinin haftalık geliştirme günlüğü ve `docs/archive/school/ROADMAP.md` tarafından kullanılıyor.
 
 ### Boyut
 

@@ -2,8 +2,8 @@
 
 > Bu doküman, proje sürecini hafta hafta takip etmek için kullanılmaktadır.
 > Haftalık ilerleme, video bağlantıları ve ekran görselleri ilgili haftaların altında paylaşılmaktadır.
-> Proje planı, `docs/archive/SplitSnap Tanıtım Raporu.md` dönem başı teslim edilen proje tanıtım raporu içeriğiyle uyumlu şekilde korunmuştur.
-> 🎓 **[Final Teslim Raporu (PDF)](docs/school/SplitSnap_Final_Raporu.pdf)**
+> Proje planı, `SplitSnap Tanıtım Raporu.md` dönem başı teslim edilen proje tanıtım raporu içeriğiyle uyumlu şekilde korunmuştur.
+> 🎓 **[Final Teslim Raporu (PDF)](21290270_Final.pdf)**
 
 ## Hafta 1 — Proje Kurulumu ve Temel Yapı
 
@@ -42,7 +42,7 @@
 
 **Expo / geliştirme ortamı**
 
-![Expo — geliştirme ortamı](docs/roadmap-screenshots/week-01/expo.png)
+![Expo — geliştirme ortamı](../roadmap-screenshots/week-01/expo.png)
 
 ## Hafta 2 — Kimlik Doğrulama ve Tema
 
@@ -75,27 +75,27 @@
 
 **Giriş ekranı**
 
-![Giriş ekranı](docs/roadmap-screenshots/week-02/login.png)
+![Giriş ekranı](../roadmap-screenshots/week-02/login.png)
 
 **Gruplar listesi (ana ekran)**
 
-![Gruplar listesi](docs/roadmap-screenshots/week-02/dashboard-groups.png)
+![Gruplar listesi](../roadmap-screenshots/week-02/dashboard-groups.png)
 
 **Yeni grup oluşturma (alt sayfa / Sheet)**
 
-![Yeni grup oluşturma](docs/roadmap-screenshots/week-02/new-group.png)
+![Yeni grup oluşturma](../roadmap-screenshots/week-02/new-group.png)
 
 **Örnek harcama / grup akışı**
 
-![Örnek harcama ekranı](docs/roadmap-screenshots/week-02/expense-example.png)
+![Örnek harcama ekranı](../roadmap-screenshots/week-02/expense-example.png)
 
 **Supabase — Authentication kullanıcıları**
 
-![Supabase kullanıcı listesi](docs/roadmap-screenshots/week-02/supabase-user.png)
+![Supabase kullanıcı listesi](../roadmap-screenshots/week-02/supabase-user.png)
 
 **Supabase — e-posta doğrulama**
 
-![Supabase e-posta doğrulama](docs/roadmap-screenshots/week-02/supabase-confirm.png)
+![Supabase e-posta doğrulama](../roadmap-screenshots/week-02/supabase-confirm.png)
 
 ## Hafta 3 — Veritabanı ve Grup Yapısı
 
@@ -122,19 +122,19 @@
 
 **Gruplar listesi**
 
-![Gruplar listesi](docs/roadmap-screenshots/week-03/groups-list.png)
+![Gruplar listesi](../roadmap-screenshots/week-03/groups-list.png)
 
 **Yeni grup oluşturma (Sheet)**
 
-![Yeni grup oluşturma](docs/roadmap-screenshots/week-03/create-group-modal.png)
+![Yeni grup oluşturma](../roadmap-screenshots/week-03/create-group-modal.png)
 
 **Gruba katılma (Sheet)**
 
-![Gruba katılma](docs/roadmap-screenshots/week-03/join-group-modal.png)
+![Gruba katılma](../roadmap-screenshots/week-03/join-group-modal.png)
 
 **Supabase — groups tablosu**
 
-![Supabase groups](docs/roadmap-screenshots/week-03/supabase-groups-view.png)
+![Supabase groups](../roadmap-screenshots/week-03/supabase-groups-view.png)
 
 ## Hafta 4 — Grup Detay ve Harcama Temeli
 
@@ -164,23 +164,23 @@
 
 **Grup detay — harcamalar listesi**
 
-![Harcamalar listesi](docs/roadmap-screenshots/week-04/expenses-view.png)
+![Harcamalar listesi](../roadmap-screenshots/week-04/expenses-view.png)
 
 **Yeni harcama formu (üst kısım)**
 
-![Yeni harcama formu üst](docs/roadmap-screenshots/week-04/new-expense-top.png)
+![Yeni harcama formu üst](../roadmap-screenshots/week-04/new-expense-top.png)
 
 **Yeni harcama — eşit bölüşüm**
 
-![Eşit bölüşüm](docs/roadmap-screenshots/week-04/new-expense-bottom-equal.png)
+![Eşit bölüşüm](../roadmap-screenshots/week-04/new-expense-bottom-equal.png)
 
 **Yeni harcama — manuel bölüşüm**
 
-![Manuel bölüşüm](docs/roadmap-screenshots/week-04/new-expense-manual-split.png)
+![Manuel bölüşüm](../roadmap-screenshots/week-04/new-expense-manual-split.png)
 
 **Supabase — expenses tablosu**
 
-![Supabase expenses](docs/roadmap-screenshots/week-04/supabase-expenses-view.png)
+![Supabase expenses](../roadmap-screenshots/week-04/supabase-expenses-view.png)
 
 ## Hafta 5 — Harcama Yönetimi
 
@@ -210,15 +210,15 @@
 
 **Harcamalar Ekranı Emojileri**
 
-![Harcamalar emojiler](docs/roadmap-screenshots/week-05/expenses-emojis.png)
+![Harcamalar emojiler](../roadmap-screenshots/week-05/expenses-emojis.png)
 
 **Gruplar Pull-to-Refresh**
 
-![Gruplar pull to refresh](docs/roadmap-screenshots/week-05/refresh-groups.png)
+![Gruplar pull to refresh](../roadmap-screenshots/week-05/refresh-groups.png)
 
 **Toast Bildirimi (Başarılı)**
 
-![Toast başarı](docs/roadmap-screenshots/week-05/toast-message-success.png)
+![Toast başarı](../roadmap-screenshots/week-05/toast-message-success.png)
 
 
 ## Hafta 6 — Paylaşım ve Hesaplama
@@ -250,23 +250,23 @@
 
 **Grup Detay — Renkli Avatarlar, Tıklanabilir Stat Kartları ve Üye Listesi**
 
-![Grup detay yeni görünüm](docs/roadmap-screenshots/week-06/expenses-new.png)
+![Grup detay yeni görünüm](../roadmap-screenshots/week-06/expenses-new.png)
 
 **Ödeme Özeti — Harcama Dökümüm Bölümü**
 
-![Ödeme özeti harcama dökümüm](docs/roadmap-screenshots/week-06/my-expenses.png)
+![Ödeme özeti harcama dökümüm](../roadmap-screenshots/week-06/my-expenses.png)
 
 **Profil Ekranı — Tema Seçimi (Açık Mod)**
 
-![Profil ekranı yeni](docs/roadmap-screenshots/week-06/profile-new.png)
+![Profil ekranı yeni](../roadmap-screenshots/week-06/profile-new.png)
 
 **Tema Seçici — ActionSheet**
 
-![Uygulama teması ActionSheet](docs/roadmap-screenshots/week-06/app-theme.png)
+![Uygulama teması ActionSheet](../roadmap-screenshots/week-06/app-theme.png)
 
 **Profil Ekranı — Koyu Mod**
 
-![Koyu mod profil](docs/roadmap-screenshots/week-06/dark-mode.png)
+![Koyu mod profil](../roadmap-screenshots/week-06/dark-mode.png)
 
 ## Hafta 7 — Yerel Veri Saklama ve İyileştirmeler
 
@@ -293,15 +293,15 @@
 
 **Profil Düzenleme Ekranı**
 
-![Profil Düzenleme](docs/roadmap-screenshots/week-07/profile-edit.png)
+![Profil Düzenleme](../roadmap-screenshots/week-07/profile-edit.png)
 
 **Şifre Değiştirme Ekranı**
 
-![Şifre Değiştirme](docs/roadmap-screenshots/week-07/profile-password-change.png)
+![Şifre Değiştirme](../roadmap-screenshots/week-07/profile-password-change.png)
 
 **Form Doğrulamaları**
 
-![Form Doğrulamaları](docs/roadmap-screenshots/week-07/form-validation.png)
+![Form Doğrulamaları](../roadmap-screenshots/week-07/form-validation.png)
 
 ## Hafta 8 — Fiş ve OCR Altyapısı
 
@@ -332,11 +332,11 @@
 
 **Fiş Fotoğrafı Kartı — Kamera / Galeri Seçimi**
 
-![Fiş kartı boş durum](docs/roadmap-screenshots/week-08/receipt-card-empty.png)
+![Fiş kartı boş durum](../roadmap-screenshots/week-08/receipt-card-empty.png)
 
 **Fiş Seçildi — OCR İşleniyor (Spinner Overlay)**
 
-![OCR spinner](docs/roadmap-screenshots/week-08/receipt-ocr-loading.png)
+![OCR spinner](../roadmap-screenshots/week-08/receipt-ocr-loading.png)
 
 ## Hafta 9 — OCR Entegrasyonu ve Arayüz
 
@@ -364,11 +364,11 @@
 
 **OCR Otomatik Doldurma — Başlık, Tutar ve Tarih**
 
-![OCR otomatik doldurma](docs/roadmap-screenshots/week-09/ocr-autofill-result.png)
+![OCR otomatik doldurma](../roadmap-screenshots/week-09/ocr-autofill-result.png)
 
 **Manuel Bölüşüm — OCR Tutarı ile**
 
-![Manuel bölüşüm OCR](docs/roadmap-screenshots/week-09/ocr-manual-split.png)
+![Manuel bölüşüm OCR](../roadmap-screenshots/week-09/ocr-manual-split.png)
 
 ## Hafta 10 — Son Düzenlemeler ve Final
 
@@ -407,23 +407,23 @@
 
 **App Store Connect — Uygulama Bilgileri**
 
-![App Store Connect uygulama bilgileri](docs/roadmap-screenshots/week-10/asc-app-info.png)
+![App Store Connect uygulama bilgileri](../roadmap-screenshots/week-10/asc-app-info.png)
 
 **TestFlight — Build Listesi**
 
-![TestFlight build listesi](docs/roadmap-screenshots/week-10/testflight-builds.png)
+![TestFlight build listesi](../roadmap-screenshots/week-10/testflight-builds.png)
 
 **Hesap Silme Akışı**
 
-![Hesap silme akışı](docs/roadmap-screenshots/week-10/account-deletion.png)
+![Hesap silme akışı](../roadmap-screenshots/week-10/account-deletion.png)
 
 **Universal Link — Davet Katılımı**
 
-![Universal link davet katılımı](docs/roadmap-screenshots/week-10/universal-link-invite.png)
+![Universal link davet katılımı](../roadmap-screenshots/week-10/universal-link-invite.png)
 
 **splitsnap.borak.dev — Web Sitesi**
 
-![Web sitesi](docs/roadmap-screenshots/week-10/website-landing.png)
+![Web sitesi](../roadmap-screenshots/week-10/website-landing.png)
 
 ---
 

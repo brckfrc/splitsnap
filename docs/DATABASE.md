@@ -463,12 +463,57 @@ owner_id = (select auth.uid()) OR public.is_group_participant(groups.id)
 | **UPDATE** | `left_at` set etme: `user_id = auth.uid()` (kendi ayrılması) veya grup `owner_id = auth.uid()` (admin çıkarma). `role` güncellemesi: yalnızca `owner_id`. |
 | **DELETE** | Kullanılmaz — `left_at` ile soft ayrılma |
 
-### 5.5 `expenses` / `expense_shares`
+### 5.5 `expenses` / `expense_shares` / `expense_payers`
 
 | Tablo | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
 | `expenses` | `is_group_participant(group_id)` | Yalnızca **aktif** üye: `is_group_member(group_id)` + `created_by = auth.uid()` (veya politika genişletmesi) | Aktif üye veya grup `owner_id` | Soft delete: `UPDATE` ile `deleted_at`, aynı yetki |
-| `expense_shares` | İlgili `expense` görünürse (`is_group_participant`) | Harcama oluşturma/güncelleme akışında birlikte | Aynı | Cascade (expense silinirse) |
+| `expense_shares` | İlgili `expense` görünürse (`is_group_participant`) | Aktif üye **ve** (harcamayı oluşturan **veya** grup sahibi) — SEC-01 | Aynı | Aynı (expense silinirse cascade) |
+| `expense_payers` | İlgili `expense` görünürse (`is_group_participant`) | `expense_shares` ile birebir aynı | Aynı | Aynı |
+
+> `expense_payers` yazma politikaları [`20260726172500_split_payer.sql`](../supabase/migrations/20260726172500_split_payer.sql) ile eklendiğinde SEC-01 öncesi kalıp kopyalanmış, yalnızca `is_group_member` istenmişti; bu, herhangi bir üyenin başkasının harcamasında **kimin ödediğini** değiştirmesine izin veriyordu. Bakiyeler doğrudan bu tablodan hesaplandığı için gerçek para hareketi anlamına geliyor. [`20260727215500_expense_write_integrity.sql`](../supabase/migrations/20260727215500_expense_write_integrity.sql) ile `expense_shares` politikalarına eşitlendi.
+
+**Neden RPC zorunlu:** Tablolara doğrudan yazma politikaları yalnızca *kimin* yazabileceğini sınırlar, *ne* yazdığını değil. Payların ve ödeyenlerin toplamının harcama tutarına eşit olması, `user_id`'lerin gruba ait olması gibi kurallar `create_expense_with_shares` / `update_expense_with_shares` içinde uygulanır (§5.5.1).
+
+#### 5.5.1 Harcama RPC'lerinin doğrulama kuralları
+
+Her iki RPC de `SECURITY DEFINER` olduğu için RLS'i baypas eder; yetki ve tutarlılık kontrollerinin tamamı fonksiyon gövdesinde yapılmak zorundadır. `public.validate_expense_allocations(_group_id, _entries, _total, _kind)` yardımcı fonksiyonu (istemciye `GRANT` verilmez) hem `p_shares` hem `p_payers` için şu kuralları uygular:
+
+| Kural | Hata kodu |
+|-------|-----------|
+| Dizi yapısı ve `user_id` / `amount` alanları geçerli | `invalid_{share,payer}_payload` |
+| Her tutar `> 0` | `invalid_{share,payer}_amount` |
+| Aynı kullanıcı iki kez geçmiyor | `duplicate_{share,payer}_user` |
+| Her `user_id` grubun bir üyesi (`left_at` **dikkate alınmaz**) | `{share,payer}_not_in_group` |
+| Toplam, `p_amount` ile ±0.01 içinde eşit (`numeric(12,2)`'ye yuvarlanmış değerler üzerinden) | `{share,payer}_total_mismatch` |
+
+Ek olarak: `p_shares` boş olamaz (`no_shares`), `p_paid_by` gruba ait olmalı (`payer_not_in_group`), `p_receipt_storage_path` `"<p_group_id>/<dosya>"` kalıbına uymalı (`invalid_receipt_path`, Storage RLS ilk klasörü `group_id` kabul ettiği için) ve `update_expense_with_shares` harcamayı **`p_group_id` kapsamında** arar.
+
+`left_at`'in yok sayılması bilinçli: gruptan ayrılmış bir üyenin geçmiş harcamalardaki payı durur ve o harcamanın düzenlenebilmesi gerekir. Kontrolün amacı, gruba hiç ait olmayan bir `user_id`'yi reddetmektir.
+
+**Tolerans neden 0.01:** Eşit bölüşmede kalan kuruş ilk katılımcıya eklenir, yani toplam tam tutmalıdır; tek kuruşluk sapma yalnızca yuvarlama kaynaklıdır. İstemci tarafında aynı değer `MONEY_EPSILON` olarak [`src/utils/validation.ts`](../src/utils/validation.ts) içinde tutulur; istemcinin sunucudan daha gevşek olması, düzeltilebilir bir form hatasını anlaşılmaz bir RPC hatasına çevirir.
+
+### 5.5.2 Rol izinleri (`GRANT`) — RLS'in ön koşulu
+
+RLS yalnızca *hangi satır* sorusunu yanıtlar; role ait `GRANT` yoksa politika hiç değerlendirilmez, sorgu `permission denied` ile düşer. `public` şemasındaki her tabloda RLS açık olduğundan kural şu: **politikası olan her işlem için `GRANT`, `GRANT`'i olan her işlem için politika.**
+
+[`20260727223000_codify_role_grants.sql`](../supabase/migrations/20260727223000_codify_role_grants.sql) bu yüzeyi versiyon kontrolüne aldı. Öncesinde hiçbir migration `authenticated` rolüne izin vermiyordu; hosted veritabanı çalışıyordu çünkü izinler oraya migration dışında uygulanmıştı, ama zincirden kurulan bir veritabanı kullanılamaz haldeydi.
+
+| Tablo | `authenticated` | Not |
+|-------|-----------------|-----|
+| `profiles` | SELECT, INSERT, UPDATE | |
+| `friend_requests` | SELECT, UPDATE, DELETE | Oluşturma `send_friend_request_by_code()` RPC'si ile |
+| `groups` | SELECT, INSERT, UPDATE | Silme = soft delete (UPDATE) |
+| `group_members` | SELECT, UPDATE | Katılma `join_group_by_invite()` + owner trigger'ı ile |
+| `expenses` | SELECT, INSERT, UPDATE | DELETE yok: soft delete |
+| `expense_shares` | SELECT, INSERT, UPDATE, DELETE | |
+| `expense_payers` | SELECT, INSERT, UPDATE, DELETE | |
+| `settlements` | SELECT, INSERT, UPDATE | Soft delete; tutar dondurma maddesi backlog'da |
+| `activity_log` | SELECT | INSERT **bilinçli olarak verilmedi**: kayıtlar DB trigger'larıyla yazılacak (ROADMAP kararı), bu da trigger fonksiyonlarının `SECURITY DEFINER` olmasını zorunlu kılar |
+| `activity_log_archive` | SELECT | |
+| `ai_usage`, `app_config` | — | RLS açık, politika yok; yalnızca `consume_ai_quota()` erişir |
+
+`anon` rolüne hiçbir izin verilmez. Fonksiyonlarda `is_group_member` / `is_group_participant` `EXECUTE` izni de aynı migration'da; bunlar olmadan grup kapsamlı her SELECT politikası hata verir.
 
 ### 5.6 Katılma: `join_group_by_invite(code text)` RPC
 
@@ -754,3 +799,5 @@ Yeni migration veya politika eklendiğinde bu tabloya bir satır ekleyin.
 | 2026-05-29 | Hafta 8 migration: [`supabase/migrations/20260529000000_week8_receipts.sql`](../supabase/migrations/20260529000000_week8_receipts.sql) — `receipts` private bucket, storage RLS (`receipts_insert` / `receipts_select`), `create_expense_with_shares` ve `update_expense_with_shares` RPC'leri `p_receipt_storage_path` + `p_ocr_suggestions` parametreleriyle genişletildi (11 param, geriye uyumlu). |
 | 2026-07-27 | Düzeltme: [`supabase/migrations/20260727051500_fix_expense_update_owner_check.sql`](../supabase/migrations/20260727051500_fix_expense_update_owner_check.sql) — `update_expense_with_shares` içindeki `coalesce(_owner_id, '')` boş string'i uuid'ye çevirmeye çalıştığı için fonksiyon her çağrıda `invalid input syntax for type uuid` hatası veriyordu (harcama düzenleme tamamen kırıktı). `is distinct from` ile değiştirildi. |
 | 2026-07-27 | AI kota migration'ı: [`supabase/migrations/20260727012000_ai_usage_quota.sql`](../supabase/migrations/20260727012000_ai_usage_quota.sql) — `ai_usage` günlük sayaç tablosu, `app_config` ayarlanabilir limit tablosu (`ai_daily_limit` 50, `ai_global_daily_limit` 500), `consume_ai_quota()` RPC. İkisinde de RLS açık ve politika yok. `parse-receipt` edge function'ı artık `Authorization` başlığı, gövde boyutu tavanı (64 KB) ve metin kırpması (6000 karakter) da uyguluyor. |
+| 2026-07-27 | İzin migration'ı: [`supabase/migrations/20260727223000_codify_role_grants.sql`](../supabase/migrations/20260727223000_codify_role_grants.sql) — `authenticated` rolünün tablo `GRANT`'leri ve `is_group_member` / `is_group_participant` `EXECUTE` izni versiyon kontrolüne alındı (§5.5.2). Yalnızca ekleme yapar; hosted veritabanındaki mevcut izinleri değiştirmez. Öncesinde migration zincirinden kurulan bir veritabanı istemci için tamamen kullanılamazdı. |
+| 2026-07-27 | Yazma bütünlüğü migration'ı: [`supabase/migrations/20260727215500_expense_write_integrity.sql`](../supabase/migrations/20260727215500_expense_write_integrity.sql) — (1) `expense_payers` yazma politikaları SEC-01 kalıbına eşitlendi, (2) `validate_expense_allocations()` ile her iki harcama RPC'sine toplam/üyelik/tekrar doğrulaması ve fiş yolu kontrolü eklendi (§5.5.1), (3) `update_expense_with_shares` harcamayı yeniden `p_group_id` kapsamında arıyor — bu kapsam `20260726172500` ile düşmüştü ve fonksiyon `SECURITY DEFINER` olduğu için herhangi bir grup sahibinin başka bir gruptaki harcamayı yeniden yazmasına izin veriyordu. Doğrulama: [`supabase/tests/expense_write_integrity_test.sql`](../supabase/tests/expense_write_integrity_test.sql). |

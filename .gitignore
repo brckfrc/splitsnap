@@ -2,6 +2,8 @@
 
 # env files
 .env
+.env.*
+!.env.example
 
 # dependencies
 node_modules/
@@ -33,8 +35,6 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
 
 # typescript
 *.tsbuildinfo

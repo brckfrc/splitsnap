@@ -42,7 +42,7 @@ Detailed development tracking for SplitSnap. This is the living document for rec
 **Notes:**
 - Native folders `ios/` / `android/` are gitignored; regenerate with `expo prebuild` / `expo run:ios` on clone.
 - `design/figma_template/` and `design/figma_screenshots/` are tracked in git as design reference (not in `.gitignore`).
-- `ROADMAP.md` usage note now points to `docs/archive/SplitSnap Tanıtım Raporu.md` for Section 7 alignment.
+- `ROADMAP.md` usage note now points to `docs/archive/school/SplitSnap Tanıtım Raporu.md` for Section 7 alignment.
 
 **Blockers:**
 - (none)
