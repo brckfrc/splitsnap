@@ -76,7 +76,7 @@
 
 ## Requirements
 
-- **Node.js** 20.19+ (Expo SDK 57). The version this project is built and released with is pinned in [`.nvmrc`](.nvmrc).
+- **Node.js** as pinned in [`.nvmrc`](.nvmrc). That single file is what local shells, the iOS build and EAS Build all read, and `engines` plus `engine-strict` in [`.npmrc`](.npmrc) turn a mismatch into a failed `npm install` rather than a warning. Expo SDK 57 itself only needs 20.19+; the tighter pin is what keeps release builds reproducible.
 - **macOS + Xcode** for iOS Simulator
 - **Supabase** project (URL + publishable/anon key)
 
@@ -88,6 +88,8 @@
    nvm use        # or: fnm use — reads .nvmrc
    npm install
    ```
+
+   The first line is not optional: `npm install` refuses to run on a Node version outside the pin.
 
 2. **Environment**
 
@@ -124,7 +126,7 @@
 
    Or: `npx expo run:ios`
 
-   First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone). The same flow works on a **physical iPhone** (USB or network) with a dev client — not Expo Go.
+   First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone). Prebuild also writes `ios/.xcode.env.local` via [`plugins/withXcodeEnvNvm.js`](plugins/withXcodeEnvNvm.js), which is how Xcode's script phases find the `.nvmrc` Node — nothing to set up by hand. The same flow works on a **physical iPhone** (USB or network) with a dev client — not Expo Go.
 
    To deploy to a device running an **iOS beta**, use `npm run ios:device`, which points the build at `Xcode-beta.app` through `DEVELOPER_DIR` while leaving `npm run ios` on the stable toolchain. See [`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md) for the toolchain split and how to clear the build cache when switching between simulator and device.
 
