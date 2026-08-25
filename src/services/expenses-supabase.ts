@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { mapProfileToUser, unwrapProfile, type ProfileRow } from '@/services/profile-mapper';
 import type { Expense, ExpenseShare, ExpensePayer } from '@/types';
+import { parseNumeric } from '@/utils/numeric';
 
 type ExpenseRow = {
   id: string;
@@ -54,14 +55,8 @@ function mapPayerRow(row: PayerRow): ExpensePayer {
     expenseId: row.expense_id,
     userId: row.user_id,
     user: mapProfileToUser(row.user_id, prof),
-    amount: parseAmount(row.amount),
+    amount: parseNumeric(row.amount),
   };
-}
-
-function parseAmount(v: string | number): number {
-  if (typeof v === 'number') return v;
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : 0;
 }
 
 function mapOcrSuggestions(json: OcrJson | null | undefined): Expense['ocrSuggestions'] {
@@ -82,7 +77,7 @@ function mapExpenseRow(row: ExpenseRow, payerById: Map<string, ProfileRow>): Exp
     groupId: row.group_id,
     title: row.title,
     description: row.description ?? undefined,
-    amount: parseAmount(row.amount),
+    amount: parseNumeric(row.amount),
     date: dateStr,
     paidBy: row.paid_by,
     paidByUser,
@@ -103,7 +98,7 @@ function mapShareRow(row: ShareRow): ExpenseShare {
     expenseId: row.expense_id,
     userId: row.user_id,
     user: mapProfileToUser(row.user_id, prof),
-    amount: parseAmount(row.amount),
+    amount: parseNumeric(row.amount),
   };
 }
 
