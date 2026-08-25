@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronRight } from '@/lib/icons';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,7 +15,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { splitData } from '@/services/split-data';
 import { formatCurrencyTry, formatShortDate } from '@/utils/format';
 import { calculateBalances, calculateSettlements } from '@/utils/settlement';
-import { MONEY_EPSILON } from '@/utils/validation';
 
 export default function SettlementScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -23,10 +22,7 @@ export default function SettlementScreen() {
   const t = useTheme();
 
   const [refreshing, setRefreshing] = useState(false);
-  /** Suggestion row currently being recorded, so only that button spins. */
-  const [pendingKey, setPendingKey] = useState<string | null>(null);
-  /** A ref, not state: it has to flip synchronously inside the tap handler. */
-  const dialogOpen = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
   const onRefresh = useCallback(async () => {
@@ -78,152 +74,32 @@ export default function SettlementScreen() {
   const nameFor = (userId: string) =>
     members.find((m) => m.userId === userId)?.user.name ?? 'Bilinmeyen';
 
-  /**
-   * The breakdown has to account for settlements too, otherwise its total is a
-   * different number than the net balance shown at the top of the screen and
-   * nothing on the screen names the difference.
-   *
-   * `net` is deliberately the same expression `calculateBalances` uses (credit for
-   * paying, debit for being paid) rather than a simpler in/out flag, so the rows
-   * add up to the headline figure by construction. It matters for the one case the
-   * flag would get wrong: `settlements` has no `from_user_id <> to_user_id`
-   * constraint, and a row pointing at yourself nets to zero in the balance.
-   */
-  const mySettlementLedger = user
-    ? pastSettlements
-        .filter((s) => s.fromUserId === user.id || s.toUserId === user.id)
-        .map((s) => {
-          const outgoing = s.fromUserId === user.id;
-          // The joined profile, not nameFor(): the counterpart may have left the
-          // group, and a past payment still has to read as a payment to someone.
-          const other = outgoing
-            ? s.toUser?.name ?? nameFor(s.toUserId)
-            : s.fromUser?.name ?? nameFor(s.fromUserId);
-          return {
-            id: s.id,
-            title: outgoing ? `Siz → ${other}` : `${other} → Siz`,
-            date: s.createdAt,
-            amount: s.amount,
-            net:
-              (s.fromUserId === user.id ? s.amount : 0) -
-              (s.toUserId === user.id ? s.amount : 0),
-          };
-        })
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    : [];
-
-  const expenseNet = myLedger.reduce((acc, e) => acc + e.net, 0);
-  const settlementNet = mySettlementLedger.reduce((acc, s) => acc + s.net, 0);
-  const showBreakdown = !!user && (myLedger.length > 0 || mySettlementLedger.length > 0);
-
-  // Anything under half a kuruş formats as 0,00, so it must not be shown with a
-  // sign or a debt colour just because of accumulated float drift.
-  const roundToZero = (value: number) => (Math.abs(value) < 0.005 ? 0 : value);
-  const signed = (value: number) => {
-    const v = roundToZero(value);
-    return `${v > 0 ? '+' : ''}${formatCurrencyTry(v)}`;
-  };
-  const netColor = (value: number) => {
-    const v = roundToZero(value);
-    return v > 0 ? t.positive : v < 0 ? t.destructive : t.mutedForeground;
-  };
-
-  async function save(key: string, fromUserId: string, toUserId: string, amount: number) {
-    setPendingKey(key);
-    try {
-      await splitData.addSettlement({ groupId: gid, fromUserId, toUserId, amount });
-    } catch (error) {
-      Alert.alert('Hata', error instanceof Error ? error.message : 'Ödeme kaydedilemedi.');
-    } finally {
-      setPendingKey(null);
-      dialogOpen.current = false;
-    }
-  }
-
-  /**
-   * Re-derives the suggestion from fresh data after the user confirms.
-   *
-   * A rendered suggestion can be minutes old, and suggestions are recomputed from
-   * net balances, so acting on a stale one records more than the payer actually
-   * owes. That flips them into credit and makes every number on the screen look
-   * wrong for a reason the screen never explains. Overpaying is still allowed —
-   * people do settle up generously — it just has to be a choice.
-   */
-  async function confirmSettle(key: string, fromUserId: string, toUserId: string, shownAmount: number) {
-    setPendingKey(key);
-    try {
-      await splitData.loadExpensesForGroup(gid);
-    } catch {
-      // Offline: better to record against slightly old data than to block the payment.
-    }
-    setPendingKey(null);
-
-    const freshMembers = splitData.getMembers(gid);
-    const freshBalances = calculateBalances(
-      freshMembers,
-      splitData.getExpenses(gid),
-      splitData.getSettlements(gid),
-      (eid) => splitData.getShares(eid),
-      (eid) => splitData.getPayers(eid),
-    );
-    const fresh = calculateSettlements(freshMembers, freshBalances).find(
-      (s) => s.from.id === fromUserId && s.to.id === toUserId,
-    );
-
-    if (!fresh) {
-      Alert.alert(
-        'Bu Borç Kapanmış',
-        `${nameFor(fromUserId)} → ${nameFor(toUserId)} ödemesi artık önerilmiyor; aradan başka bir kayıt geçmiş olabilir. Yine de kaydederseniz ters yönde bir borç oluşur.`,
-        [
-          { text: 'Vazgeç', style: 'cancel', onPress: () => { dialogOpen.current = false; } },
-          {
-            text: 'Yine de kaydet',
-            style: 'destructive',
-            onPress: () => void save(key, fromUserId, toUserId, shownAmount),
-          },
-        ],
-        { onDismiss: () => { dialogOpen.current = false; } },
-      );
-      return;
-    }
-
-    if (Math.abs(fresh.amount - shownAmount) > MONEY_EPSILON) {
-      Alert.alert(
-        'Tutar Değişmiş',
-        `Bu borç ekranda ${formatCurrencyTry(shownAmount)} görünüyordu, şu an ${formatCurrencyTry(fresh.amount)}. Arada yeni bir harcama veya ödeme kaydedilmiş.`,
-        [
-          { text: 'Vazgeç', style: 'cancel', onPress: () => { dialogOpen.current = false; } },
-          {
-            text: `${formatCurrencyTry(fresh.amount)} kaydet`,
-            onPress: () => void save(key, fromUserId, toUserId, fresh.amount),
-          },
-          {
-            text: `Yine de ${formatCurrencyTry(shownAmount)}`,
-            onPress: () => void save(key, fromUserId, toUserId, shownAmount),
-          },
-        ],
-        { onDismiss: () => { dialogOpen.current = false; } },
-      );
-      return;
-    }
-
-    await save(key, fromUserId, toUserId, shownAmount);
-  }
-
-  function handleSettle(key: string, fromUserId: string, toUserId: string, amount: number) {
-    // Set before the Alert opens, not after it is confirmed, so repeated taps
-    // can't stack confirmation dialogs on top of each other.
-    if (dialogOpen.current) return;
-    dialogOpen.current = true;
-
+  async function handleSettle(fromUserId: string, toUserId: string, amount: number) {
     Alert.alert(
       'Ödemeyi Onayla',
       `${formatCurrencyTry(amount)} tutarındaki borcun elden veya banka yoluyla ödendiğini onaylıyor musunuz?\n\n(Bu işlem sadece kayıt amaçlıdır, gerçek para transferi yapılmaz.)`,
       [
-        { text: 'İptal', style: 'cancel', onPress: () => { dialogOpen.current = false; } },
-        { text: 'Kaydet', onPress: () => void confirmSettle(key, fromUserId, toUserId, amount) },
-      ],
-      { onDismiss: () => { dialogOpen.current = false; } },
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Kaydet',
+          onPress: async () => {
+            setSubmitting(true);
+            try {
+              await splitData.addSettlement({
+                groupId: gid,
+                fromUserId,
+                toUserId,
+                amount,
+              });
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : 'Ödeme kaydedilemedi.';
+              Alert.alert('Hata', msg);
+            } finally {
+              setSubmitting(false);
+            }
+          },
+        },
+      ]
     );
   }
 
@@ -251,17 +127,10 @@ export default function SettlementScreen() {
             <Text
               style={[
                 styles.balance,
-                {
-                  color:
-                    roundToZero(myBalance) > 0
-                      ? t.positive
-                      : roundToZero(myBalance) < 0
-                        ? t.destructive
-                        : t.foreground,
-                },
+                { color: myBalance > 0 ? t.positive : myBalance < 0 ? t.destructive : t.foreground },
               ]}
             >
-              {formatCurrencyTry(roundToZero(myBalance))}
+              {formatCurrencyTry(myBalance)}
             </Text>
           </Card>
         ) : null}
@@ -271,8 +140,18 @@ export default function SettlementScreen() {
           {members.map((m) => (
             <View key={m.userId} style={styles.row}>
               <Text style={{ color: t.foreground, flex: 1, fontWeight: '600' }}>{m.user.name}</Text>
-              <Text style={{ fontWeight: '700', color: netColor(balances[m.userId] ?? 0) }}>
-                {formatCurrencyTry(roundToZero(balances[m.userId] ?? 0))}
+              <Text
+                style={{
+                  fontWeight: '700',
+                  color:
+                    (balances[m.userId] ?? 0) > 0
+                      ? t.positive
+                      : (balances[m.userId] ?? 0) < 0
+                        ? t.destructive
+                        : t.mutedForeground,
+                }}
+              >
+                {formatCurrencyTry(balances[m.userId] ?? 0)}
               </Text>
             </View>
           ))}
@@ -283,10 +162,8 @@ export default function SettlementScreen() {
           <Text style={{ color: t.mutedForeground }}>Herkes dengede görünüyor.</Text>
         ) : (
           <View style={{ gap: Spacing.three }}>
-            {settlements.map((s, idx) => {
-              const key = `${s.from.id}-${s.to.id}-${idx}`;
-              return (
-              <Card key={key}>
+            {settlements.map((s, idx) => (
+              <Card key={`${s.from.id}-${s.to.id}-${idx}`}>
                 <View style={styles.settleRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: t.foreground, fontWeight: '700' }}>{s.from.name}</Text>
@@ -301,9 +178,8 @@ export default function SettlementScreen() {
                   {(user?.id === s.from.id || user?.id === s.to.id) && (
                     <Button
                       size="sm"
-                      disabled={pendingKey !== null && pendingKey !== key}
-                      loading={pendingKey === key}
-                      onPress={() => handleSettle(key, s.from.id, s.to.id, s.amount)}
+                      disabled={submitting}
+                      onPress={() => handleSettle(s.from.id, s.to.id, s.amount)}
                       variant="secondary"
                     >
                       {user?.id === s.from.id ? 'Öde' : 'Ödendi'}
@@ -311,8 +187,7 @@ export default function SettlementScreen() {
                   )}
                 </View>
               </Card>
-              );
-            })}
+            ))}
           </View>
         )}
 
@@ -344,7 +219,7 @@ export default function SettlementScreen() {
           </View>
         )}
 
-        {showBreakdown && (
+        {user && myLedger.length > 0 && (
           <>
             <Pressable
               onPress={() => setLedgerOpen((v) => !v)}
@@ -353,7 +228,7 @@ export default function SettlementScreen() {
               accessibilityLabel="Bakiyeniz nasıl oluştu?"
             >
               <Text style={[styles.section, { color: t.foreground, marginTop: 0, flex: 1 }]}>
-                Bakiye Dökümünüz
+                Harcama Dökümüm
               </Text>
               <ChevronDown
                 size={18}
@@ -377,10 +252,7 @@ export default function SettlementScreen() {
                     style={({ pressed }) => [
                       styles.ledgerRow,
                       pressed && { backgroundColor: t.accent },
-                      (idx < myLedger.length - 1 || mySettlementLedger.length > 0) && {
-                        borderBottomWidth: StyleSheet.hairlineWidth,
-                        borderBottomColor: t.border,
-                      },
+                      idx < myLedger.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.border },
                     ]}
                   >
                     <Text style={{ fontSize: 17, width: 26, textAlign: 'center' }}>{entry.icon ?? '📝'}</Text>
@@ -392,75 +264,31 @@ export default function SettlementScreen() {
                         {formatShortDate(entry.date)}  ·  {formatCurrencyTry(entry.amount)}
                       </Text>
                     </View>
-                    <Text style={{ fontWeight: '700', fontSize: 13, color: netColor(entry.net) }}>
-                      {signed(entry.net)}
+                    <Text
+                      style={{
+                        fontWeight: '700',
+                        fontSize: 13,
+                        color: entry.net > 0.01 ? t.positive : entry.net < -0.01 ? t.destructive : t.mutedForeground,
+                      }}
+                    >
+                      {entry.net > 0.01 ? '+' : ''}{formatCurrencyTry(entry.net)}
                     </Text>
                     <ChevronRight size={16} color={t.mutedForeground} />
                   </Pressable>
                 ))}
-
-                {mySettlementLedger.length > 0 && (
-                  <>
-                    <View style={[styles.ledgerGroupHeader, { backgroundColor: `${t.foreground}05` }]}>
-                      <Text style={{ color: t.mutedForeground, fontSize: 11, fontWeight: '700', letterSpacing: 0.3 }}>
-                        KAYITLI ÖDEMELER
-                      </Text>
-                    </View>
-                    {mySettlementLedger.map((entry, idx) => (
-                      <View
-                        key={entry.id}
-                        style={[
-                          styles.ledgerRow,
-                          idx < mySettlementLedger.length - 1 && {
-                            borderBottomWidth: StyleSheet.hairlineWidth,
-                            borderBottomColor: t.border,
-                          },
-                        ]}
-                      >
-                        <View style={[styles.ledgerBadge, { backgroundColor: t.positiveMuted }]}>
-                          <Check size={13} color={t.positive} />
-                        </View>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text style={{ color: t.foreground, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>
-                            {entry.title}
-                          </Text>
-                          <Text style={{ color: t.mutedForeground, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                            {formatShortDate(entry.date)}  ·  {formatCurrencyTry(entry.amount)}
-                          </Text>
-                        </View>
-                        <Text style={{ fontWeight: '700', fontSize: 13, color: netColor(entry.net) }}>
-                          {signed(entry.net)}
-                        </Text>
-                        {/* Aligns with the expense rows, which are inset by a chevron. */}
-                        <View style={{ width: 16 }} />
-                      </View>
-                    ))}
-                  </>
-                )}
-
-                <View style={[styles.ledgerFooterBlock, { borderTopColor: t.border, backgroundColor: `${t.foreground}08` }]}>
-                  <View style={styles.ledgerFooterRow}>
-                    <Text style={{ flex: 1, color: t.mutedForeground, fontSize: 12 }}>Harcamalar</Text>
-                    <Text style={{ fontWeight: '600', fontSize: 13, color: t.foreground }}>
-                      {signed(expenseNet)}
-                    </Text>
-                  </View>
-                  {mySettlementLedger.length > 0 && (
-                    <View style={styles.ledgerFooterRow}>
-                      <Text style={{ flex: 1, color: t.mutedForeground, fontSize: 12 }}>Ödemeler</Text>
-                      <Text style={{ fontWeight: '600', fontSize: 13, color: t.foreground }}>
-                        {signed(settlementNet)}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={[styles.ledgerFooterRow, styles.ledgerNetRow, { borderTopColor: t.border }]}>
-                    <Text style={{ flex: 1, color: t.foreground, fontSize: 13, fontWeight: '700' }}>
-                      Net bakiyeniz
-                    </Text>
-                    <Text style={{ fontWeight: '800', fontSize: 14, color: netColor(myBalance) }}>
-                      {signed(myBalance)}
-                    </Text>
-                  </View>
+                <View style={[styles.ledgerRow, styles.ledgerFooter, { borderTopColor: t.border, backgroundColor: `${t.foreground}08` }]}>
+                  <Text style={{ flex: 1, color: t.mutedForeground, fontSize: 12, fontWeight: '600' }}>
+                    Harcamalar toplamı
+                  </Text>
+                  <Text style={{ fontWeight: '800', fontSize: 13, color: t.foreground }}>
+                    {(() => {
+                      const sub = myLedger.reduce((acc, e) => acc + e.net, 0);
+                      return `${sub > 0.01 ? '+' : ''}${formatCurrencyTry(sub)}`;
+                    })()}
+                  </Text>
+                  {/* Keeps the total aligned with the rows' net column, which is
+                      inset by the chevron the footer doesn't have. */}
+                  <View style={{ width: 16 }} />
                 </View>
               </Card>
             )}
@@ -511,34 +339,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
   },
-  ledgerGroupHeader: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one + 2,
-  },
-  ledgerBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ledgerFooterBlock: {
+  ledgerFooter: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingLeft: Spacing.three,
-    // Lines the amounts up with the rows' net column, which is inset by the
-    // chevron (16) plus its gap that the footer doesn't have.
-    paddingRight: Spacing.three + Spacing.two + 16,
-    paddingVertical: Spacing.two,
-  },
-  ledgerFooterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: 3,
-  },
-  ledgerNetRow: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: Spacing.one,
-    paddingTop: Spacing.two,
   },
 });

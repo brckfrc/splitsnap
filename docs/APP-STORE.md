@@ -25,20 +25,14 @@ Kişisel referans — SplitSnap'in App Store yayın sürecine dair kararlar ve y
 
 ```bash
 # Simülatörde çalıştır (en hızlı)
-npm run ios
-
-# Ekran görüntülerinin çekildiği cihaz: iOS 26.5, Pro Max geometrisi
-npm run ios:26
-
-# Simülatör/cihaz seçici
-npm run ios:pick
+npx expo run:ios
 
 # Fiziksel cihaza USB ile yükle (local build, ~2-3 dk)
-# iOS beta'daki telefon için Xcode-beta şart, bu script onu ayarlıyor
-npm run ios:device
-```
+npx expo run:ios --device
 
-Cihaz hedefleri ve iOS sürümü ayrımı: [`DEVELOPMENT_WORKFLOW.md`](./DEVELOPMENT_WORKFLOW.md) §4.
+# Simülatörde belirli bir cihaz seç
+npx expo run:ios --simulator "iPhone 14 Pro Max"
+```
 
 ### Fiziksel cihaz — ilk kurulum (bir kez yapılır)
 
@@ -122,9 +116,8 @@ eas device:list
 
 | Durum | Komut |
 |---|---|
-| Her gün geliştirme (simülatör) | `npm run ios` |
-| Ekran görüntüsü karesi çekme (Pro Max, iOS 26.5) | `npm run ios:26` |
-| Her gün geliştirme (USB, fiziksel cihaz) | `npm run ios:device` |
+| Her gün geliştirme (simülatör) | `npx expo run:ios` |
+| Her gün geliştirme (USB, fiziksel cihaz) | `npx expo run:ios --device` |
 | Cihaz kayıt + dev client (bir kez) | `eas build --profile development` |
 | Başkasına test için gönder | `eas build --profile preview` |
 | App Store'a yeni sürüm | `eas build --profile production` → `eas submit` |
@@ -148,8 +141,6 @@ docs/store-assets/<sürüm>/
 ### Boyut
 
 Tek boyut yeterli: **1320 × 2868** (6.9", iPhone 17 / 16 Pro Max'in tam çözünürlüğü). Apple 1290×2796 ve 1260×2736'yı da kabul ediyor, ve verdiğin bu tek seti küçük cihazlara kendisi ölçekliyor. Yerelleştirme başına **en fazla 10** kare yüklenebilir.
-
-Kareleri `npm run ios:26` ile açılan `iPhone 17 Pro Max (26.5)` simülatöründe çek: pencere tam bu çözünürlüğe denk geliyor, üstelik kullanıcı çoğunluğunun bulunduğu iOS sürümü orada.
 
 **İlk 3 kare** arama sonuçlarında ve yükleme sayfasında görünen tek karelerdir; gerisini çoğu kullanıcı hiç görmez.
 

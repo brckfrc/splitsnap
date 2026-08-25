@@ -23,7 +23,7 @@ import { uploadReceipt } from '@/services/receipts';
 import { parseReceipt, type ReceiptScan } from '@/services/receipt-parse';
 import { splitData } from '@/services/split-data';
 import { formatCurrency, guessCategoryEmoji } from '@/utils/format';
-import { amountsMatch, parseAmount, validateAmount, validateExpenseTitle } from '@/utils/validation';
+import { parseAmount, validateAmount, validateExpenseTitle } from '@/utils/validation';
 
 const EMOJI_LIST = ['📝', '🍔', '🛒', '🚕', '🏠', '🎮', '🏥', '👕', '🐾', '🍻', '🎁', '✈️', '☕️', '🍿', '🎬'];
 
@@ -284,7 +284,7 @@ export default function AddExpenseScreen() {
           sum += v;
         }
       }
-      if (!amountsMatch(sum, num)) {
+      if (Math.abs(sum - num) > 0.05) {
         Alert.alert('Ödeme tutarı uyuşmuyor', 'Ödeyenlerin toplam miktarı, harcama tutarına eşit olmalı.');
         return;
       }
@@ -301,7 +301,7 @@ export default function AddExpenseScreen() {
         const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
         if (!Number.isNaN(v) && v > 0) { manualAmounts[id] = v; sum += v; }
       }
-      if (!amountsMatch(sum, num)) {
+      if (Math.abs(sum - num) > 0.05) {
         Alert.alert('Tutar uyuşmuyor', 'Manuel payların toplamı, harcama tutarına eşit olmalı.');
         return;
       }

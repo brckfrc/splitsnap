@@ -42,13 +42,7 @@ export function stopExpensesBackgroundSync() {
 }
 
 /**
- * Initial fetch for one group, Realtime on `expenses` and `settlements` for that
- * group_id, refetch on AppState active.
- *
- * `expense_shares` / `expense_payers` are deliberately not subscribed: both
- * expense RPCs always touch the parent `expenses` row, so a split change already
- * arrives as an `expenses` event, and `loadExpensesForGroup` refetches shares and
- * payers with it.
+ * Initial fetch for one group, Realtime on `expenses` for that group_id, refetch on AppState active.
  */
 export async function syncExpensesForGroup(groupId: string): Promise<void> {
   stopExpensesBackgroundSync();
@@ -69,19 +63,6 @@ export async function syncExpensesForGroup(groupId: string): Promise<void> {
         event: '*',
         schema: 'public',
         table: 'expenses',
-        filter: `group_id=eq.${groupId}`,
-      },
-      () => scheduleReload(),
-    )
-    // Without this, a payment recorded by someone else never reaches this device
-    // until the app is backgrounded and resumed, so the settlement screen keeps
-    // offering a suggestion that was already acted on.
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'settlements',
         filter: `group_id=eq.${groupId}`,
       },
       () => scheduleReload(),

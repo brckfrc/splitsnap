@@ -128,7 +128,7 @@
 
    First run generates native projects via prebuild (if `ios/` is ignored in git, this is expected on each fresh clone). Prebuild also writes `ios/.xcode.env.local` via [`plugins/withXcodeEnvNvm.js`](plugins/withXcodeEnvNvm.js), which is how Xcode's script phases find the `.nvmrc` Node — nothing to set up by hand. The same flow works on a **physical iPhone** (USB or network) with a dev client — not Expo Go.
 
-   To choose a target, use `npm run ios:26` or `npm run ios:27` for a specific iOS runtime, or `npm run ios:pick` for a prompt. All three stay on the stable toolchain; only deploying to a device running an **iOS beta** needs `npm run ios:device`, which points the build at `Xcode-beta.app` through `DEVELOPER_DIR`. See [`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md) for the toolchain split, why the simulator runtime is independent of the SDK, and how to clear the build cache when switching between simulator and device.
+   To deploy to a device running an **iOS beta**, use `npm run ios:device`, which points the build at `Xcode-beta.app` through `DEVELOPER_DIR` while leaving `npm run ios` on the stable toolchain. See [`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md) for the toolchain split and how to clear the build cache when switching between simulator and device.
 
 ## Learn more
 

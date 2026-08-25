@@ -7,8 +7,7 @@ import type { User } from '@/types';
 
 export type ProfileRow = {
   display_name: string;
-  /** Optional: group-scoped queries deliberately leave it out of the projection. */
-  email?: string | null;
+  email: string | null;
   avatar_url: string | null;
 };
 
