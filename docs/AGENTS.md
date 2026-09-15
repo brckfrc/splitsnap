@@ -7,8 +7,25 @@
 - Backend: **Supabase** (`@supabase/supabase-js`). Do not write custom backend or server code. All Auth, DB, and Storage operations must go through the Supabase client.
 - Database schema changes require a migration plan in [`docs/DATABASE.md`](./DATABASE.md) (or an update to that file) before implementation.
 - Receipt OCR: **hybrid** approach. Image→text: **on-device** via `expo-text-extractor` (Apple Vision, installed Week 8). Text→JSON: **Supabase Edge Function `parse-receipt`** → `gpt-4o-mini` (key stored as Supabase secret `OPENAI_API_KEY` — never in client bundle, never `EXPO_PUBLIC_`). Falls back to local heuristic when the edge function is unavailable. Supabase Edge Functions are permitted for the OCR/LLM proxy (they are part of the Supabase platform, not a custom server).
-- **Do not create git commits, and do not modify the staging area.** All staging and commits are done by the developer manually. Agents must never run `git commit`, `git add`, or any command that changes what is staged (`git reset`, `git restore --staged`, `git stash`, etc.). Leave edits as unstaged working-tree changes and suggest commit messages instead.
+- **Do not create git commits, and do not modify the staging area.** All staging and commits are done by the developer manually. Agents must never run `git commit`, `git add`, or any command that changes what is staged (`git reset`, `git restore --staged`, `git stash`, etc.). Leave edits as unstaged working-tree changes. **Do not propose a commit** unless the developer asks in the same message — they often commit themselves and find unsolicited commit suggestions noisy.
+- **Do not touch what is already staged** unless the developer explicitly asks. A staged set may mix several sprints; leave it alone, put new agent edits in the working tree (unstaged), and report against the staged set if asked.
 - Never commit `.env` files or Supabase keys. Commit **`.env.example`** only (placeholders). Use **`EXPO_PUBLIC_`** prefixed vars in `.env` for client-safe values.
+
+## Working Style (session continuity)
+
+These are standing agreements from real sessions — follow them even when a prompt is short.
+
+- **Ask before starting large work.** Scan / report / propose first when the ask is open-ended ("roadmap'ten devam", "öner"). Do **not** begin implementing migrations, refactors, or multi-file fixes until the developer confirms the next step. Exception: a clear, scoped instruction ("şunu düzelt", "önerdiğin gibi yap").
+- **"Sadece incele" / inspect-only means zero edits.** Read, diagnose, answer. No file writes, no "quick fixes while we're here."
+- **Prefer short answers in chat.** Lead with the verdict. Expand only when asked ("baştan anlat", "rapor ver") or when the answer would be wrong without one concrete reason.
+- **Document by updating existing files.** Prefer `ROADMAP.md`, `docs/AGENTS.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `supabase/README.md`, etc. Do not invent new markdown docs unless the developer asks for a throwaway file (e.g. a test plan they will delete).
+- **Treat aspirational docs as aspirational.** `DEVELOPMENT_WORKFLOW.md` §1–§2 describe a `splitsnap-dev` project that **does not exist yet**. There is one hosted Supabase project; local `.env` points at production. Never assume a safe write target without checking Active Status in `ROADMAP.md`.
+- **Changelog timing:** write `docs/changelog/sprint_NN_*.md` only when that Sprint **closes** (see `ROADMAP.md` *How This Document Works*). Mid-sprint completed work stays as a `[Done · date]` bullet inside the Sprint block (or Active Status); do not open a changelog file early.
+- **ROADMAP language & routing:** `ROADMAP.md` is English. New items follow the three-question router at the top of that file (blocker → current Sprint; dependency → linked Sprint; independent → Continuous Lane / Backlog). Emoji and `[High]/[Medium]/[Low]` are tags, not folders.
+- **Money from the DB vs money from the keyboard:** Postgres `numeric` arrives as a JSON string — always go through `parseNumeric` in [`src/utils/numeric.ts`](../src/utils/numeric.ts) before arithmetic. User-typed amounts use `parseAmount` / `MONEY_EPSILON` (`0.01`) in [`src/utils/validation.ts`](../src/utils/validation.ts). The client epsilon **must not** be looser than the server (`validate_expense_allocations`); a looser client turns a form error into an opaque RPC failure.
+- **Smoke / dual-client testing on production:** until the dev project exists, use only the App Store screenshot accounts (Deniz / Mert / Sude and friends — see [`APP-STORE.md`](./APP-STORE.md) + `supabase/seed-local/`). Never poke real user groups. Pair **YENİ** (simulator on working-tree code) with **ESKİ** (physical phone left on App Store 1.2.0 Build 13 — do not install the new build on that phone during the pass). Step list: repo-root [`TEST-PLAN.md`](../TEST-PLAN.md) (temporary; delete after the pass).
+- **Local Supabase is for SQL / migration verification, not day-to-day app runs.** `supabase start` + `db reset` + `supabase/tests/*.sql` prove migrations alone produce a usable DB. The running Expo app still talks to the hosted project via `.env`.
+- **Running on iOS:** one toolchain — stable Xcode 27 (iOS 27 SDK) builds for the simulators and the iOS 27 phone alike, and the project's line is iOS 27 (no iOS 26 targets). The default is `npm run ios:pick` (terminal list of every simulator plus the phone); `ios:27` boots the Pro Max screenshot simulator first via [`scripts/run-ios-simulator.sh`](../scripts/run-ios-simulator.sh). The dev build shares the App Store bundle ID, so picking the phone replaces the store install — never during a dual-client pass (see `DEVELOPMENT_WORKFLOW.md` §4).
 
 ## Environment Variables
 
@@ -64,7 +81,7 @@
 
 ## Important Locations
 
-- `ROADMAP.md` — Post-release backlog and active development updates (English). The primary document for tracking features. Backlog items are grouped logically into 🚀 Core Features & Logic, 🎨 UI/UX Polish & Modernization, and 🐛 Bugs & Performance, prioritized with `[High]`, `[Medium]`, or `[Low]` prefixes. Completed sprint logs are moved to the `## Recent Updates` section at the bottom. **CRITICAL: Agents must unconditionally keep this document and session walkthroughs up-to-date after completing tasks.**
+- `ROADMAP.md` — Post-release backlog and active development (English). The primary document for tracking work. Organised as **dependency-ordered Sprints** (`#5, #6 …`), **not** by category: an item's 🔐/🚀/🎨/🐛/🧹 emoji and its `[High]/[Medium]/[Low]` prefix are **tags, not its location**. New items are routed by the *How This Document Works* section at the top of the file (blocker → current Sprint; has a dependency → the Sprint it links to; independent → the Continuous Lane or Backlog), and each item ends with a `needs: … · blocks: …` metadata line. When a Sprint ships, move its log to `docs/changelog/sprint_NN_*.md` and leave a one-line summary under `## Recent Updates & Changelog`. **CRITICAL: Agents must unconditionally keep this document and session walkthroughs up-to-date after completing tasks.**
 - `design/figma_template/` — Figma-aligned **reference UI** (Vite/React prototype; not the production app). Use for layout/tokens when implementing `src/app/`. Screenshots: `design/figma_screenshots/`.
 - `docs/archive/school/SplitSnap Tanıtım Raporu.md` — original university report
 - `docs/DATABASE.md` — PostgreSQL / Supabase ER diyagramı, tablolar, RLS stratejisi ve backend planı (tek kaynak)
@@ -87,12 +104,16 @@
 
 - **Tamagui portals / Sheet:** `TamaguiProvider` already wraps `PortalProvider` (`shouldAddRootHost`). If Metro still throws `PortalDispatchContext cannot be null`, the usual cause is **two physical copies** of `@tamagui/portal` under `node_modules` (e.g. nested under `@tamagui/sheet`). Fix: direct dep + `overrides` in [`package.json`](../package.json) so only **one** `@tamagui/portal` exists at the repo root. Never add a **second** `PortalProvider` in `_layout`. For **Lucide** / native SVG, `useTheme()` must resolve Tamagui variables to strings — [`use-theme.ts`](../src/hooks/use-theme.ts) uses `getVariableValue` so `color={t.primary}` is never an object.
 - **Expo Go** does not load this project reliably — **MMKV / Nitro** need a **development build**. Use `npm run ios` or `npx expo run:ios`.
-- **Two Xcode toolchains:** the simulator uses stable Xcode (`npm run ios`), the physical iPhone on the iOS 27 beta uses Xcode-beta (`npm run ios:device`). Both share one DerivedData directory (keyed by workspace path, not Xcode version), so alternating between them can produce Swift/module mismatch errors unrelated to your code — clear with `rm -rf ~/Library/Developer/Xcode/DerivedData/SplitSnap-*`, then `npx expo prebuild --clean`. Details: [`DEVELOPMENT_WORKFLOW.md`](./DEVELOPMENT_WORKFLOW.md).
+- **After an Xcode upgrade (or a temporary beta toolchain):** every build shares one DerivedData directory (keyed by workspace path, not Xcode version), so a compiler change can produce Swift/module mismatch errors unrelated to your code — clear with `rm -rf ~/Library/Developer/Xcode/DerivedData/SplitSnap-*`, then `npx expo prebuild --clean`. A beta phone is a one-off `DEVELOPER_DIR=… npm run ios:pick`, not a permanent script. Details: [`DEVELOPMENT_WORKFLOW.md`](./DEVELOPMENT_WORKFLOW.md) §4.
+- **Node comes from `.nvmrc` and nowhere else:** Xcode script phases read `NODE_BINARY` from `ios/.xcode.env.local`, which [`plugins/withXcodeEnvNvm.js`](../plugins/withXcodeEnvNvm.js) regenerates on every prebuild and resolves through nvm. Never hardcode a Node path there — absolute paths break on the next Homebrew or nvm update, and the build then fails with `node: No such file or directory` plus misleading `Internal inconsistency error` cascades. `npm install` also hard-fails outside the pin (`engine-strict` in [`.npmrc`](../.npmrc)), so run `nvm use` first.
 - **Storage roles:** AsyncStorage = Supabase auth session (tutorial default). MMKV = app/Zustand persistence. Do not store the same session in two backends without an explicit migration plan.
 - **OCR package:** `expo-text-extractor` (installed, Week 8). Earlier notes mention `expo-doc-vision` — that package does not exist; ignore any reference to it.
 - Path aliases in `tsconfig.json` must stay in sync with Metro if you add them.
 - Receipt uploads: validate size/format before Storage.
-- Equal-split math: watch currency rounding.
+- Equal-split math: watch currency rounding; equal-split must not emit zero-amount shares (server rejects `share <= 0`).
+- **Homebrew Node paths rot.** Never put `/opt/homebrew/Cellar/node/...` in `ios/.xcode.env.local` — that was the 2026-07-31 build break. Always regenerate via the nvm plugin.
+- **`expo run:ios --device` + shut-down simulator:** on Xcode 26.6 the build succeeded and the install failed with CoreDeviceError 1001, because Expo installs anything `devicectl` lists through `devicectl`. Xcode 27's `devicectl` lists only booted simulators, so `ios:pick` should now boot a shut-down one itself — unconfirmed; if 1001 returns, open the simulator first. `ios:27` always boots first. The `Unexpected devicectl JSON version output` warning is cosmetic (Xcode 27 emits `jsonVersion` 5; `@expo/cli` 57 knows 2 and 3).
+- **Deleted-account PII:** `user_metadata: {}` in `delete-account` does **not** clear name fields — GoTrue merges metadata. Explicit nulls are a Sprint #6 item; display decision (keep full name + passive "silinmiş") is settled in `ROADMAP.md`.
 
 ## Release Notes Guidelines (What's New)
 
@@ -147,9 +168,10 @@
 | Command | Description |
 |--------|-------------|
 | `npm start` | Start Metro (use with dev build on simulator/device) |
-| `npm run ios` | Build and run iOS dev client (stable Xcode → iOS 26 Simulator) |
-| `npm run ios:device` | Same, but on a **physical iPhone** via Xcode-beta (`DEVELOPER_DIR`) — needed while the device runs the iOS 27 beta |
-| `npm run check` | **Typecheck + lint** — run before commits / PRs |
+| `npm run ios:pick` | **Default.** Terminal list of every simulator plus the connected iPhone; builds for the one you pick (stable Xcode 27) |
+| `npm run ios:27` | iOS 27.0 **Pro Max** simulator (screenshot geometry) — boots via `scripts/run-ios-simulator.sh`, then Expo |
+| `npm run ios` | Default simulator, no list (`simctl` path — boots it itself) |
+| `npm run check` | **Typecheck + lint** — run before finishing work / before the developer commits |
 | `npm run typecheck` | `tsc --noEmit` (strict TS) |
 | `npm run lint` | ESLint via Expo |
 | `npm run lint:fix` | ESLint with auto-fix |

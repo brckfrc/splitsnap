@@ -24,15 +24,19 @@ Kişisel referans — SplitSnap'in App Store yayın sürecine dair kararlar ve y
 ### Günlük geliştirme
 
 ```bash
-# Simülatörde çalıştır (en hızlı)
-npx expo run:ios
+# Cihaz listesinden seç: tüm simülatörler + bağlı iPhone (varsayılan)
+npm run ios:pick
 
-# Fiziksel cihaza USB ile yükle (local build, ~2-3 dk)
-npx expo run:ios --device
+# Ekran görüntülerinin çekildiği cihaz: iPhone 17 Pro Max, iOS 27 (boot edip açar)
+npm run ios:27
 
-# Simülatörde belirli bir cihaz seç
-npx expo run:ios --simulator "iPhone 14 Pro Max"
+# Varsayılan simülatör, liste yok
+npm run ios
 ```
+
+> Listeden telefonu seçmek, dev build'i telefondaki App Store sürümünün **üzerine** kurar (aynı bundle ID). Telefonda App Store sürümünü koruman gereken bir test turundaysan telefonu seçme.
+
+Cihaz hedefleri ve iOS sürümü ayrımı: [`DEVELOPMENT_WORKFLOW.md`](./DEVELOPMENT_WORKFLOW.md) §4.
 
 ### Fiziksel cihaz — ilk kurulum (bir kez yapılır)
 
@@ -43,7 +47,7 @@ eas device:create
 # 2. Yeni cihazla güncel provisioning profile oluşturmak için development build al
 eas build --profile development --platform ios
 #    → Build biter → .ipa linki gelir → Expo Go veya EAS ile cihaza yükle
-#    → Bundan sonra artık `expo run:ios --device` yeterli
+#    → Bundan sonra artık `npm run ios:pick` yeterli
 ```
 
 ### Test dağıtımı (başkasına göndermek için)
@@ -116,8 +120,8 @@ eas device:list
 
 | Durum | Komut |
 |---|---|
-| Her gün geliştirme (simülatör) | `npx expo run:ios` |
-| Her gün geliştirme (USB, fiziksel cihaz) | `npx expo run:ios --device` |
+| Her gün geliştirme (simülatör veya fiziksel cihaz) | `npm run ios:pick` |
+| Ekran görüntüsü karesi çekme (Pro Max, iOS 27) | `npm run ios:27` |
 | Cihaz kayıt + dev client (bir kez) | `eas build --profile development` |
 | Başkasına test için gönder | `eas build --profile preview` |
 | App Store'a yeni sürüm | `eas build --profile production` → `eas submit` |
@@ -141,6 +145,8 @@ docs/store-assets/<sürüm>/
 ### Boyut
 
 Tek boyut yeterli: **1320 × 2868** (6.9", iPhone 17 / 16 Pro Max'in tam çözünürlüğü). Apple 1290×2796 ve 1260×2736'yı da kabul ediyor, ve verdiğin bu tek seti küçük cihazlara kendisi ölçekliyor. Yerelleştirme başına **en fazla 10** kare yüklenebilir.
+
+Kareleri `npm run ios:27` ile açılan `iPhone 17 Pro Max` simülatöründe (iOS 27) çek: pencere tam bu çözünürlüğe denk geliyor.
 
 **İlk 3 kare** arama sonuçlarında ve yükleme sayfasında görünen tek karelerdir; gerisini çoğu kullanıcı hiç görmez.
 
