@@ -54,7 +54,7 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   it never shipped; its changes are folded into the 1.2.0 notes.
 - **Uncommitted working tree (~1,335 lines):** Sprint #3 (write-integrity migration + tests +
   audit SQL) and Sprint #4 (settlement screen rewrite, `+335` in `settlement.tsx`), plus
-  `utils/numeric.ts` and the `MONEY_EPSILON` change, are **uncommitted** (working tree, unstaged). (Per
+  `utils/numeric.ts` and the `MONEY_EPSILON` change, are **uncommitted**. (Per
   `AGENTS.md`, the developer commits and pushes manually — agents leave edits unstaged and never
   touch staging.)
 - **Migrations are deployed, the client is not.** `20260727215500` + `20260727223000` were pushed
@@ -430,6 +430,20 @@ Large, no dependency yet. Pulled up when they become a dependency or you choose 
   draft-expense concept so they don't grow two flows. `independent (for now)`
 - **Profile avatars** — listed as the optional tail of Sprint #7; drops here if it doesn't make that
   cut. `needs: Storage bucket + RLS`
+- **[🧹 Medium] Upgrade to Expo SDK 58.** Expo SDK 57 pins the version of every native package
+  (`react-native` 0.86.x, `react` 19.2.3, reanimated, worklets, screens, gesture-handler,
+  safe-area, datetimepicker). Renovate's non-major PR (#15, 2026-09) bumped them past that to the latest
+  npm releases (`react-native` 0.87.1, `react` 19.3.0, …) — a set no SDK ships together, which failed
+  `npx expo install --check` on 11 packages and `tsc` with 6 errors from the RN 0.87 types (`ScrollView`
+  refs in `groups/[groupId]/index.tsx`, `AppState` status in `expenses-sync.ts`). Those packages move
+  only with the SDK, never one by one. SDK 58 was at `58.0.0-preview.4` on 2026-09-22 (preview: RN
+  0.88-rc, React 19.3). *When it goes stable:* `npx expo install expo@^58 --fix` (Expo picks the
+  compatible set; `expo install --check` is the gate, not a hand-kept list), fix the type errors,
+  `npx expo prebuild --clean --platform ios`, full run-through on simulator and phone. Its own Sprint-sized
+  pass — not mixed with feature work, and not during a release pass. Close #15 (and any Renovate PR that
+  bumps SDK-managed packages) rather than cherry-picking from it; the only safe picks there were `.nvmrc`
+  (needs `nvm install` first) and the `design/` prototype.
+  `needs: SDK 58 stable · blocks: nothing yet (becomes urgent if a store/Xcode requirement drops SDK 57)`
 
 ---
 

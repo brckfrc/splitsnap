@@ -154,9 +154,11 @@ When that happens, clear caches cheapest first:
 rm -rf ~/Library/Developer/Xcode/DerivedData/SplitSnap-*
 
 # 2. Still failing? Regenerate the native project, re-running codegen + pod install
-npx expo prebuild --clean
+npx expo prebuild --clean --platform ios
 ```
+
+The same command is the step after any `package-lock.json` change that touches native packages (a Renovate lock-maintenance merge, an Expo patch bump): `npm ci`, then `npx expo prebuild --clean --platform ios`.
 
 Note that `ios/build/` is **not** the compiler cache — it only holds React Native codegen and autolinking output, which is toolchain-independent. Deleting it forces codegen to re-run but won't fix a Swift version mismatch.
 
-Nothing here touches tracked files — `ios/` is gitignored, so `prebuild --clean` is always safe to run. It also rewrites `ios/.xcode.env.local` from the config plugin, so the Node setup survives the wipe instead of having to be restored by hand.
+With `--platform ios` nothing here touches tracked files — `ios/` is gitignored, so the command is always safe to run. **Leave the flag off and Expo prepares Android too:** it creates `android/` and writes an `android.package` into `app.json`, a tracked-file change this iOS-only project does not want (seen 2026-09-22; undo with `git restore app.json` and `rm -rf android`). It also rewrites `ios/.xcode.env.local` from the config plugin, so the Node setup survives the wipe instead of having to be restored by hand.
