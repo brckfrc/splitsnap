@@ -57,10 +57,11 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   `utils/numeric.ts` and the `MONEY_EPSILON` change, are **uncommitted**. (Per
   `AGENTS.md`, the developer commits and pushes manually — agents leave edits unstaged and never
   touch staging.)
-- **Migrations are deployed, the client is not.** `20260727215500` + `20260727223000` were pushed
-  to the hosted database on 2026-07-31, after a local `db reset` ran the 19-case write-integrity
-  suite clean. So the server is already strict while every installed client predates Sprint #4 —
-  what remains of that step is the smoke test, an audit re-run, and the rebuild.
+- **Migrations are deployed, the client is not.** `20260727215500` + `20260727223000` went to the
+  hosted database on 2026-07-31 and the payer fix (`20261027120000`) on 2026-10-27; `migration list
+  --linked` reports 12 of 12 applied with nothing pending. So the server is fully up to date while
+  every installed client predates Sprint #4 — what remains is the client test pass, a commit, an
+  audit re-run, and the rebuild.
 - **Framework:** Expo SDK 57 (React Native 0.86) + React 19 + TypeScript. **iOS only.**
 - **Backend:** Supabase (Auth, DB, Edge Functions, Storage) — **a single project.** The dev/prod
   split in `docs/DEVELOPMENT_WORKFLOW.md` §1–§2 is aspirational, not built, so simulator runs and
@@ -76,13 +77,26 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   (settlement screen reconciles with its own headline; stale suggestions can't book silent
   overpayments) is done in code but still needs the rebuild. Any feature that displays or acts on a
   balance rests on both.
-- **Where we left off (2026-08-01):** first successful simulator run of the Sprint #4 client after the
-  nvm/Xcode Node fix (`npm run ios:pick` → iPhone 17 Pro 27.0). **Next human step:** execute
-  [`TEST-PLAN.md`](TEST-PLAN.md) (YENİ = working-tree simulator, ESKİ = App Store 1.2.0 Build 13 on
-  the physical phone — do not overwrite that install). Critical checks: **B.2** (ledger net equals
-  headline balance) and **F.3** (old client epsilon vs strict server). After the pass: the two Sprint
-  #5 code fixes (payer reassignment, zero-share equal split) → rebuild/submit → then the hosted
-  `splitsnap-dev` project. Do **not** open `docs/changelog/sprint_05_*.md` until Sprint #5 closes.
+- **Where we left off (2026-10-27, ~03:00):** both Sprint #5 code fixes are **written, proven and —
+  for the server half — deployed** (see the two Done bullets below). What is left is the **client
+  test pass**, which was set up but not started: environment refreshed (`git pull`, `npm ci` to Expo
+  57.0.30, DerivedData cleared for Xcode 27.1, `prebuild --clean`), the app built clean in ~28
+  minutes and installed on the iPhone 17 Pro Max simulator, with a second simulator (iPhone 17)
+  booted for the two-device checks. Stopped there for the night; Metro and the local Supabase stack
+  were shut down.
+  - **Resume with:** `npm run ios:27`, install the same build on the second simulator, sign in as two
+    screenshot test accounts in one group, then [`TEST-PLAN.md`](TEST-PLAN.md) sections **B** (B.2 is
+    the whole point of Sprint #4: the ledger's net line must equal the headline balance to the
+    kuruş), **C** (stale-suggestion guard, needs both simulators), **D** (realtime) and **E**. Section
+    **F** no longer needs the phone — the old-client paths are now covered by SQL
+    (`tests/expense_payer_preservation_test.sql`), and F.1's bug is fixed and deployed.
+  - **Then:** commit the working tree (EAS builds the committed state), re-run
+    `audit/expense_integrity_audit.sql`, `eas build --profile production`, submit. Version stays
+    `1.2.0`, EAS auto-increments to Build 14.
+  - **Watch out:** the phone is on **iOS 27.2** while Xcode is **27.1**, so `ios:pick` cannot deploy
+    to it until Xcode is updated. Updating Xcode also means clearing DerivedData again and paying
+    another cold build (~28 min). Not needed for the simulator pass.
+  - Do **not** open `docs/changelog/sprint_05_*.md` until Sprint #5 closes.
 
 ---
 
@@ -111,21 +125,37 @@ was verified on 2026-07-28: no RPC signature change, receipt paths already match
 check, and the only direct table write old clients make is the soft-delete UPDATE the grants
 migration covers.
 
-- **[🔐 High] Old client editing an expense reassigns who paid it.**
-  `update_expense_with_shares` treats an empty `p_payers` as "reset payers to `auth.uid()` for the
-  full amount" (`20260727215500`, preserved from `20260726172500`). Any pre-multi-payer client
-  sends no `p_payers`, so a v1.0.0 user editing only the title of someone else's expense silently
-  becomes its sole payer; `paid_by` isn't touched, so the two then disagree. Not caught by the
-  audit (payers still sum to the total). **Live in production today.** *Fix:* on **update**, empty
-  `p_payers` = "leave payers alone" — capture existing rows, keep them if they still sum to the new
-  amount, pro-rate if the amount changed (the client already does this in `split-data.ts`
-  `updateExpense`), single-payer fallback only when there were none.
-  `needs: nothing · blocks: safe v1.2.0 submission`
-- **[🔐 Low] Equal split under one kuruş per person is rejected.** The equal-split branch in
-  `split-data.ts` (`addExpense` / `updateExpense`) doesn't filter zero-amount shares the way the
-  manual branch does; `amount/n < 0.01` produces `[0.01, 0, 0]` and `validate_expense_allocations`
-  rejects any share `<= 0`. Affects every build. *Fix:* filter zeros in the equal branch too; the
-  rest still sums to the total. `needs: nothing · blocks: nothing (fold in while touching split math)`
+- **[🔐 Done · 2026-10-27] Old client editing an expense no longer reassigns who paid it.**
+  `update_expense_with_shares` treated an empty `p_payers` as "reset payers to `auth.uid()` for the
+  full amount" (`20260727215500`, preserved from `20260726172500`). Any pre-multi-payer client sends
+  no `p_payers`, so a v1.0.0 user editing only the title of someone else's expense silently became
+  its sole payer, and `paid_by` was left alone so the two then disagreed. The audit never caught it:
+  the payer total still equalled the amount, so every group still summed to zero — wrong
+  attribution, not broken arithmetic. It had been live since the multi-payer migration (July).
+  **Reproduced first**, on a local stack: a title-only edit moved the payer from bob to alice while
+  `paid_by` still read bob. Fixed by
+  [`20261027120000_preserve_payers_on_update.sql`](supabase/migrations/20261027120000_preserve_payers_on_update.sql),
+  which makes an empty `p_payers` on UPDATE mean "leave the payers alone": keep the rows when the
+  amount is unchanged, pro-rate them when it moved (the same thing `split-data.ts` `updateExpense`
+  does client-side), and fall back to a single payer credited to `expenses.paid_by` — not to the
+  caller — only when there were none at all. Covered by
+  [`tests/expense_payer_preservation_test.sql`](supabase/tests/expense_payer_preservation_test.sql)
+  (8 cases: multi-payer preserved, pro-rate 60/40 → 120/80, a payer rounding below a kuruş without
+  losing the total, the fallback crediting `paid_by`, and an explicit `p_payers` still winning).
+  The 19-case write-integrity suite still passes unchanged. **Pushed to the hosted database on
+  2026-10-27** after a `--dry-run`, and the deployed function body was re-read to confirm the old
+  branch is gone. Fold into `sprint_05_*.md` when this Sprint closes.
+  `needs: nothing · blocks: nothing (it was the last [High] on the board)`
+- **[🔐 Done · 2026-10-27] Equal split under one kuruş per person is accepted again.** The
+  equal-split branch in `split-data.ts` did not filter zero-amount shares the way the manual branch
+  does, so `amount / n < 0.01` produced `[0.02, 0, 0]` and `validate_expense_allocations` rejected
+  the save outright (`invalid_share_amount`). Affected every build, not just old ones. The math now
+  lives in one `equalShares` helper shared by `addExpense` and `updateExpense`, so the two cannot
+  drift, and it drops zero rows — the remaining rows still sum to the total, so someone simply
+  absorbs an amount too small to divide. Verified over 14 amount/participant combinations and then
+  end-to-end against the server: the old `[0.02, 0, 0]` payload is still rejected, the new `[0.02]`
+  is accepted, and `0.03 / 3` is unchanged. Client-side only — ships with the rebuild below.
+  `needs: nothing · blocks: nothing`
 - **[🧹 Medium] No dev database — every local run writes to production.**
   `docs/DEVELOPMENT_WORKFLOW.md` §1–§2 describe a `splitsnap-dev` project and EAS-secret overrides as
   though they exist; there is in fact a single Supabase project, so simulator runs, smoke tests and
@@ -153,10 +183,21 @@ migration covers.
   geometry. `DEVELOPMENT_WORKFLOW.md` §4, `AGENTS.md`, `README.md`, `APP-STORE.md` and `TEST-PLAN.md`
   updated to match. Fold into `sprint_05_*.md` with the bullet above.
   `needs: nothing · blocks: nothing`
-- **Rebuild and submit.** The migrations are already pushed (2026-07-31). What is left: smoke-test
-  add/edit expense and record-payment against the hosted DB, re-run the audit queries, rebuild
-  (Build 13 predates `MONEY_EPSILON` and Sprint #4), submit.
-  `needs: the two fixes above · blocks: Sprints #6+`
+- **[🧹 Done · 2026-10-27] `npm run ios:27` was broken on this machine.**
+  `scripts/run-ios-simulator.sh` raised the simulator window with a bare `open -a Simulator`, which
+  resolves through LaunchServices and failed with "Unable to find application named 'Simulator'" —
+  and because the script runs under `set -e`, it died there and the build never started. Xcode 27
+  ships no `Simulator.app` under the developer directory at all on this install. The window step is
+  now best-effort and never fatal: `xcrun simctl` drives the device headless, which is all the build
+  and install need. The breakage was invisible because the default run command is `ios:pick`, which
+  does not go through the script. `needs: nothing · blocks: nothing`
+- **Rebuild and submit.** Migrations are fully deployed (Sprint #3's two on 2026-07-31, the payer fix
+  on 2026-10-27; `migration list --linked` shows 12 of 12 applied, nothing pending). What is left:
+  finish the client test pass on the simulators, **commit the working tree** (EAS builds from the
+  committed state, so uncommitted fixes would not reach the build), re-run the audit queries,
+  `eas build --profile production` and submit. Version stays `1.2.0`; the build number is
+  auto-incremented by EAS (`appVersionSource: remote`), so the next one is 14.
+  `needs: the client test pass · blocks: Sprints #6+`
 
 ### Sprint #6 · Backend hardening — *deploy-only, no client rebuild* · not blocked by the release
 
@@ -393,6 +434,51 @@ either. Sheet appearance follows sheet behaviour.
 
 ---
 
+### Sprint #13 · Test harness & CI — *the gate every later change goes through* · internal
+
+The highest-value work on this board that is not a release blocker, and the answer to a specific
+problem: **a Renovate PR gets zero automated verification today.** Even a non-major bump can break
+the app, and the two that were caught (#15 in September, #18 in October — both pushed `react-native`
+and `react` past what the installed Expo SDK pins) were caught only because someone ran
+`expo install --check` and `tsc` by hand. Those are two deterministic commands. In CI they would
+have failed the PR unattended.
+
+Three things are missing, all verified on 2026-10-27:
+
+1. **No test runner.** No jest, no vitest, no `npm test`. The SQL suites under `supabase/tests/`
+   are run by hand through `docker exec … psql`, and — the part that matters — they print PASS/FAIL
+   as `NOTICE` and **exit 0 either way**. A test that cannot fail a command is not a gate; today you
+   have to read the output and count. First job: make the suites set a non-zero exit on any FAIL and
+   wrap them in `npm run test:db`.
+2. **One Supabase project.** Local `.env` points at production, so every simulator run, smoke test
+   and seed writes live data. This is the hard prerequisite for anything unattended, and it is
+   already the dev-database item in Sprint #5.
+3. **No CI.** `.github/workflows/` does not exist. Nothing runs on push or on a PR.
+
+Suggested order, each step useful on its own:
+
+- **[🧹 High] Make the SQL suites fail properly, add `npm run test:db`.** Smallest piece, unblocks
+  everything below. `needs: nothing · blocks: CI`
+- **[🧹 High] GitHub Actions: `npm ci` → `expo install --check` → `tsc` → `lint` → `test:db`**
+  against a Supabase stack in the runner. This alone closes the Renovate hole, with no agent and no
+  tokens. `needs: test:db · blocks: trustworthy Renovate merges`
+- **[🧹 Medium] One Maestro smoke flow** (sign in → create group → add expense → record a payment →
+  the ledger net equals the headline balance). Maestro suits React Native and runs in CI; a fixed
+  flow, deliberately not an open-ended "navigate and judge". Needs the dev database first, because a
+  flow that runs on every PR cannot be writing to production. `needs: dev DB (#5) · blocks: nothing`
+- **[🧹 Low] Extend the DB suites to the rest of the money paths** — invite codes, account deletion,
+  receipt-path scoping, the settlement RLS policies. These are cheap to write and never flaky,
+  unlike UI tests. `needs: test:db · blocks: nothing`
+
+Why this is its own Sprint rather than folded into another: it changes how every later Sprint is
+verified, and the numbering is identity, not priority — pull it forward as soon as Sprint #5's dev
+database lands, ahead of #7 if you want Renovate quiet. **Deliberately excluded:** anything that
+depends on an agent's own judgement of its own work. The pass criterion is an exit code. The payer
+fix above is the model: it was trustworthy because the bug FAILED a test first and PASSED after,
+not because the code looked right.
+
+---
+
 ## Continuous Lane · Independent Chores (grab-bag)
 
 Touch nothing else and nobody waits on them — pick up between Sprints, ordered by priority tag.
@@ -430,6 +516,21 @@ Large, no dependency yet. Pulled up when they become a dependency or you choose 
   draft-expense concept so they don't grow two flows. `independent (for now)`
 - **Profile avatars** — listed as the optional tail of Sprint #7; drops here if it doesn't make that
   cut. `needs: Storage bucket + RLS`
+- **[🧹 Low] Overnight agent runs the gates (NightShift for SplitSnap).** The idea in
+  `~/Desktop/gece_tasker.md`: an agent picks up queued work overnight, runs the checks, and leaves a
+  report to review in the morning. For this repo the realistic job is narrow — **take a Renovate PR,
+  run the Sprint #13 gates in a worktree, and when one goes red, diagnose it and leave a patch plus
+  a report** — not open-ended feature work. It belongs behind #13 because an agent with no gates to
+  run has nothing to report except its own opinion, which is the one thing that must never be the
+  pass criterion. Rules already agreed in that file apply: git stays the developer's (no
+  commit/push/PR), production is read-only, each job writes a report with a separate "what I could
+  not verify" section, and the Mac only takes heavy work on power with disk to spare. Note the
+  constraint recorded there too: Google's FAQ says an individual Antigravity subscription does not
+  support wiring its CLI into third-party orchestrators, so prefer each tool's own scheduler over a
+  cross-vendor orchestrator. Driving simulators unattended is the least reliable part and should be
+  last: in the 2026-10-27 session `simctl` calls hung for minutes, the simulator tool crashed once,
+  and a cold build ran long — fine with someone watching, expensive at 03:00.
+  `needs: Sprint #13 · blocks: nothing`
 - **[🧹 Medium] Upgrade to Expo SDK 58.** Expo SDK 57 pins the version of every native package
   (`react-native` 0.86.x, `react` 19.2.3, reanimated, worklets, screens, gesture-handler,
   safe-area, datetimepicker). Renovate's non-major PR (#15, 2026-09) bumped them past that to the latest
