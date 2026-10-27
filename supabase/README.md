@@ -2,6 +2,12 @@
 
 Şema tek kaynak: [`docs/DATABASE.md`](../docs/DATABASE.md).
 
+> **Ortam gerçeği:** Hosted tarafta tek proje var; Expo uygulamasının `.env`'i ona bakar. Aşağıdaki
+> `supabase start` / `db reset` yolu **migration ve SQL testleri** içindir — günlük uygulama
+> geliştirme "güvenli bir dev DB"ye yazmıyor. Prod'a elle test ederken yalnızca ekran görüntüsü
+> hesaplarını kullan (`docs/APP-STORE.md`, `seed-local/`). Dev/prod ayrımı `ROADMAP.md` Sprint #5'te,
+> v1.2.0 test turundan sonra.
+
 ## Migrations
 
 - Hafta 3 çekirdek şema: [`migrations/20260405140000_week3_core.sql`](migrations/20260405140000_week3_core.sql) (`profiles`, `friend_requests`, `groups`, `group_members`, `activity_log`, `activity_log_archive`, RLS, RPC'ler, Realtime).
@@ -19,6 +25,33 @@ Yerel Docker ile test:
 supabase start
 supabase db reset
 ```
+
+## Testler
+
+`tests/` altındaki SQL dosyaları elle çalıştırılır; henüz bir test koşucusu yok. Her kontrol `PASS` / `FAIL` basar ve dosya sonunda `rollback` ile hiçbir iz bırakmaz.
+
+```bash
+supabase start
+docker exec -i supabase_db_splitsnap psql -U postgres -d postgres -q -f - \
+  < supabase/tests/expense_write_integrity_test.sql
+```
+
+| Dosya | Kapsam |
+|-------|--------|
+| [`tests/expense_write_integrity_test.sql`](tests/expense_write_integrity_test.sql) | `expense_payers` RLS'i, harcama RPC'lerinin pay/ödeyen doğrulaması, gruplar arası harcama ele geçirme senaryosu |
+
+Bu dosya aynı zamanda "migration'lar tek başına çalışan bir veritabanı üretiyor mu?" sorusunun da cevabı: `authenticated` rolünün izinleri artık [`migrations/20260727223000_codify_role_grants.sql`](migrations/20260727223000_codify_role_grants.sql) içinde tanımlı, test fixture'ı hiçbir ek `GRANT` vermiyor. İzinler yanlışsa RLS kontrolleri "yanlış nedenle geçmek" yerine `permission denied` ile düşer.
+
+## Denetim (prod, salt okunur)
+
+[`audit/expense_integrity_audit.sql`](audit/expense_integrity_audit.sql) — Supabase SQL editor'a olduğu gibi yapıştırılabilir; yalnızca okur. Dört sorgu:
+
+1. Payları veya ödeyenleri toplamı tutmayan harcamalar
+2. Grup başına üye net bakiyeleri — `net_toplam` her grupta `0.00` olmalı, değilse uygulamanın asla kapatamayacağı bir bakiye var demektir
+3. Gruba hiç ait olmamış bir kullanıcıya ait pay/ödeyen satırları (bakiye matematiğinden sessizce düşerler)
+4. Hiç ödeyen satırı olmayan harcamalar
+
+`20260727215500` öncesinde RPC'ler gelen payları doğrulamadığı için 1. sorgunun boş dönmesi garanti değil; migration yeni bozuk satırı engeller, eskisini onarmaz.
 
 ## `activity_log` arşivi (`pg_cron`)
 
