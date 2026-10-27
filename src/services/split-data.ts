@@ -14,6 +14,33 @@ import { fetchSettlementsForGroup, createSettlementRemote } from '@/services/set
 import { useSplitDataStore } from '@/stores/split-data-store';
 import type { User } from '@/types';
 
+/**
+ * Splits `amount` evenly across `participantIds`, with the rounding remainder on
+ * the first participant.
+ *
+ * Zero rows are dropped, which matters once `amount / n` falls below a kurus: a
+ * 0.02 expense across three people works out to `[0.02, 0, 0]`, and the server's
+ * `validate_expense_allocations` rejects any share `<= 0`, so the whole save
+ * failed with a raw RPC error. The rows that remain still sum to the total, so
+ * the split stays valid — someone simply absorbs an amount too small to divide.
+ *
+ * Shared by `addExpense` and `updateExpense` so the two cannot drift apart.
+ */
+function equalShares(
+  amount: number,
+  participantIds: string[],
+): { userId: string; amount: number }[] {
+  const n = participantIds.length;
+  const base = Math.floor((amount / n) * 100) / 100;
+  const remainder = Math.round((amount - base * n) * 100) / 100;
+  return participantIds
+    .map((userId, i) => ({
+      userId,
+      amount: i === 0 ? Math.round((base + remainder) * 100) / 100 : base,
+    }))
+    .filter((s) => s.amount > 0);
+}
+
 export function ensureSplitDataForUser(user: User) {
   const { sessionUserId, resetForUser } = useSplitDataStore.getState();
   if (sessionUserId !== user.id) {
@@ -100,13 +127,7 @@ export const splitData = {
 
     let shares: { userId: string; amount: number }[] = [];
     if (splitType === 'equal' && participantIds.length > 0) {
-      const n = participantIds.length;
-      const base = Math.floor((amount / n) * 100) / 100;
-      const remainder = Math.round((amount - base * n) * 100) / 100;
-      shares = participantIds.map((userId, i) => ({
-        userId,
-        amount: i === 0 ? base + remainder : base,
-      }));
+      shares = equalShares(amount, participantIds);
     } else if (splitType === 'manual' && manualAmounts) {
       shares = participantIds
         .map((userId) => {
@@ -166,13 +187,7 @@ export const splitData = {
 
     let shares: { userId: string; amount: number }[] = [];
     if (input.splitType === 'equal' && input.participantIds.length > 0) {
-      const n = input.participantIds.length;
-      const base = Math.floor((input.amount / n) * 100) / 100;
-      const remainder = Math.round((input.amount - base * n) * 100) / 100;
-      shares = input.participantIds.map((userId, i) => ({
-        userId,
-        amount: i === 0 ? base + remainder : base,
-      }));
+      shares = equalShares(input.amount, input.participantIds);
     } else if (input.splitType === 'manual' && input.manualAmounts) {
       shares = input.participantIds
         .map((userId) => {

@@ -1,5 +1,20 @@
 import { supabase } from '@/lib/supabase';
-import type { Settlement, User } from '@/types';
+import { mapProfileToUser, unwrapProfile, type ProfileRow } from '@/services/profile-mapper';
+import type { Settlement } from '@/types';
+import { parseNumeric } from '@/utils/numeric';
+
+type SettlementRow = {
+  id: string;
+  group_id: string;
+  from_user_id: string;
+  to_user_id: string;
+  amount: string | number;
+  note: string | null;
+  created_at: string;
+  deleted_at: string | null;
+  from_profile: ProfileRow | ProfileRow[] | null;
+  to_profile: ProfileRow | ProfileRow[] | null;
+};
 
 export async function fetchSettlementsForGroup(groupId: string): Promise<Settlement[]> {
   const { data, error } = await supabase
@@ -18,33 +33,18 @@ export async function fetchSettlementsForGroup(groupId: string): Promise<Settlem
     throw error;
   }
 
-  return (data || []).map((row: any) => {
-    const fromUser: User = {
-      id: row.from_profile.id,
-      name: row.from_profile.display_name,
-      email: '',
-      avatar: row.from_profile.avatar_url,
-    };
-    const toUser: User = {
-      id: row.to_profile.id,
-      name: row.to_profile.display_name,
-      email: '',
-      avatar: row.to_profile.avatar_url,
-    };
-
-    return {
-      id: row.id,
-      groupId: row.group_id,
-      fromUserId: row.from_user_id,
-      toUserId: row.to_user_id,
-      fromUser,
-      toUser,
-      amount: row.amount,
-      note: row.note,
-      createdAt: row.created_at,
-      deletedAt: row.deleted_at,
-    };
-  });
+  return ((data ?? []) as SettlementRow[]).map((row) => ({
+    id: row.id,
+    groupId: row.group_id,
+    fromUserId: row.from_user_id,
+    toUserId: row.to_user_id,
+    fromUser: mapProfileToUser(row.from_user_id, unwrapProfile(row.from_profile)),
+    toUser: mapProfileToUser(row.to_user_id, unwrapProfile(row.to_profile)),
+    amount: parseNumeric(row.amount),
+    note: row.note ?? undefined,
+    createdAt: row.created_at,
+    deletedAt: row.deleted_at,
+  }));
 }
 
 export async function createSettlementRemote(input: {

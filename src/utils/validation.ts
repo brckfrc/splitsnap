@@ -24,6 +24,22 @@ export const MAX_GROUP_DESCRIPTION_LENGTH = 280;
 export const MAX_EXPENSE_AMOUNT = 1_000_000;
 export const MAX_TITLE_LENGTH = 100;
 
+/**
+ * Tolerance when comparing two money sums (one kuruş).
+ *
+ * Amounts are stored as `numeric(12,2)`, so an equal split can drift by at most
+ * a single kuruş of rounding. Anything larger is a real mismatch. The same
+ * value is enforced server-side by `validate_expense_allocations`; keeping the
+ * client looser than the server only turns a fixable form error into an opaque
+ * RPC rejection.
+ */
+export const MONEY_EPSILON = 0.01;
+
+/** True when two money amounts are equal within `MONEY_EPSILON`. */
+export function amountsMatch(a: number, b: number): boolean {
+  return Math.abs(a - b) <= MONEY_EPSILON;
+}
+
 export function validateEmail(email: string): string | null {
   const value = email.trim();
   if (!value) return 'E-posta adresi gerekli.';

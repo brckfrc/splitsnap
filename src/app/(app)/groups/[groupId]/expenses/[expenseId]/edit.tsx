@@ -21,7 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { getReceiptSignedUrl } from '@/services/receipts';
 import { splitData, useSplitDataStore } from '@/services/split-data';
 import { guessCategoryEmoji } from '@/utils/format';
-import { parseAmount, validateAmount, validateExpenseTitle } from '@/utils/validation';
+import { amountsMatch, parseAmount, validateAmount, validateExpenseTitle } from '@/utils/validation';
 import { useGroupAggregates } from '@/hooks/use-group-aggregates';
 
 const EMOJI_LIST = ['📝', '🍔', '🛒', '🚕', '🏠', '🎮', '🏥', '👕', '🐾', '🍻', '🎁', '✈️', '☕️', '🍿', '🎬'];
@@ -195,7 +195,7 @@ export default function EditExpenseScreen() {
           sum += v;
         }
       }
-      if (Math.abs(sum - num) > 0.05) {
+      if (!amountsMatch(sum, num)) {
         Alert.alert('Ödeme tutarı uyuşmuyor', 'Ödeyenlerin toplam miktarı, harcama tutarına eşit olmalı.');
         return;
       }
@@ -217,7 +217,7 @@ export default function EditExpenseScreen() {
           sum += v;
         }
       }
-      if (Math.abs(sum - num) > 0.05) {
+      if (!amountsMatch(sum, num)) {
         Alert.alert('Tutar uyuşmuyor', 'Manuel payların toplamı, harcama tutarına eşit olmalı.');
         return;
       }
