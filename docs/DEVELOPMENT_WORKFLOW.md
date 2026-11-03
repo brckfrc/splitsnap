@@ -74,14 +74,14 @@ graph TD
 1.  **Create Migration Locally:**
     Create a timestamped migration SQL file using the Supabase CLI:
     ```bash
-    npx supabase migration new <feature_name>
+    supabase migration new <feature_name>
     ```
     This generates a timestamped `.sql` file under `supabase/migrations/`. Add your schema modifications to this file.
 
 2.  **Apply to Development:**
     Push the new migration to your dev project reference:
     ```bash
-    npx supabase db push --linked-project <splitsnap-dev-project-ref>
+    supabase db push --linked-project <splitsnap-dev-project-ref>
     ```
 
 3.  **Submit TestFlight Build:**
@@ -90,7 +90,7 @@ graph TD
 4.  **Promote to Production (Just Before Release):**
     Once the TestFlight build is approved and you are ready to release it to the App Store, apply the migration files to the production database:
     ```bash
-    npx supabase db push --linked-project <splitsnap-production-project-ref>
+    supabase db push --linked-project <splitsnap-production-project-ref>
     ```
     *   **Data Integrity & Conflict Prevention:** The Supabase CLI inspects the `schema_migrations` table in your production database and executes **only** the missing migration scripts in timestamp order. Migrations are never re-run or duplicated, preventing schema corruption.
 
@@ -155,6 +155,13 @@ timeout 30  xcrun simctl openurl $B "exp+splitsnap://expo-development-client/?ur
 - **Everything hangs:** `killall -9 com.apple.CoreSimulator.CoreSimulatorService`, reboot the simulators with `bootstatus -b`, then restart Metro as above.
 
 The device UDIDs are machine-local. `xcrun simctl list devices available` shows the current ones.
+
+### Supabase CLI: one copy, from Homebrew
+
+The CLI is installed from **Homebrew** (`homebrew/core` formula `supabase`) and called as plain `supabase`. It is updated by the daily `brew update && brew upgrade`. `brew update` alone only refreshes the formula list and installs nothing. Its runtime services do **not** float with the CLI: `supabase link` writes production's service versions into `supabase/.temp/*-version` (gitignored), and `supabase start` runs exactly those (Postgres 17.6.1.084, PostgREST v14.5, Storage v1.84.25, Auth v2.197.0 as of 2026-11-03). The "local" column of `supabase services` shows the CLI's built-in defaults, not what `start` uses. Re-run `supabase link` when production's versions change.
+
+> [!WARNING]
+> **Never `npx supabase`.** There is no `supabase` package in `package.json`, so `npx` downloads the latest npm release into its cache and runs **that**, a second CLI next to the Homebrew one. On 2026-11-03 the two were 3.0.0 (npx) and 2.122.0 (brew), and it was the npx copy that rejected `config.toml`. A major CLI release can break `config.toml` (3.0 dropped `[inbucket]` for `[local_smtp]`). If `supabase start` fails right after a `brew upgrade`, read the CLI release notes before anything else.
 
 ### How Xcode finds Node
 
