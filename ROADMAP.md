@@ -75,21 +75,32 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   (settlement screen reconciles with its own headline; stale suggestions can't book silent
   overpayments) is done in code but still needs the rebuild. Any feature that displays or acts on a
   balance rests on both.
-- **Where we left off (2026-11-03):** the v1.2.0 client test pass is **complete** on two simulators
-  (Deniz on A, Sude on B, in **Test grubu**), live DB integrity audit (`expense_integrity_audit.sql`) passed
-  with 0 orphans and `0.00` net across all groups, test data was cleaned up, and `TEST-PLAN.md` was archived to
-  [`docs/archive/test-plans/v1.2.0-test-plan.md`](docs/archive/test-plans/v1.2.0-test-plan.md).
-  The pass also surfaced and **fixed a release blocker**: the app did not launch when built with the iOS 27.1+ SDK
-  (Done bullet below). That fix (`expo-build-properties`, `app.json`), three small follow-up fixes
-  (`equalShares` in integer kuruş, deterministic expense ordering in `expenses-supabase.ts` and
-  `utils/expense.ts`), and new backlog items are ready to commit. Xcode and simulators are now on **27.2**
-  (old 27.0 and 27.1 runtimes removed; local build & launch verified on 27.2).
-  - **Next:** commit the working tree (EAS builds the committed state; no attribution trailer, see
-    `AGENTS.md`), `eas build --profile production` (`--no-wait` is fine, it builds in the cloud) and
-    submit. Version stays `1.2.0` and EAS auto-increments to Build 14. After that comes the dev database,
-    then SDK 58, both further down in this Sprint.
-  - **Watch out:** the simulator tooling can be flaky on this machine; the workarounds are in
-    `AGENTS.md` → Known Gotchas and `DEVELOPMENT_WORKFLOW.md` §4.
+- **Where we left off (2026-11-03, evening):**
+  - **Released:** `1.2.1` (Build 15, EAS `a7359849`, from `main` at `4b92dfd`) is with App Store review. It
+    contains:
+    - Sprint #3 + #4;
+    - the UIScene launch-crash fix;
+    - the two Sprint #5 fixes (payer preservation is also live server-side since 2026-10-27);
+    - two `design/`-only Vite bumps.
+
+    `1.2.0` could not be reused (that number was already taken on App Store Connect). Build 14 (`1.2.0`)
+    went to TestFlight only and confirmed the UIScene fix on an iOS 27.2 phone. The v1.2.0 test pass is
+    archived in [`docs/archive/test-plans/v1.2.0-test-plan.md`](docs/archive/test-plans/v1.2.0-test-plan.md).
+  - **On `dev`:** the local-first dev environment is done and verified end to end on the simulator against
+    the local stack. Sign-in, Test grubu and a recorded payment all landed in the local DB, not production.
+    It comprises:
+    - `config.toml` on CLI 3.0;
+    - the `service_role` grants migration;
+    - `supabase/seed.sql` and `.env.development.local`;
+    - docs rewritten.
+  - **Next:** **SDK 58** on `feature/sdk-58` (branched from `dev`), then the next release from it.
+  - **Before `dev` merges to `main`:**
+    - bring `main` into `dev` (the `1.2.1` version bump, #21/#23);
+    - after the merge, push `20261103120000_codify_service_role_grants.sql` to production. It is a
+      verified no-op there.
+  - **Open Renovate:** #24 (non-major, successor of #18). Close it once SDK 58 lands; same reason as #18.
+  - **Tooling:** Xcode and simulators are on **27.2**. The Supabase CLI comes only from Homebrew (3.x). The
+    simulator tooling can be flaky (`AGENTS.md` → Known Gotchas).
   - Do **not** open `docs/changelog/sprint_05_*.md` until Sprint #5 closes.
 
 ---
@@ -153,27 +164,75 @@ migration covers.
   (`0.02 / 3` → `[0.01, 0.01]`, `100 / 7` → four × 14.29 + three × 14.28) instead of piling it all
   on the first one. Client-side only — ships with the rebuild below.
   `needs: nothing · blocks: nothing`
-- **[🧹 Medium] No dev database — every local run writes to production.**
-  `docs/DEVELOPMENT_WORKFLOW.md` §1–§2 describe a `splitsnap-dev` project and EAS-secret overrides as
-  though they exist; there is in fact a single Supabase project, so simulator runs, smoke tests and
-  screenshot seeding all mutate live data, and a destructive migration has nowhere safe to fail first.
-  Pulled into this Sprint rather than #6, but deliberately sequenced **after** the v1.2.0 test pass
-  (decided 2026-08-01): the pending Sprint #3/#4 work is what is holding up the release, and that pass
-  is survivable on production as long as it stays on the screenshot test accounts. *Fix:* create the dev
-  project, point local `.env` at it, move the production values to EAS secrets the way §2 already
-  describes, then rewrite §1–§2 to match what is actually true.
-  *2026-10-30 Supabase Data API grant change:* from October 30 onwards, Supabase no longer auto-grants
-  Data API privileges (`anon`, `authenticated`, `service_role`) on newly created `public` tables —
-  including when migrations recreate the schema on a new project (`splitsnap-dev`) or via local
-  `supabase db reset`. `20260727223000_codify_role_grants.sql` already covers `authenticated` (and
-  intentionally withholds `anon`), **except `service_role`**, which receives no grants in the migration
-  chain. Because the `delete-account` Edge Function uses `SUPABASE_SERVICE_ROLE_KEY` via PostgREST to
-  `UPDATE public.profiles`, creating `splitsnap-dev` requires adding explicit `service_role` grants
-  (`grant usage on schema public to service_role; grant select, update on public.profiles to service_role;`
-  — or full table grants for `service_role`) and every future migration that runs `CREATE TABLE` in
-  `public` must include its role `GRANT`s in the same migration file.
-  `needs: nothing · blocks: nothing before submission (it protects every run after it)`
-- **[🧹 Medium] Upgrade to Expo SDK 58 — after the dev database, not in the v1.2.0 build.** Expo SDK 57 pins the version of every native package
+- **[🧹 Done · 2026-11-03, on `dev`] Local-first dev environment — stop writing to production, without a second project.**
+  Simulator runs, smoke tests and screenshot seeding all mutate live data, because the app's `.env` points
+  at the single hosted project. The original plan was a hosted `splitsnap-dev` project. **Re-decided
+  2026-11-03:** use the **local Supabase stack** instead, and move the hosted project to Backlog (see
+  there for when it becomes worth it). Two reasons. The local stack already proved itself as the place a
+  migration fails first (the payer fix was reproduced, fixed and covered there before the production push).
+  And the iOS simulator reaches `localhost`, so a dev build can run against local auth, storage, realtime,
+  edge functions and Mailpit, with none of the upkeep of a second hosted project (pausing on inactivity,
+  schema sync, secrets, test accounts). Work happens on the **`dev` branch**; `main` stays releasable.
+  Steps, in order:
+  1. **[Done · 2026-11-03, `65fde98`] CLI 3.0 compatibility.** CLI 3.0 refused the old `config.toml`
+     (`[inbucket] … no longer supported`), so the local stack did not start at all. Diffed against a fresh
+     CLI 3.0 template, the file now:
+     - renames `[inbucket]` to `[local_smtp]`;
+     - renames `auth.email`/`auth.sms` `enable_signup` to `enabled` (3.0 silently ignored the old keys);
+     - moves `orioledb_version` to `[db]`;
+     - sets **`api.auto_expose_new_tables = false`** (see step 2).
+
+     Starts with no warnings; 27/27 SQL cases pass. The Supabase CLI itself now comes only from Homebrew
+     (`DEVELOPMENT_WORKFLOW.md` §4).
+  2. **[Done · 2026-11-03, on `dev`] `service_role` grants migration.** Supabase's changelog announced that
+     from 2026-10-30, tables created in `public` are no longer exposed to the Data API automatically.
+     Existing tables keep their grants. Whether the rollout is actually live is unclear: a CLI maintainer
+     wrote on 2026-10-27 that it was being re-timed
+     ([changelog](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically),
+     [cli#7286](https://github.com/supabase/cli/issues/7286)). **Measured locally with CLI 3.0.0:**
+     - With the flag unset, the stack still auto-grants everything, `anon` included, so local tests would
+       never catch a missing `GRANT`.
+     - With the flag `false`, `authenticated` gets exactly what `20260727223000_codify_role_grants.sql`
+       intends, and `anon` gets nothing.
+     - `service_role` got **nothing at all**. `delete-account`'s PostgREST update failed with **HTTP
+       403 / 42501 "permission denied for table profiles"**.
+
+     **Fixed by**
+     [`20261103120000_codify_service_role_grants.sql`](supabase/migrations/20261103120000_codify_service_role_grants.sql).
+     It grants `service_role` DML on all `public` tables and sequences and execute on all functions, plus
+     default privileges so objects from future migrations are covered too, for `service_role` only.
+     Verified:
+     - The same request now returns **200**.
+     - `anon` has nothing, and `authenticated` is unchanged.
+     - A new table opens to `service_role` only.
+     - 27/27 SQL cases pass.
+
+     A production dump shows `service_role` already holds all of it there (12/12 tables, 16/16 functions,
+     default privileges present), so the push is a pure no-op. **Push it when `dev` merges to `main`**, so
+     production's migration history matches `main`. The grants rule for future migrations is in
+     `AGENTS.md` → Known Gotchas.
+  3. **[Done] Point simulator runs at the local stack.**
+     - **`.env.development.local`** is gitignored and excluded from EAS. Expo's own loader confirms it is
+       read in development mode only (local URL) and ignored in production mode (production URL).
+     - **[`supabase/seed.sql`](supabase/seed.sql)** runs on every `db reset` and creates Deniz, Mert and
+       Sude (local-only password `localdev123`), Test grubu and two expenses. A password sign-in against
+       the local Auth succeeded, RLS returned only Deniz's group with correct shares, and the SQL suites
+       still pass with the seed present.
+     - `parse-receipt` locally needs `OPENAI_API_KEY` in `supabase/functions/.env` (gitignored).
+       Without it the app falls back to its on-device parser.
+  4. **[Done: was already true] Production keys in EAS environment variables.** `eas env:list --environment
+     production` already holds `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY`, and `.easignore`
+     already keeps every `.env*` out of the upload. Production builds never read a local file.
+  5. **[Done] Docs.** `DEVELOPMENT_WORKFLOW.md` §1–§3 have been rewritten: the environments table,
+     first-time setup, local test data, Mailpit/Studio, Edge Functions, and the migration lifecycle.
+     `AGENTS.md` and `supabase/README.md` no longer say that development writes to production.
+
+  **Still to do on this branch before merging:** one run of the app on the simulator against the local
+  stack (sign in as Deniz, open Test grubu, record a payment).
+
+  A permissions regression test (asserting the grant matrix above) fits Sprint #13.
+  `needs: nothing · blocks: SDK 58 upgrade, Sprint #13 Maestro flow`
+- **[🧹 Medium] Upgrade to Expo SDK 58 — on a feature branch, after the local-first dev environment.** Expo SDK 57 pins the version of every native package
   (`react-native` 0.86.x, `react` 19.2.3, reanimated, worklets, screens, gesture-handler,
   safe-area, datetimepicker). Renovate's non-major PR (#15, 2026-09) bumped them past that to the latest
   npm releases (`react-native` 0.87.1, `react` 19.3.0, …) — a set no SDK ships together, which failed
@@ -190,10 +249,50 @@ migration covers.
   *Note on iOS 27 scene lifecycle:* SDK 58 adopts `ExpoAppSceneDelegate` directly in the native project template;
   upon upgrading, delete `ios.enableSceneSupport: true` under `expo-build-properties` in `app.json` (and uninstall
   `expo-build-properties` if unused by other features).
-  Placed here on 2026-10-27 (moved up from Backlog): it comes **right after the dev database**, so the
-  upgrade is exercised against `splitsnap-dev` instead of live data, and **after the v1.2.0 submission**,
-  so the release build stays on the SDK 57 set this test pass verified.
-  `needs: v1.2.0 submitted, dev database · blocks: nothing yet (urgent if a store/Xcode requirement drops SDK 57)`
+  Placed here on 2026-10-27 (moved up from Backlog). The App Store build for `1.2.0` is made **after**
+  this upgrade (decision 2026-11-03, see Active Status), and it comes after the local-first dev
+  environment, so the full run-through goes against the local stack rather than live data. Do it on a
+  feature branch and merge only once `expo install --check`, `tsc`, the SQL suites and the two-simulator
+  run are clean.
+  **Renovate around it:** close #24 (successor of #18; this upgrade replaces it); afterwards Renovate opens fresh PRs
+  against the SDK 58 baseline, which get triaged normally.
+  **In progress on `feature/sdk-58` (2026-11-03):**
+  - **Upgrade.** `expo install expo@^58` then `--fix` moved the whole SDK-pinned set: `react-native` 0.86 → 0.88.1,
+    `react` 19.3, gesture-handler 2.32 → 3.3, reanimated 4.7.1, worklets 0.13, screens 4.30, every `expo-*`
+    to 58. `expo install --check` is clean; `expo-doctor` passes 20/20.
+  - **Types.** `tsc` raised 6 errors, all RN 0.88 type changes, all fixed:
+    - `ScrollView` refs are now `ScrollViewInstance` (`groups/[groupId]/index.tsx`);
+    - `AppState.currentState` is now `string | null | undefined` (`expenses-sync.ts`, `groups-sync.ts`).
+
+    `tsc` and lint are clean.
+  - **Scene support.** `expo-build-properties` → `ios.enableSceneSupport` was removed together with the
+    package, which nothing else used. The SDK 58 template now generates `SceneDelegate.swift` (an
+    `ExpoAppSceneDelegate` subclass) and the Info.plist scene manifest on its own; verified after
+    `prebuild --clean`.
+  - **API scan.**
+    - No `expo-router/unstable-native-tabs` or `expo-router/react-navigation` imports.
+    - No RN APIs removed in 0.87/0.88 are in use (`InteractionManager`, `Touchable` root, `Modal animated`, …).
+    - gesture-handler 3 **deprecates** the `Gesture.*` builders we use (bottom sheet, bottom bar, image
+      viewer). They still ship and type-check; the migration is noted under Card-stack UI.
+  - **Not verified by tooling.**
+    - Tamagui 2.5.1 has no release against RN 0.88. It installs and type-checks; the native build and a
+      UI pass decide. Its removal is Sprint #8 anyway.
+    - expo-router 58 makes stack headers transparent Liquid Glass by default on iOS 26+. That needs a
+      visual check.
+  - **Native build:** succeeded (1277 files, 0 errors). MMKV/Nitro and Tamagui 2.5.1 compile on RN 0.88.
+  - **UI pass on the local stack (2026-11-03): passed.** Checked:
+    - launch (SDK 58 `SceneDelegate`), sign-in and Test grubu;
+    - settlement numbers and a recorded payment;
+    - add expense with the payer sheet's drag-to-dismiss, the date picker, the bottom bar and its
+      gesture;
+    - background/foreground, and both themes.
+
+    Stack headers show no problem; no Liquid Glass look is visible either. One gotcha: right after the
+    upgrade Metro served a stale file map ("Unable to resolve module ./errors/ExpoErrorManager");
+    `--clear` fixed it (`AGENTS.md`). **Not yet exercised:** the receipt image viewer (pinch / double tap
+    still uses the deprecated gesture builders). Check it once before the release build.
+  - **Left:** merge into `dev`, then `dev` → `main`, then the release build.
+  `needs: local-first dev environment · blocks: the 1.2.0 App Store submission`
 - **[🧹 Done · 2026-07-31] Build toolchain: Node resolves from `.nvmrc`.** Xcode's script phases held a
   hardcoded Homebrew Node path that died on a revision bump (`node/26.5.0` → `26.5.0_1`), so no build
   ran at all. `ios/.xcode.env.local` is now generated on every prebuild by
@@ -237,8 +336,11 @@ migration covers.
   finish the client test pass on the simulators, **commit the working tree** (EAS builds from the
   committed state, so uncommitted fixes would not reach the build), re-run the audit queries,
   `eas build --profile production` and submit. Version stays `1.2.0`; the build number is
-  auto-incremented by EAS (`appVersionSource: remote`), so the next one is 14.
-  `needs: the client test pass · blocks: Sprints #6+`
+  auto-incremented by EAS (`appVersionSource: remote`).
+  **Status 2026-11-03:** Build 14 built from `8a242c5` and sent to TestFlight only. The App Store
+  submission is deferred to the end of this Sprint, on a fresh build after the SDK 58 upgrade, with a
+  new two-simulator test pass first (see Active Status).
+  `needs: SDK 58 upgrade, its test pass · blocks: Sprints #6+`
 
 ### Sprint #6 · Backend hardening — *deploy-only, no client rebuild* · not blocked by the release
 
@@ -419,6 +521,20 @@ write-off audit trail, and completes the "leave a group" banner from #9.
   dummy expense. *Fix:* in `settlement.tsx`, allow tapping on the amount or add a "Kısmi Öde" action
   opening a numeric input sheet to record an arbitrary partial payment amount (`0 < amount`), letting
   the settlement algorithm automatically recompute the remaining balance. `needs: nothing · blocks: nothing`
+- **[🎨 Medium] Settlement screen (Ödeme Özeti) is hard to read — reorder around the user's question.**
+  Developer feedback after the 2026-11-03 local test pass: following the checklist meant jumping up and
+  down the screen. Today's order is: headline net balance, Üye Bakiyeleri, Önerilen Ödemeler, Geçmiş
+  Ödemeler, then Bakiye Dökümünüz at the very bottom. The breakdown is the part that explains the
+  headline, and it is furthest from it. *Proposed order (to be validated, other layouts welcome):*
+  1. **Headline + Bakiye Dökümünüz** directly under it, as a compact summary (Harcamalar · Ödemeler ·
+     Net) that expands to the per-expense rows. Collapsible or always-on is still to decide.
+  2. **Önerilen Ödemeler**, i.e. what to do now.
+  3. **Üye Bakiyeleri** and **Geçmiş Ödemeler** last, as reference.
+
+  Do it **in one pass with the two items above** (undo, partial amount): all three reshape
+  `settlement.tsx`, and that is the screen Sprint #4's B.2 check guards. Re-run that check
+  (ledger net = headline, before and after a payment) on the local stack afterwards.
+  `needs: nothing · blocks: nothing (pairs with settlement undo + partial amount)`
 - **[🐛 Medium] A recomputed suggestion looks like an unexplained new demand.** Suggestions are
   recomputed from net balances every time, so someone who already paid can be asked again, to a
   different person, for a different amount — correct debt simplification, presented as a fresh
@@ -480,11 +596,22 @@ either. Sheet appearance follows sheet behaviour.
 - **[🎨 Medium] Card-stack UI for payer/split selection.** Fine-tune swipe/gesture animations on the
   custom bottom sheets for smooth card-stack sliding. `needs: ExpenseForm extraction (#8) · blocks:
   Liquid Glass`
+  **Also migrate off the deprecated gesture builders** (gesture-handler 3, since SDK 58): `Gesture.Pan()` /
+  `Pinch()` / `Tap()` / `Exclusive` / `Simultaneous` → `usePanGesture` etc. in `ui/bottom-sheet.tsx`,
+  `app-bottom-bar.tsx`, `ui/image-viewer-modal.tsx`. They still work in 3.3 but "will be removed in a future
+  version"; doing it while retuning the sheets avoids touching them twice.
+
 - **[🎨 Low] Liquid Glass progressive enhancement (iOS 26+).** `expo-glass-effect` refraction/blur
   with a glassmorphism fallback. Candidate surfaces: floating island bottom bar (`app-bottom-bar`),
   bottom sheets (`ui/bottom-sheet` + everything on it), sticky headers. **Not** on content cards
   (legibility). `needs: Card-stack UI (tuning glass against animation about to change is wasted) ·
   blocks: nothing`
+  **SDK 58 option for the bottom bar (noted 2026-11-03, no rush):** `app-bottom-bar.tsx` draws its glass
+  look in JS. expo-router 58 ships native tabs at a stable path, `expo-router/native-tabs`, which render the
+  system tab bar, including Liquid Glass on iOS 26+. Evaluate switching, but check first that native tabs
+  can host what the custom bar does today: the center "+" action and the swipe gesture. If they cannot,
+  keep the custom bar and give it `expo-glass-effect`.
+
 - **[🎨 Low] Biometric app lock (FaceID / TouchID).** Optional privacy shield via
   `expo-local-authentication` on open / before sensitive actions — not for login (session persists).
   `needs: nothing · blocks: nothing`
@@ -521,8 +648,9 @@ Suggested order, each step useful on its own:
   tokens. `needs: test:db · blocks: trustworthy Renovate merges`
 - **[🧹 Medium] One Maestro smoke flow** (sign in → create group → add expense → record a payment →
   the ledger net equals the headline balance). Maestro suits React Native and runs in CI; a fixed
-  flow, deliberately not an open-ended "navigate and judge". Needs the dev database first, because a
-  flow that runs on every PR cannot be writing to production. `needs: dev DB (#5) · blocks: nothing`
+  flow, deliberately not an open-ended "navigate and judge". Needs a non-production backend first, because a
+  flow that runs on every PR cannot be writing to production. In CI that is the Supabase stack started inside
+  the runner, the same local-first setup as Sprint #5. `needs: local-first dev environment (#5) · blocks: nothing`
 - **[🧹 Low] Extend the DB suites to the rest of the money paths** — invite codes, account deletion,
   receipt-path scoping, the settlement RLS policies. These are cheap to write and never flaky,
   unlike UI tests. `needs: test:db · blocks: nothing`
@@ -578,6 +706,16 @@ Touch nothing else and nobody waits on them — pick up between Sprints, ordered
 
 Large, no dependency yet. Pulled up when they become a dependency or you choose to.
 
+- **[🧹 Low] Hosted `splitsnap-dev` Supabase project.** Deferred on 2026-11-03 in favour of the
+  local-first dev environment (Sprint #5). Pull it up when any of these becomes true:
+  - Builds go to **other people** (TestFlight/preview testers) and must not write to production. Their
+    devices cannot reach a laptop's `localhost`.
+  - Sprint #7's OAuth (Apple/Google) callbacks or real e-mail confirmation flows turn out to need a
+    hosted Auth setup that the local stack cannot stand in for.
+  - Agents or CI need a **hosted** environment while the developer's machine is off.
+
+  When created: leave "Automatically expose new tables" **unchecked**, then apply the migration chain,
+  which includes the `service_role` grants. `needs: one of the triggers above · blocks: nothing`
 - **[🚀 Low] Bank/card transaction auto-import.** SMS-notification parsing or Open Banking to
   suggest draft expenses. *Shared abstraction:* this and Itemized Splitting both produce "here is a
   suggested expense, confirm or edit it" — whichever is built first should introduce the shared

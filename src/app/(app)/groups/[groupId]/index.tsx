@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowUpDown, ArrowUpRight, Receipt, TrendingUp, UserPlus } from '@/lib/icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View, RefreshControl, type ScrollViewInstance } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
@@ -70,7 +70,7 @@ export default function GroupDetailScreen() {
     return `${mainPayerName} + ${payers.length - 1} kişi`;
   }, []);
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const [isMembersExpanded, setIsMembersExpanded] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);

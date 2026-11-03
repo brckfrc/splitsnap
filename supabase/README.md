@@ -2,11 +2,7 @@
 
 Şema tek kaynak: [`docs/DATABASE.md`](../docs/DATABASE.md).
 
-> **Ortam gerçeği:** Hosted tarafta tek proje var; Expo uygulamasının `.env`'i ona bakar. Aşağıdaki
-> `supabase start` / `db reset` yolu **migration ve SQL testleri** içindir — günlük uygulama
-> geliştirme "güvenli bir dev DB"ye yazmıyor. Prod'a elle test ederken yalnızca ekran görüntüsü
-> hesaplarını kullan (`docs/APP-STORE.md`, `seed-local/`). Dev/prod ayrımı `ROADMAP.md` Sprint #5'te,
-> v1.2.0 test turundan sonra.
+> **Ortam:** Geliştirme **yerelde** yapılıyor. Simülatör `.env.development.local` üzerinden bu yerel yığına bağlanıyor, production build ise EAS ortam değişkenleriyle canlıya. `supabase db reset` migration'ları ve [`seed.sql`](seed.sql)'i uygular. Seed, yerel test hesaplarını (`deniz@` / `mert@` / `sude@borak.dev`, şifre `localdev123`, sadece yerelde geçerli) ve Test grubu'nu kurar. Kurulum: [`docs/DEVELOPMENT_WORKFLOW.md`](../docs/DEVELOPMENT_WORKFLOW.md) §1.
 
 ## Migrations
 
@@ -50,7 +46,7 @@ supabase stop             # bitince
 
 ## Canlıya migration push (kontrollü)
 
-Tek hosted proje var (`splitsnap-dev` henüz yok) ve `db push` **bekleyen tüm** migration'ları uygular. Bu yüzden sıra şu:
+Tek hosted proje var: canlı. Geliştirme yerelde yapılıyor, hosted dev projesi yok ve `db push` **bekleyen tüm** migration'ları uygular. Bu yüzden sıra şu:
 
 ```bash
 supabase migration list --linked     # yalnızca beklediğini bildiğin dosya(lar) remote="" görünmeli

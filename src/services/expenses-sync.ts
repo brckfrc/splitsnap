@@ -1,4 +1,4 @@
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { loadExpensesForGroup } from '@/services/split-data';
@@ -7,7 +7,8 @@ const CHANNEL_PREFIX = 'splitsnap-expenses-sync-';
 
 let channel: ReturnType<typeof supabase.channel> | null = null;
 let appStateSub: { remove: () => void } | null = null;
-let lastAppState: AppStateStatus = AppState.currentState;
+// RN 0.88 types this as `string | null | undefined`: it can be unset before the first native update.
+let lastAppState: string | null | undefined = AppState.currentState;
 let activeGroupId: string | null = null;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -93,7 +94,7 @@ export async function syncExpensesForGroup(groupId: string): Promise<void> {
     });
 
   appStateSub = AppState.addEventListener('change', (next) => {
-    if (lastAppState.match(/inactive|background/) && next === 'active') {
+    if (lastAppState?.match(/inactive|background/) && next === 'active') {
       scheduleReload();
     }
     lastAppState = next;

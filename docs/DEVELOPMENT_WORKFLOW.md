@@ -3,98 +3,61 @@
 > [!NOTE]
 > Persistent guide for environment management, migration tracking, iOS toolchains, and EAS deployment. Lives at `docs/DEVELOPMENT_WORKFLOW.md` (this path — there is no `docs/dev/` folder).
 
-This document outlines how to manage database schema changes, environments, and App Store builds. **§1–§3 below mix current practice with a target setup** — read the callout in §1 before following any "point `.env` at dev" instruction.
+This document covers environments, the database migration lifecycle, iOS toolchains and EAS builds. **Development is local-first**: the simulator runs against a local Supabase stack, production is touched only by releases and by deliberate, verified migration pushes. A hosted `splitsnap-dev` project is deferred (ROADMAP → Backlog).
 
 ---
 
-## 1. Environment Separation (Dev vs Prod)
+## 1. Environments
 
-> [!WARNING]
-> **Current reality (as of 2026-08):** there is **one** hosted Supabase project. Local `.env` points at production. Simulator runs, smoke tests, and screenshot seeding all write live data. Creating `splitsnap-dev` and flipping `.env` is a Sprint #5 item scheduled **after** the v1.2.0 dual-client test pass (see `ROADMAP.md`). Until then:
->
-> - App / smoke testing → production, **only** screenshot test accounts (`APP-STORE.md`, `supabase/seed-local/`). Clean up with teardown / manual deletes.
-> - Migration / RPC verification → **local Docker** (`supabase start`, `db reset`, SQL under `supabase/tests/` — see `supabase/README.md`). That stack is not what the Expo app uses day to day.
->
-> The rest of §1–§3 is the **target** workflow once the second project exists. Do not rewrite this section as if it were already true, and do not skip the warning above when onboarding a new session.
+| | Backend | Where the app's URL/key come from |
+|---|---|---|
+| **Development** (`expo start`, `expo run:ios`, `npm run ios:*`) | **Local Supabase stack** in Docker (`http://127.0.0.1:54321`) | `.env.development.local` (gitignored) |
+| **Production** (`eas build --profile production`) | Hosted project `splitsnap` (`vlrbkplylwoejnkwnaab`) | **EAS environment variables**, `production` environment |
 
-**Target** (not built yet): two hosted projects instead of relying on Docker for daily app work:
+**Why this is safe.** `.env*` files are in both `.gitignore` and `.easignore`, so none of them is uploaded to EAS. A production build cannot pick up a local URL. Expo's loader confirms the split: `.env.development.local` is read in development mode only. In production mode only `.env` would apply, and EAS never sees it either.
 
-1.  **`splitsnap` (Production):** The database linked to the live App Store build.
-2.  **`splitsnap-dev` (Development):** Free-tier project for local development, prototyping, and staging.
+The iOS simulator reaches `localhost`, because `NSAllowsLocalNetworking` is on. A physical phone cannot reach the laptop's `localhost`, so a dev build on the phone needs the production values (rename `.env.development.local` away and restart Metro), or a hosted dev project once one exists.
 
----
+### First-time setup (and after `git clone`)
 
-## 2. `.env` and EAS Secrets Configuration
+```bash
+supabase start                 # Docker must be running; pulls images pinned to production's versions
+supabase db reset              # LOCAL only: all migrations + supabase/seed.sql
+supabase status -o env         # prints API_URL and ANON_KEY for the file below
+```
 
-**Today:** `.env` holds the production publishable URL/key. EAS may or may not already override them — verify on the Expo dashboard before assuming a split.
-
-**Target** (after `splitsnap-dev` exists): keep production out of the working tree so a careless `eas build` cannot ship a local `.env` pointed at the wrong place.
-
-### Local Development (`.env`) — target
-Point local `.env` at the **Development** database:
+`.env.development.local`:
 ```env
-EXPO_PUBLIC_SUPABASE_URL=https://splitsnap-dev.supabase.co
-EXPO_PUBLIC_SUPABASE_KEY=your-dev-anon-key
+EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+EXPO_PUBLIC_SUPABASE_KEY=<ANON_KEY from supabase status; the CLI's fixed local demo key>
 ```
 
-### Production Build (EAS Secrets) — target
-To override local `.env` values when building for production:
-1.  Navigate to your project settings on the [Expo Dashboard](https://expo.dev).
-2.  Go to **Credentials -> Secrets**.
-3.  Add the following variables with your **Production** Supabase keys:
-    *   `EXPO_PUBLIC_SUPABASE_URL` = `https://<production-ref>.supabase.co`
-    *   `EXPO_PUBLIC_SUPABASE_KEY` = `your-production-anon-key`
+**Local test data** comes from [`supabase/seed.sql`](../supabase/seed.sql) and runs on every `db reset`:
+- accounts `deniz@borak.dev`, `mert@borak.dev`, `sude@borak.dev`, all with the **local-only** password `localdev123`;
+- **Test grubu**, owned by Deniz, with Mert and Sude as members;
+- two equal-split expenses Deniz paid, so the settlement screen opens on Deniz +3.000 · Mert −1.500 · Sude −1.500.
 
-> [!TIP]
-> During EAS Build, Expo injects secret values into the bundle. Local development (simulators or development client builds) falls back to `.env`.
+E-mails the local stack would send (sign-up confirmation, password reset) show up in **Mailpit**: `MAILPIT_URL` in `supabase status`. **Studio** (table browser, SQL editor) is at `STUDIO_URL`.
 
----
+**Edge Functions** run inside the local stack. `delete-account` works with no setup, because the CLI injects the local service-role key. `parse-receipt` needs an OpenAI key in `supabase/functions/.env` (gitignored), one line `OPENAI_API_KEY=sk-...`. Without it the function fails and the app falls back to its on-device heuristic parser.
 
-## 3. Migration and TestFlight Lifecycle Management
+## 2. Production configuration
 
-> [!NOTE]
-> **Today's shortcut:** migrations that already shipped for v1.2.0 write-integrity were verified with local `db reset` + the SQL suite, then `supabase db push` to the single hosted project — *before* every installed client matched. That gap is intentional and temporary; closing it is the Sprint #5 client rebuild. Prefer the diagram below once a real dev project exists.
+- **App build:** `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` live in the EAS `production` environment (`eas env:list --environment production`). Change them there, never in a file.
+- **Secrets** for Edge Functions: `supabase secrets set OPENAI_API_KEY=...` against the linked project.
+- **`supabase/.temp/*-version`**, written by `supabase link`, pins the local stack's service versions to production's. See §4 → *Supabase CLI*.
 
-Since Apple's review process can take a few days, **Supabase Migration Auto-Tracking** is used to align database schemas with client builds without version conflicts:
+## 3. Migration lifecycle
 
-### Workflow Diagram
+Rule: a migration is proven locally before it reaches production, and production history follows `main`.
 
-```mermaid
-graph TD
-    A[Write Code & Create Migration Locally] --> B[Push Migration to Dev Database]
-    B --> C[Test Dev Version on Simulators]
-    C --> D[Submit TestFlight Build via EAS]
-    D --> E{Wait for Apple Review}
-    E -->|Approved| F[Push Migration to Prod Database]
-    F --> G[Release New App Version on App Store]
-```
-
-### Step-by-Step Operations
-
-1.  **Create Migration Locally:**
-    Create a timestamped migration SQL file using the Supabase CLI:
-    ```bash
-    supabase migration new <feature_name>
-    ```
-    This generates a timestamped `.sql` file under `supabase/migrations/`. Add your schema modifications to this file.
-
-2.  **Apply to Development:**
-    Push the new migration to your dev project reference:
-    ```bash
-    supabase db push --linked-project <splitsnap-dev-project-ref>
-    ```
-
-3.  **Submit TestFlight Build:**
-    Submit the app to TestFlight. EAS tracks the Git Commit Hash associated with this TestFlight build, allowing you to trace the exact migration files in the repo at that commit.
-
-4.  **Promote to Production (Just Before Release):**
-    Once the TestFlight build is approved and you are ready to release it to the App Store, apply the migration files to the production database:
-    ```bash
-    supabase db push --linked-project <splitsnap-production-project-ref>
-    ```
-    *   **Data Integrity & Conflict Prevention:** The Supabase CLI inspects the `schema_migrations` table in your production database and executes **only** the missing migration scripts in timestamp order. Migrations are never re-run or duplicated, preventing schema corruption.
-
----
+1. **Branch.** Work on `dev` or a feature branch. `main` stays releasable.
+2. **Write.** `supabase migration new <name>`. Every `CREATE TABLE` in `public` grants `authenticated` exactly what its RLS policies allow (`AGENTS.md` → grants rule). `service_role` is covered by default privileges.
+3. **Prove locally.** `supabase db reset` replays the whole chain from scratch. Then run the SQL suites (`supabase/README.md` → *Testler*). A fix for a bug gets a test that FAILS before it and PASSES after it.
+4. **Run the app against it.** Simulator plus local stack, two simulators for multi-user flows (§4).
+5. **Merge to `main`.**
+6. **Push to production deliberately**, never as a side effect: `migration list --linked` → `db push --dry-run` → `db push --linked` → verify with a dump. The full procedure is in `supabase/README.md` → *Canlıya migration push*. This needs the developer's explicit go-ahead.
+7. **Client/server ordering.** A migration that old installed clients cannot satisfy must stay backward-compatible until the new client is live. Otherwise ship the client first and the migration with it, and verify old-client paths in SQL by calling the RPCs the way an old build does.
 
 ## 4. iOS Toolchain and Run Targets
 
