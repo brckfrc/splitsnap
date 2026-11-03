@@ -86,6 +86,10 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   (`equalShares` in integer kuruş, deterministic expense ordering in `expenses-supabase.ts` and
   `utils/expense.ts`), and new backlog items are ready to commit. Xcode and simulators are now on **27.2**
   (old 27.0 and 27.1 runtimes removed; local build & launch verified on 27.2).
+  - **Shipped 2026-11-03:** **`1.2.1` (Build 15)** went to the App Store from `main` at `4b92dfd`
+    (EAS build `a7359849`). It is the tested `1.2.0` code plus two Vite security bumps that touch
+    only `design/` (#21, #23) and the version bump. This supersedes the plan below to wait for SDK 58.
+    SDK 58 still follows on `dev` and becomes the next release.
   - **Release plan changed 2026-11-03:** Build 14 (`1.2.0`, SDK 57, EAS build `f5381af1`, commit
     `8a242c5`) went to **TestFlight only**, to confirm the UIScene fix on a real iOS 27.2 device. The
     **App Store submission waits until Sprint #5 closes**, on a build made **after the SDK 58 upgrade**.
@@ -161,7 +165,7 @@ migration covers.
   (`0.02 / 3` → `[0.01, 0.01]`, `100 / 7` → four × 14.29 + three × 14.28) instead of piling it all
   on the first one. Client-side only — ships with the rebuild below.
   `needs: nothing · blocks: nothing`
-- **[🧹 Medium] Local-first dev environment — stop writing to production, without a second project.**
+- **[🧹 Done · 2026-11-03, on `dev`] Local-first dev environment — stop writing to production, without a second project.**
   Simulator runs, smoke tests and screenshot seeding all mutate live data, because the app's `.env` points
   at the single hosted project. The original plan was a hosted `splitsnap-dev` project. **Re-decided
   2026-11-03:** use the **local Supabase stack** instead, and move the hosted project to Backlog (see
@@ -208,14 +212,24 @@ migration covers.
      default privileges present), so the push is a pure no-op. **Push it when `dev` merges to `main`**, so
      production's migration history matches `main`. The grants rule for future migrations is in
      `AGENTS.md` → Known Gotchas.
-  3. **Point simulator runs at the local stack.** Add a `.env.local` (gitignored) with the local URL
-     and key, and a seed script that creates the test accounts and Test grubu locally. Run
-     `parse-receipt` via `supabase functions serve` with the OpenAI key from a local env file.
-  4. **Move production keys into EAS environment variables** for the `production` profile. This matters
-     more once `.env` can point at `localhost`: otherwise a careless `eas build` ships a binary that
-     talks to the laptop.
-  5. **Rewrite `docs/DEVELOPMENT_WORKFLOW.md` §1–§3** around the local-first flow. They still describe the
-     hosted dev project as the target.
+  3. **[Done] Point simulator runs at the local stack.**
+     - **`.env.development.local`** is gitignored and excluded from EAS. Expo's own loader confirms it is
+       read in development mode only (local URL) and ignored in production mode (production URL).
+     - **[`supabase/seed.sql`](supabase/seed.sql)** runs on every `db reset` and creates Deniz, Mert and
+       Sude (local-only password `localdev123`), Test grubu and two expenses. A password sign-in against
+       the local Auth succeeded, RLS returned only Deniz's group with correct shares, and the SQL suites
+       still pass with the seed present.
+     - `parse-receipt` locally needs `OPENAI_API_KEY` in `supabase/functions/.env` (gitignored).
+       Without it the app falls back to its on-device parser.
+  4. **[Done: was already true] Production keys in EAS environment variables.** `eas env:list --environment
+     production` already holds `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY`, and `.easignore`
+     already keeps every `.env*` out of the upload. Production builds never read a local file.
+  5. **[Done] Docs.** `DEVELOPMENT_WORKFLOW.md` §1–§3 have been rewritten: the environments table,
+     first-time setup, local test data, Mailpit/Studio, Edge Functions, and the migration lifecycle.
+     `AGENTS.md` and `supabase/README.md` no longer say that development writes to production.
+
+  **Still to do on this branch before merging:** one run of the app on the simulator against the local
+  stack (sign in as Deniz, open Test grubu, record a payment).
 
   A permissions regression test (asserting the grant matrix above) fits Sprint #13.
   `needs: nothing · blocks: SDK 58 upgrade, Sprint #13 Maestro flow`
