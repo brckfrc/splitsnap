@@ -98,12 +98,12 @@ graph TD
 
 ## 4. iOS Toolchain and Run Targets
 
-There is **one** toolchain: stable **Xcode 27.0** (iOS 27.0 SDK), the `xcode-select` default. It builds for the simulators and for the physical iPhone (on the iOS 27.0 release) alike, so no command needs a `DEVELOPER_DIR` override. The project's line is **iOS 27**: there is no iOS 26 runtime or simulator on the development machine, and no script targets one.
+There is **one** toolchain: stable **Xcode 27.2** (iOS 27.2 SDK), the `xcode-select` default. It builds for the simulators and for the physical iPhone (on the iOS 27.2 release) alike, so no command needs a `DEVELOPER_DIR` override. The project's line is **iOS 27**: there is no iOS 26 runtime or simulator on the development machine, and no script targets one.
 
 | Target | Command |
 |--------|---------|
 | **Pick from a list** — every simulator plus the connected iPhone, printed in the terminal on each run | `npm run ios:pick` |
-| iOS 27.0 `iPhone 17 Pro Max`, booted for you — the App Store screenshot geometry (1320 × 2868, see [`APP-STORE.md`](./APP-STORE.md)) | `npm run ios:27` |
+| iOS 27.2 `iPhone 17 Pro Max`, booted for you — the App Store screenshot geometry (1320 × 2868, see [`APP-STORE.md`](./APP-STORE.md)) | `npm run ios:27` |
 | Whatever simulator Xcode picks by default, no list | `npm run ios` |
 
 `ios:pick` is the default. In its list the phone carries 🌐 (Wi-Fi) or 🔌 (USB), and a simulator that is already running is shown in bold.
@@ -131,6 +131,30 @@ There is **one** toolchain: stable **Xcode 27.0** (iOS 27.0 SDK), the `xcode-sel
 
 > [!NOTE]
 > **If the phone goes back on a beta** (an iOS 28 beta next summer, say), stable Xcode cannot deploy to it. Install Xcode-beta and override the toolchain for that one run rather than switching the global default with `sudo xcode-select -s`: `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer npm run ios:pick`. Simulators keep building on stable Xcode. Alternating compilers is when DerivedData needs clearing (see below).
+
+### Two simulators, two accounts (multi-user tests)
+
+Realtime and stale-suggestion checks need two signed-in users at once. Build once, then put the same binary on a second simulator. Every `simctl` call is wrapped in `timeout`, because CoreSimulator can hang (see `AGENTS.md` → Known Gotchas).
+
+```bash
+A=AE30C037-520C-4167-A3CF-21F7F3BA2BBC   # iPhone 17 Pro Max (27.2), the ios:27 target
+B=70069C4B-6059-459A-8848-612EEA1412E3   # iPhone 17 (27.2)
+APP=~/Library/Developer/Xcode/DerivedData/SplitSnap-*/Build/Products/Debug-iphonesimulator/SplitSnap.app
+
+npm run ios:27                                   # builds, installs on A, starts Metro
+timeout 120 xcrun simctl bootstatus $B -b
+timeout 120 xcrun simctl install $B $APP         # repeat after EVERY rebuild
+timeout 45  xcrun simctl launch  $B dev.borak.splitsnap
+timeout 30  xcrun simctl openurl $B "exp+splitsnap://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+```
+
+- **The dev client opens on its server picker.** The `openurl` line connects it straight to Metro on 8081, so nothing needs typing.
+- **If `expo run:ios` died but the app is installed,** start Metro on its own with `npx expo start --dev-client --port 8081` and use the same `openurl`.
+- **Receipt photos for OCR tests:** `timeout 120 xcrun simctl addmedia $A <file.jpg>…` (and again for `$B`). The images land in Photos for "Galeriden Seç". Sample receipts live outside the repo in `~/Desktop/splitsnap için/`.
+- **Screenshots without the MCP tool:** `timeout 60 xcrun simctl io $A screenshot shot.png && sips -Z 700 shot.png`.
+- **Everything hangs:** `killall -9 com.apple.CoreSimulator.CoreSimulatorService`, reboot the simulators with `bootstatus -b`, then restart Metro as above.
+
+The device UDIDs are machine-local. `xcrun simctl list devices available` shows the current ones.
 
 ### How Xcode finds Node
 

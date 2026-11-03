@@ -24,5 +24,9 @@ export function expenseSpentAt(expense: Expense): number {
 /** Returns a new array sorted newest-first by the requested key. */
 export function sortExpenses<T extends Expense>(expenses: T[], key: ExpenseSortKey): T[] {
   const at = key === 'entered' ? expenseEnteredAt : expenseSpentAt;
-  return [...expenses].sort((a, b) => at(b) - at(a));
+  return [...expenses].sort((a, b) => {
+    const diff = at(b) - at(a);
+    if (diff !== 0) return diff;
+    return expenseEnteredAt(b) - expenseEnteredAt(a);
+  });
 }

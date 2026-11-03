@@ -173,7 +173,8 @@ export async function fetchExpensesForGroupPayload(groupId: string): Promise<{
     .select(EXPENSE_COLUMNS)
     .eq('group_id', groupId)
     .is('deleted_at', null)
-    .order('expense_date', { ascending: false });
+    .order('expense_date', { ascending: false })
+    .order('created_at', { ascending: false });
 
   if (eErr) throw new Error(eErr.message);
 
@@ -200,7 +201,8 @@ export async function fetchExpensesForGroupsPayload(groupIds: string[]): Promise
     .select(EXPENSE_COLUMNS)
     .in('group_id', groupIds)
     .is('deleted_at', null)
-    .order('expense_date', { ascending: false });
+    .order('expense_date', { ascending: false })
+    .order('created_at', { ascending: false });
 
   if (eErr) throw new Error(eErr.message);
 

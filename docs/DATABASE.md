@@ -515,6 +515,10 @@ RLS yalnızca *hangi satır* sorusunu yanıtlar; role ait `GRANT` yoksa politika
 
 `anon` rolüne hiçbir izin verilmez. Fonksiyonlarda `is_group_member` / `is_group_participant` `EXECUTE` izni de aynı migration'da; bunlar olmadan grup kapsamlı her SELECT politikası hata verir.
 
+> **30 Ekim 2026 Supabase Data API değişikliği ve `service_role`:** 30 Ekim 2026 itibarıyla Supabase, `public` şemasında oluşturulan yeni tablolara (yeni açılan projeler — ör. `splitsnap-dev` — ve yerel `supabase db reset` dahil) artık otomatik olarak `anon`, `authenticated` ve `service_role` izni (`GRANT`) tanımlamıyor.
+> - **Yeni tablolar:** Bundan sonra `public` şemasında tablo oluşturan her migration dosyası, ilgili tablonun `GRANT` ifadelerini **aynı migration içinde** barındırmak zorundadır.
+> - **`service_role` (`delete-account`):** [`20260727223000_codify_role_grants.sql`](../supabase/migrations/20260727223000_codify_role_grants.sql) yalnızca `authenticated` rolünü kapsar; `service_role` için hiçbir `GRANT` içermez. [`supabase/functions/delete-account/index.ts`](../supabase/functions/delete-account/index.ts) Edge Function'ı `service_role` istemcisiyle PostgREST üzerinden `public.profiles` tablosuna `UPDATE` yaptığı için (`service_role` RLS'i baypas eder ama tablo düzeyindeki PostgreSQL `GRANT` kontrolüne tabidir), `splitsnap-dev` kurulurken yeni bir migration ile `grant usage on schema public to service_role;` ve en azından `grant select, update on public.profiles to service_role;` (veya tüm tablolar için `service_role` izinleri) eklenmelidir.
+
 ### 5.6 Katılma: `join_group_by_invite(code text)` RPC
 
 Davet koduyla gruba katılma **`SECURITY DEFINER`** fonksiyonu:

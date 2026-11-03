@@ -31,12 +31,14 @@ function equalShares(
   participantIds: string[],
 ): { userId: string; amount: number }[] {
   const n = participantIds.length;
-  const base = Math.floor((amount / n) * 100) / 100;
-  const remainder = Math.round((amount - base * n) * 100) / 100;
+  if (n === 0) return [];
+  const totalCents = Math.round(amount * 100);
+  const baseCents = Math.floor(totalCents / n);
+  const remainderCents = totalCents % n;
   return participantIds
     .map((userId, i) => ({
       userId,
-      amount: i === 0 ? Math.round((base + remainder) * 100) / 100 : base,
+      amount: (baseCents + (i < remainderCents ? 1 : 0)) / 100,
     }))
     .filter((s) => s.amount > 0);
 }

@@ -30,15 +30,37 @@ supabase db reset
 
 `tests/` altındaki SQL dosyaları elle çalıştırılır; henüz bir test koşucusu yok. Her kontrol `PASS` / `FAIL` basar ve dosya sonunda `rollback` ile hiçbir iz bırakmaz.
 
+> **Dikkat:** sonuçlar `NOTICE` olarak basılır ve **çıkış kodu her durumda 0'dır**. Yani testin geçip geçmediğini çıkış kodundan anlayamazsın, çıktıda `FAIL` aramalısın. Bunu düzeltmek ROADMAP Sprint #13'ün ilk maddesi.
+
 ```bash
-supabase start
-docker exec -i supabase_db_splitsnap psql -U postgres -d postgres -q -f - \
-  < supabase/tests/expense_write_integrity_test.sql
+npx supabase start            # Docker açık olmalı
+npx supabase db reset         # YALNIZCA yerel; tüm migration zincirini sıfırdan uygular. Asla --linked ile değil.
+for f in supabase/tests/*.sql; do
+  echo "== $f"
+  docker exec -i supabase_db_splitsnap psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$f" 2>&1 \
+    | grep -E "PASS|FAIL|ERROR" | sed 's/^psql:<stdin>:[0-9]*: NOTICE:  //'
+done
+npx supabase stop             # bitince
 ```
 
 | Dosya | Kapsam |
 |-------|--------|
-| [`tests/expense_write_integrity_test.sql`](tests/expense_write_integrity_test.sql) | `expense_payers` RLS'i, harcama RPC'lerinin pay/ödeyen doğrulaması, gruplar arası harcama ele geçirme senaryosu |
+| [`tests/expense_write_integrity_test.sql`](tests/expense_write_integrity_test.sql) | 19 vaka: `expense_payers` RLS'i, harcama RPC'lerinin pay/ödeyen doğrulaması, gruplar arası harcama ele geçirme senaryosu |
+| [`tests/expense_payer_preservation_test.sql`](tests/expense_payer_preservation_test.sql) | 8 vaka: `p_payers` gönderilmeyen düzenlemede ödeyenin korunması (korunur, tutar değiştiyse oranlanır, hiç yoksa `paid_by`'a düşer; açık `p_payers` hâlâ kazanır) |
+
+## Canlıya migration push (kontrollü)
+
+Tek hosted proje var (`splitsnap-dev` henüz yok) ve `db push` **bekleyen tüm** migration'ları uygular. Bu yüzden sıra şu:
+
+```bash
+npx supabase migration list --linked     # yalnızca beklediğini bildiğin dosya(lar) remote="" görünmeli
+npx supabase db push --dry-run           # neyin uygulanacağını basar, hiçbir şey yazmaz
+npx supabase db push --linked            # --linked'i açıkça ver; CLI varsayılan hedefi değiştirecek
+npx supabase migration list --linked     # bekleyen kalmamalı
+npx supabase db dump --linked -f /tmp/prod-schema.sql   # fonksiyon gövdesini oku ve doğrula; asla "-f -"
+```
+
+Önce migration yerelde `db reset` ile uygulanmalı ve `tests/` temiz geçmeli. Geri dönüş yolu bir sonraki migration'dır: önceki fonksiyon gövdesi git'teki eski migration dosyasında durur. Canlıya push bir dış eylemdir, geliştiricinin açık onayı olmadan yapılmaz.
 
 Bu dosya aynı zamanda "migration'lar tek başına çalışan bir veritabanı üretiyor mu?" sorusunun da cevabı: `authenticated` rolünün izinleri artık [`migrations/20260727223000_codify_role_grants.sql`](migrations/20260727223000_codify_role_grants.sql) içinde tanımlı, test fixture'ı hiçbir ek `GRANT` vermiyor. İzinler yanlışsa RLS kontrolleri "yanlış nedenle geçmek" yerine `permission denied` ile düşer.
 
