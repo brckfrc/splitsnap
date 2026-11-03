@@ -49,7 +49,7 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
 
 ## Active Status
 
-- **Version:** `v1.2.1` (Build 16 on Expo SDK 58) — ready for EAS production build & App Store submission (`v1.2.0` / Build 13 was already approved on App Store Connect, closing the `1.2.0` train per `ITMS-90186`/`ITMS-90062`; Build 14/15 went to TestFlight to verify the iOS 27.2 `UIScene` fix).
+- **Version:** `v1.2.1` (Build 16 on Expo SDK 58) — ready for EAS production build & App Store submission (`v1.2.0` / Build 13 was already approved on App Store Connect, closing the `1.2.0` train per `ITMS-90186`/`ITMS-90062`; Build 14 (`1.2.0`) was rejected at upload because `1.2.0` was a closed train; Build 15 (`1.2.1`, SDK 57) and Build 16 (`1.2.1`, SDK 58) both sit on the `1.2.1` version, and Build 16 is the first build checked on the iOS 27.2 phone for the `UIScene` fix).
 - **Migrations:** 13 of 13 applied on production (`20261103120000_codify_service_role_grants.sql` pushed on 2026-11-03 after a dry-run; verified no-op on existing production objects).
 - **Framework:** Expo SDK 58 (React Native 0.88.1) + React 19.3 + TypeScript. **iOS only.**
 - **Backend:** Supabase (Auth, DB, Edge Functions, Storage) — **local-first development** since 2026-11-03 (`supabase start` + `.env.development.local` + `supabase/seed.sql` for simulator runs and SQL tests; production credentials live in EAS environment variables). Details in `docs/DEVELOPMENT_WORKFLOW.md` §1–§3.
@@ -67,17 +67,14 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
 - **Where we left off (2026-11-03):**
   - **Sprint #5 is closed** and archived in [`docs/changelog/sprint_05_release_local_dev_sdk_58.md`](docs/changelog/sprint_05_release_local_dev_sdk_58.md).
   - All UI checks on Expo SDK 58 (including the receipt image viewer pinch/double-tap gestures) passed against the local Supabase stack, `dev` was merged to `main` (`PR #25`), Renovate `#24` was closed, and `20261103120000_codify_service_role_grants.sql` is applied on production (13/13 migrations).
-  - **Correction to verify in the next chat:** Build 14 (`1.2.0`) was **rejected at upload**. Around
-    17:00–18:00 App Store Connect's upload validation refused it because `1.2.0` was a closed train, so
-    it never reached TestFlight. Build 15 (`1.2.1`) arrived at 19:55. Any line here or in
-    `docs/changelog/sprint_05_*.md` saying "Build 14 confirmed UIScene on the phone via TestFlight" is
-    therefore wrong. The first on-device UIScene check is **Build 16 via TestFlight**, done by the
-    developer before submitting for review.
-  - **Build 16 (`1.2.1`, SDK 58, from `main` at `dfe3d75`) started on EAS on 2026-11-03** with
-    `--auto-submit`, so it uploads to App Store Connect when done. **Next human step:** in App Store
-    Connect, pick **Build 16** on the `1.2.1` version (Build 15, SDK 57, sits on the same version) and
-    submit it for review. Then sync `dev` with `main`, close Renovate #24, and start **Sprint #6** in a new
-    chat, from this section.
+  - **Build 14 never reached TestFlight.** App Store Connect's upload validation refused it because
+    `1.2.0` was a closed train. Build 15 (`1.2.1`, SDK 57) arrived at 19:55 but was not tested on the
+    phone, so the first on-device `UIScene` check is **Build 16 via TestFlight**.
+  - **Build 16 (`1.2.1`, SDK 58, from `main` at `dfe3d75`)** was built on EAS with `--auto-submit` and
+    uploaded to App Store Connect on 2026-11-03. `main` and `dev` are in sync. **Next human step:**
+    install Build 16 from TestFlight on the iOS 27.2 phone and smoke-test it; if it passes, pick
+    **Build 16** on the `1.2.1` version in App Store Connect (Build 15 sits on the same version) and
+    submit it for review. Then start **Sprint #6** (local stack first, then a controlled production push).
 
 ---
 
