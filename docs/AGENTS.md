@@ -126,6 +126,11 @@ These are standing agreements from real sessions — follow them even when a pro
 - **Renovate PR triage:** *lock-file maintenance* PRs are normally safe. After merging one, run `npm ci`, then `npx expo prebuild --clean --platform ios` if native packages moved. *Non-major updates* PRs (#15, #18) bump packages the Expo SDK pins (`react-native`, `react`, reanimated, …) into a set no SDK ships, so close them and let the SDK upgrade move those packages. The gate is `npx expo install --check` plus `tsc`, run in a separate worktree so the developer's working tree is untouched. **Release freeze:** between a finished test pass and the submitted production build, merge no dependency PR, lock-file maintenance included, so the build ships exactly what was tested.
 - **`supabase db dump … -f -` writes a file literally named `-`** into the repo root. Always pass a real path in the scratchpad.
 - **Supabase CLI = Homebrew `supabase`, never `npx supabase`.** `npx` silently runs a second, newer npm copy (3.0.0 next to brew 2.122.0 on 2026-11-03). Details: `DEVELOPMENT_WORKFLOW.md` §4 → *Supabase CLI*.
+- **Grants in new migrations.** Supabase stopped auto-granting new `public` tables on 2026-10-30, and the local stack mirrors that via `api.auto_expose_new_tables = false`.
+  - Every `CREATE TABLE` in `public` must `GRANT` `authenticated` exactly the operations its RLS policies allow, in the same file. Never grant `anon`.
+  - Every new function gets `revoke all … from public`, plus an explicit `grant execute … to authenticated` when the client calls it.
+  - `service_role` is covered automatically by the default privileges in `20261103120000_codify_service_role_grants.sql`.
+  - A migration that forgets the `authenticated` grant fails locally with `42501 permission denied`. That is the intended early warning.
 
 ## Release Notes Guidelines (What's New)
 

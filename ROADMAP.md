@@ -86,10 +86,16 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   (`equalShares` in integer kuruş, deterministic expense ordering in `expenses-supabase.ts` and
   `utils/expense.ts`), and new backlog items are ready to commit. Xcode and simulators are now on **27.2**
   (old 27.0 and 27.1 runtimes removed; local build & launch verified on 27.2).
-  - **Next:** commit the working tree (EAS builds the committed state; no attribution trailer, see
-    `AGENTS.md`), `eas build --profile production` (`--no-wait` is fine, it builds in the cloud) and
-    submit. Version stays `1.2.0` and EAS auto-increments to Build 14. After that comes the dev database,
-    then SDK 58, both further down in this Sprint.
+  - **Release plan changed 2026-11-03:** Build 14 (`1.2.0`, SDK 57, EAS build `f5381af1`, commit
+    `8a242c5`) went to **TestFlight only**, to confirm the UIScene fix on a real iOS 27.2 device. The
+    **App Store submission waits until Sprint #5 closes**, on a build made **after the SDK 58 upgrade**.
+    Two consequences. First, that SDK 58 build needs its **own** two-simulator test pass before it is
+    submitted, because Build 14's pass does not carry over. Second, Sprint #4's settlement fix reaches
+    users later. That delay is display only: the server-side payer fix has been live since 2026-10-27.
+    With the submission deferred, the release freeze on dependency merges is lifted until the next test
+    pass.
+  - **Next:** the local-first dev environment on the `dev` branch (step 1, `config.toml` for CLI 3.0, is
+    done: `65fde98`), then SDK 58, then the final test pass and the submission.
   - **Watch out:** the simulator tooling can be flaky on this machine; the workarounds are in
     `AGENTS.md` → Known Gotchas and `DEVELOPMENT_WORKFLOW.md` §4.
   - Do **not** open `docs/changelog/sprint_05_*.md` until Sprint #5 closes.
@@ -155,27 +161,65 @@ migration covers.
   (`0.02 / 3` → `[0.01, 0.01]`, `100 / 7` → four × 14.29 + three × 14.28) instead of piling it all
   on the first one. Client-side only — ships with the rebuild below.
   `needs: nothing · blocks: nothing`
-- **[🧹 Medium] No dev database — every local run writes to production.**
-  `docs/DEVELOPMENT_WORKFLOW.md` §1–§2 describe a `splitsnap-dev` project and EAS-secret overrides as
-  though they exist; there is in fact a single Supabase project, so simulator runs, smoke tests and
-  screenshot seeding all mutate live data, and a destructive migration has nowhere safe to fail first.
-  Pulled into this Sprint rather than #6, but deliberately sequenced **after** the v1.2.0 test pass
-  (decided 2026-08-01): the pending Sprint #3/#4 work is what is holding up the release, and that pass
-  is survivable on production as long as it stays on the screenshot test accounts. *Fix:* create the dev
-  project, point local `.env` at it, move the production values to EAS secrets the way §2 already
-  describes, then rewrite §1–§2 to match what is actually true.
-  *2026-10-30 Supabase Data API grant change:* from October 30 onwards, Supabase no longer auto-grants
-  Data API privileges (`anon`, `authenticated`, `service_role`) on newly created `public` tables —
-  including when migrations recreate the schema on a new project (`splitsnap-dev`) or via local
-  `supabase db reset`. `20260727223000_codify_role_grants.sql` already covers `authenticated` (and
-  intentionally withholds `anon`), **except `service_role`**, which receives no grants in the migration
-  chain. Because the `delete-account` Edge Function uses `SUPABASE_SERVICE_ROLE_KEY` via PostgREST to
-  `UPDATE public.profiles`, creating `splitsnap-dev` requires adding explicit `service_role` grants
-  (`grant usage on schema public to service_role; grant select, update on public.profiles to service_role;`
-  — or full table grants for `service_role`) and every future migration that runs `CREATE TABLE` in
-  `public` must include its role `GRANT`s in the same migration file.
-  `needs: nothing · blocks: nothing before submission (it protects every run after it)`
-- **[🧹 Medium] Upgrade to Expo SDK 58 — after the dev database, not in the v1.2.0 build.** Expo SDK 57 pins the version of every native package
+- **[🧹 Medium] Local-first dev environment — stop writing to production, without a second project.**
+  Simulator runs, smoke tests and screenshot seeding all mutate live data, because the app's `.env` points
+  at the single hosted project. The original plan was a hosted `splitsnap-dev` project. **Re-decided
+  2026-11-03:** use the **local Supabase stack** instead, and move the hosted project to Backlog (see
+  there for when it becomes worth it). Two reasons. The local stack already proved itself as the place a
+  migration fails first (the payer fix was reproduced, fixed and covered there before the production push).
+  And the iOS simulator reaches `localhost`, so a dev build can run against local auth, storage, realtime,
+  edge functions and Mailpit, with none of the upkeep of a second hosted project (pausing on inactivity,
+  schema sync, secrets, test accounts). Work happens on the **`dev` branch**; `main` stays releasable.
+  Steps, in order:
+  1. **[Done · 2026-11-03, `65fde98`] CLI 3.0 compatibility.** CLI 3.0 refused the old `config.toml`
+     (`[inbucket] … no longer supported`), so the local stack did not start at all. Diffed against a fresh
+     CLI 3.0 template, the file now:
+     - renames `[inbucket]` to `[local_smtp]`;
+     - renames `auth.email`/`auth.sms` `enable_signup` to `enabled` (3.0 silently ignored the old keys);
+     - moves `orioledb_version` to `[db]`;
+     - sets **`api.auto_expose_new_tables = false`** (see step 2).
+
+     Starts with no warnings; 27/27 SQL cases pass. The Supabase CLI itself now comes only from Homebrew
+     (`DEVELOPMENT_WORKFLOW.md` §4).
+  2. **[Done · 2026-11-03, on `dev`] `service_role` grants migration.** Supabase's changelog announced that
+     from 2026-10-30, tables created in `public` are no longer exposed to the Data API automatically.
+     Existing tables keep their grants. Whether the rollout is actually live is unclear: a CLI maintainer
+     wrote on 2026-10-27 that it was being re-timed
+     ([changelog](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically),
+     [cli#7286](https://github.com/supabase/cli/issues/7286)). **Measured locally with CLI 3.0.0:**
+     - With the flag unset, the stack still auto-grants everything, `anon` included, so local tests would
+       never catch a missing `GRANT`.
+     - With the flag `false`, `authenticated` gets exactly what `20260727223000_codify_role_grants.sql`
+       intends, and `anon` gets nothing.
+     - `service_role` got **nothing at all**. `delete-account`'s PostgREST update failed with **HTTP
+       403 / 42501 "permission denied for table profiles"**.
+
+     **Fixed by**
+     [`20261103120000_codify_service_role_grants.sql`](supabase/migrations/20261103120000_codify_service_role_grants.sql).
+     It grants `service_role` DML on all `public` tables and sequences and execute on all functions, plus
+     default privileges so objects from future migrations are covered too, for `service_role` only.
+     Verified:
+     - The same request now returns **200**.
+     - `anon` has nothing, and `authenticated` is unchanged.
+     - A new table opens to `service_role` only.
+     - 27/27 SQL cases pass.
+
+     A production dump shows `service_role` already holds all of it there (12/12 tables, 16/16 functions,
+     default privileges present), so the push is a pure no-op. **Push it when `dev` merges to `main`**, so
+     production's migration history matches `main`. The grants rule for future migrations is in
+     `AGENTS.md` → Known Gotchas.
+  3. **Point simulator runs at the local stack.** Add a `.env.local` (gitignored) with the local URL
+     and key, and a seed script that creates the test accounts and Test grubu locally. Run
+     `parse-receipt` via `supabase functions serve` with the OpenAI key from a local env file.
+  4. **Move production keys into EAS environment variables** for the `production` profile. This matters
+     more once `.env` can point at `localhost`: otherwise a careless `eas build` ships a binary that
+     talks to the laptop.
+  5. **Rewrite `docs/DEVELOPMENT_WORKFLOW.md` §1–§3** around the local-first flow. They still describe the
+     hosted dev project as the target.
+
+  A permissions regression test (asserting the grant matrix above) fits Sprint #13.
+  `needs: nothing · blocks: SDK 58 upgrade, Sprint #13 Maestro flow`
+- **[🧹 Medium] Upgrade to Expo SDK 58 — on a feature branch, after the local-first dev environment.** Expo SDK 57 pins the version of every native package
   (`react-native` 0.86.x, `react` 19.2.3, reanimated, worklets, screens, gesture-handler,
   safe-area, datetimepicker). Renovate's non-major PR (#15, 2026-09) bumped them past that to the latest
   npm releases (`react-native` 0.87.1, `react` 19.3.0, …) — a set no SDK ships together, which failed
@@ -192,10 +236,14 @@ migration covers.
   *Note on iOS 27 scene lifecycle:* SDK 58 adopts `ExpoAppSceneDelegate` directly in the native project template;
   upon upgrading, delete `ios.enableSceneSupport: true` under `expo-build-properties` in `app.json` (and uninstall
   `expo-build-properties` if unused by other features).
-  Placed here on 2026-10-27 (moved up from Backlog): it comes **right after the dev database**, so the
-  upgrade is exercised against `splitsnap-dev` instead of live data, and **after the v1.2.0 submission**,
-  so the release build stays on the SDK 57 set this test pass verified.
-  `needs: v1.2.0 submitted, dev database · blocks: nothing yet (urgent if a store/Xcode requirement drops SDK 57)`
+  Placed here on 2026-10-27 (moved up from Backlog). The App Store build for `1.2.0` is made **after**
+  this upgrade (decision 2026-11-03, see Active Status), and it comes after the local-first dev
+  environment, so the full run-through goes against the local stack rather than live data. Do it on a
+  feature branch and merge only once `expo install --check`, `tsc`, the SQL suites and the two-simulator
+  run are clean.
+  **Renovate around it:** close #18 (this upgrade replaces it); afterwards Renovate opens fresh PRs
+  against the SDK 58 baseline, which get triaged normally.
+  `needs: local-first dev environment · blocks: the 1.2.0 App Store submission`
 - **[🧹 Done · 2026-07-31] Build toolchain: Node resolves from `.nvmrc`.** Xcode's script phases held a
   hardcoded Homebrew Node path that died on a revision bump (`node/26.5.0` → `26.5.0_1`), so no build
   ran at all. `ios/.xcode.env.local` is now generated on every prebuild by
@@ -239,8 +287,11 @@ migration covers.
   finish the client test pass on the simulators, **commit the working tree** (EAS builds from the
   committed state, so uncommitted fixes would not reach the build), re-run the audit queries,
   `eas build --profile production` and submit. Version stays `1.2.0`; the build number is
-  auto-incremented by EAS (`appVersionSource: remote`), so the next one is 14.
-  `needs: the client test pass · blocks: Sprints #6+`
+  auto-incremented by EAS (`appVersionSource: remote`).
+  **Status 2026-11-03:** Build 14 built from `8a242c5` and sent to TestFlight only. The App Store
+  submission is deferred to the end of this Sprint, on a fresh build after the SDK 58 upgrade, with a
+  new two-simulator test pass first (see Active Status).
+  `needs: SDK 58 upgrade, its test pass · blocks: Sprints #6+`
 
 ### Sprint #6 · Backend hardening — *deploy-only, no client rebuild* · not blocked by the release
 
@@ -523,8 +574,9 @@ Suggested order, each step useful on its own:
   tokens. `needs: test:db · blocks: trustworthy Renovate merges`
 - **[🧹 Medium] One Maestro smoke flow** (sign in → create group → add expense → record a payment →
   the ledger net equals the headline balance). Maestro suits React Native and runs in CI; a fixed
-  flow, deliberately not an open-ended "navigate and judge". Needs the dev database first, because a
-  flow that runs on every PR cannot be writing to production. `needs: dev DB (#5) · blocks: nothing`
+  flow, deliberately not an open-ended "navigate and judge". Needs a non-production backend first, because a
+  flow that runs on every PR cannot be writing to production. In CI that is the Supabase stack started inside
+  the runner, the same local-first setup as Sprint #5. `needs: local-first dev environment (#5) · blocks: nothing`
 - **[🧹 Low] Extend the DB suites to the rest of the money paths** — invite codes, account deletion,
   receipt-path scoping, the settlement RLS policies. These are cheap to write and never flaky,
   unlike UI tests. `needs: test:db · blocks: nothing`
@@ -580,6 +632,16 @@ Touch nothing else and nobody waits on them — pick up between Sprints, ordered
 
 Large, no dependency yet. Pulled up when they become a dependency or you choose to.
 
+- **[🧹 Low] Hosted `splitsnap-dev` Supabase project.** Deferred on 2026-11-03 in favour of the
+  local-first dev environment (Sprint #5). Pull it up when any of these becomes true:
+  - Builds go to **other people** (TestFlight/preview testers) and must not write to production. Their
+    devices cannot reach a laptop's `localhost`.
+  - Sprint #7's OAuth (Apple/Google) callbacks or real e-mail confirmation flows turn out to need a
+    hosted Auth setup that the local stack cannot stand in for.
+  - Agents or CI need a **hosted** environment while the developer's machine is off.
+
+  When created: leave "Automatically expose new tables" **unchecked**, then apply the migration chain,
+  which includes the `service_role` grants. `needs: one of the triggers above · blocks: nothing`
 - **[🚀 Low] Bank/card transaction auto-import.** SMS-notification parsing or Open Banking to
   suggest draft expenses. *Shared abstraction:* this and Itemized Splitting both produce "here is a
   suggested expense, confirm or edit it" — whichever is built first should introduce the shared
