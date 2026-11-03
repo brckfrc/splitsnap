@@ -76,7 +76,7 @@
 
 ## Requirements
 
-- **Node.js** as pinned in [`.nvmrc`](.nvmrc). That single file is what local shells, the iOS build and EAS Build all read, and `engines` plus `engine-strict` in [`.npmrc`](.npmrc) turn a mismatch into a failed `npm install` rather than a warning. Expo SDK 57 itself only needs 20.19+; the tighter pin is what keeps release builds reproducible.
+- **Node.js** as pinned in [`.nvmrc`](.nvmrc). That single file is what local shells, the iOS build and EAS Build all read, and `engines` plus `engine-strict` in [`.npmrc`](.npmrc) turn a mismatch into a failed `npm install` rather than a warning. Expo SDK 58 itself only needs 20.19+; the tighter pin is what keeps release builds reproducible.
 - **macOS + Xcode** for iOS Simulator
 - **Supabase** project (URL + publishable/anon key)
 

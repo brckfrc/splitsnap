@@ -3,7 +3,7 @@
 ## Must-Follow Constraints
 
 - This project **ships for iOS only**. Do not add Android-specific features, dependencies, or branching logic for Android as a supported target. The Expo template may still include `android` / `web` blocks in `app.json` and scripts like `npm run android` / `npm run web` — treat those as **template defaults**, not product requirements (see `README.md`).
-- Framework: **Expo SDK 57** (React Native 0.86) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
+- Framework: **Expo SDK 58** (React Native 0.88) + **TypeScript**. All application code under **`src/`** must use `.ts` / `.tsx`. Do not add new plain `.js` files under `src/`. Exceptions: existing tooling (e.g. `scripts/*.js`) and config files the toolchain requires.
 - Backend: **Supabase** (`@supabase/supabase-js`). Do not write custom backend or server code. All Auth, DB, and Storage operations must go through the Supabase client.
 - Database schema changes require a migration plan in [`docs/DATABASE.md`](./DATABASE.md) (or an update to that file) before implementation.
 - Receipt OCR: **hybrid** approach. Image→text: **on-device** via `expo-text-extractor` (Apple Vision, installed Week 8). Text→JSON: **Supabase Edge Function `parse-receipt`** → `gpt-4o-mini` (key stored as Supabase secret `OPENAI_API_KEY` — never in client bundle, never `EXPO_PUBLIC_`). Falls back to local heuristic when the edge function is unavailable. Supabase Edge Functions are permitted for the OCR/LLM proxy (they are part of the Supabase platform, not a custom server).
@@ -43,7 +43,7 @@ These are standing agreements from real sessions — follow them even when a pro
 
 | Layer | Package | Purpose |
 |-------|---------|---------|
-| Framework | Expo SDK 57 | React Native 0.86, TypeScript built-in |
+| Framework | Expo SDK 58 | React Native 0.88, TypeScript built-in |
 | Navigation | Expo Router | File-based routing under **`src/app/`** |
 | Backend | @supabase/supabase-js | Auth, PostgreSQL, Storage |
 | Auth session storage | @react-native-async-storage/async-storage | Default `auth.storage` for Supabase (official Expo tutorial pattern) |
@@ -188,7 +188,7 @@ These are standing agreements from real sessions — follow them even when a pro
 |--------|-------------|
 | `npm start` | Start Metro (use with dev build on simulator/device) |
 | `npm run ios:pick` | **Default.** Terminal list of every simulator plus the connected iPhone; builds for the one you pick (stable Xcode 27) |
-| `npm run ios:27` | iOS 27.0 **Pro Max** simulator (screenshot geometry) — boots via `scripts/run-ios-simulator.sh`, then Expo |
+| `npm run ios:27` | iOS 27.2 **Pro Max** simulator (screenshot geometry) — boots via `scripts/run-ios-simulator.sh`, then Expo |
 | `npm run ios` | Default simulator, no list (`simctl` path — boots it itself) |
 | `npm run check` | **Typecheck + lint** — run before finishing work / before the developer commits |
 | `npm run typecheck` | `tsc --noEmit` (strict TS) |
