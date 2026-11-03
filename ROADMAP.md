@@ -49,9 +49,7 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
 
 ## Active Status
 
-- **Version:** `v1.2.0` (Build 13) — prepared, **pending submission**. `v1.0.0` is live on the
-  App Store. `v1.1.0` / Build 12 was submitted but its review was cancelled before approval, so
-  it never shipped; its changes are folded into the 1.2.0 notes.
+- **Version:** `v1.2.1` (Build 15) — prepared, **pending submission** (`v1.2.0` / Build 13 was already approved on App Store Connect, closing the `1.2.0` train per `ITMS-90186`/`ITMS-90062` when Build 14 was submitted). `v1.1.0` / Build 12 was submitted earlier and its review was cancelled before approval.
 - **Uncommitted working tree (~1,335 lines):** Sprint #3 (write-integrity migration + tests +
   audit SQL) and Sprint #4 (settlement screen rewrite, `+335` in `settlement.tsx`), plus
   `utils/numeric.ts` and the `MONEY_EPSILON` change, are **uncommitted**. (Per
