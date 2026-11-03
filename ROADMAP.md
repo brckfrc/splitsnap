@@ -88,7 +88,8 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   (old 27.0 and 27.1 runtimes removed; local build & launch verified on 27.2).
   - **Shipped 2026-11-03:** **`1.2.1` (Build 15)** went to the App Store from `main` at `4b92dfd`
     (EAS build `a7359849`). It is the tested `1.2.0` code plus two Vite security bumps that touch
-    only `design/` (#21, #23) and the version bump. This supersedes the plan below to wait for SDK 58.
+    only `design/` (#21, #23) and the version bump. The bump was needed because the `1.2.0` upload was refused:
+    that version number had already been used on App Store Connect, so the next upload had to be `1.2.1`. This supersedes the plan below to wait for SDK 58.
     SDK 58 still follows on `dev` and becomes the next release.
   - **Release plan changed 2026-11-03:** Build 14 (`1.2.0`, SDK 57, EAS build `f5381af1`, commit
     `8a242c5`) went to **TestFlight only**, to confirm the UIScene fix on a real iOS 27.2 device. The
@@ -486,6 +487,20 @@ write-off audit trail, and completes the "leave a group" banner from #9.
   dummy expense. *Fix:* in `settlement.tsx`, allow tapping on the amount or add a "Kısmi Öde" action
   opening a numeric input sheet to record an arbitrary partial payment amount (`0 < amount`), letting
   the settlement algorithm automatically recompute the remaining balance. `needs: nothing · blocks: nothing`
+- **[🎨 Medium] Settlement screen (Ödeme Özeti) is hard to read — reorder around the user's question.**
+  Developer feedback after the 2026-11-03 local test pass: following the checklist meant jumping up and
+  down the screen. Today's order is: headline net balance, Üye Bakiyeleri, Önerilen Ödemeler, Geçmiş
+  Ödemeler, then Bakiye Dökümünüz at the very bottom. The breakdown is the part that explains the
+  headline, and it is furthest from it. *Proposed order (to be validated, other layouts welcome):*
+  1. **Headline + Bakiye Dökümünüz** directly under it, as a compact summary (Harcamalar · Ödemeler ·
+     Net) that expands to the per-expense rows. Collapsible or always-on is still to decide.
+  2. **Önerilen Ödemeler**, i.e. what to do now.
+  3. **Üye Bakiyeleri** and **Geçmiş Ödemeler** last, as reference.
+
+  Do it **in one pass with the two items above** (undo, partial amount): all three reshape
+  `settlement.tsx`, and that is the screen Sprint #4's B.2 check guards. Re-run that check
+  (ledger net = headline, before and after a payment) on the local stack afterwards.
+  `needs: nothing · blocks: nothing (pairs with settlement undo + partial amount)`
 - **[🐛 Medium] A recomputed suggestion looks like an unexplained new demand.** Suggestions are
   recomputed from net balances every time, so someone who already paid can be asked again, to a
   different person, for a different amount — correct debt simplification, presented as a fresh
