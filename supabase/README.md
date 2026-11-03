@@ -46,7 +46,7 @@ supabase stop             # bitince
 
 ## Canlıya migration push (kontrollü)
 
-Tek hosted proje var (`splitsnap-dev` henüz yok) ve `db push` **bekleyen tüm** migration'ları uygular. Bu yüzden sıra şu:
+Tek hosted proje var: canlı. Geliştirme yerelde yapılıyor, hosted dev projesi yok ve `db push` **bekleyen tüm** migration'ları uygular. Bu yüzden sıra şu:
 
 ```bash
 supabase migration list --linked     # yalnızca beklediğini bildiğin dosya(lar) remote="" görünmeli
