@@ -77,32 +77,32 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   (settlement screen reconciles with its own headline; stale suggestions can't book silent
   overpayments) is done in code but still needs the rebuild. Any feature that displays or acts on a
   balance rests on both.
-- **Where we left off (2026-11-03):** the v1.2.0 client test pass is **complete** on two simulators
-  (Deniz on A, Sude on B, in **Test grubu**), live DB integrity audit (`expense_integrity_audit.sql`) passed
-  with 0 orphans and `0.00` net across all groups, test data was cleaned up, and `TEST-PLAN.md` was archived to
-  [`docs/archive/test-plans/v1.2.0-test-plan.md`](docs/archive/test-plans/v1.2.0-test-plan.md).
-  The pass also surfaced and **fixed a release blocker**: the app did not launch when built with the iOS 27.1+ SDK
-  (Done bullet below). That fix (`expo-build-properties`, `app.json`), three small follow-up fixes
-  (`equalShares` in integer kuruş, deterministic expense ordering in `expenses-supabase.ts` and
-  `utils/expense.ts`), and new backlog items are ready to commit. Xcode and simulators are now on **27.2**
-  (old 27.0 and 27.1 runtimes removed; local build & launch verified on 27.2).
-  - **Shipped 2026-11-03:** **`1.2.1` (Build 15)** went to the App Store from `main` at `4b92dfd`
-    (EAS build `a7359849`). It is the tested `1.2.0` code plus two Vite security bumps that touch
-    only `design/` (#21, #23) and the version bump. The bump was needed because the `1.2.0` upload was refused:
-    that version number had already been used on App Store Connect, so the next upload had to be `1.2.1`. This supersedes the plan below to wait for SDK 58.
-    SDK 58 still follows on `dev` and becomes the next release.
-  - **Release plan changed 2026-11-03:** Build 14 (`1.2.0`, SDK 57, EAS build `f5381af1`, commit
-    `8a242c5`) went to **TestFlight only**, to confirm the UIScene fix on a real iOS 27.2 device. The
-    **App Store submission waits until Sprint #5 closes**, on a build made **after the SDK 58 upgrade**.
-    Two consequences. First, that SDK 58 build needs its **own** two-simulator test pass before it is
-    submitted, because Build 14's pass does not carry over. Second, Sprint #4's settlement fix reaches
-    users later. That delay is display only: the server-side payer fix has been live since 2026-10-27.
-    With the submission deferred, the release freeze on dependency merges is lifted until the next test
-    pass.
-  - **Next:** the local-first dev environment on the `dev` branch (step 1, `config.toml` for CLI 3.0, is
-    done: `65fde98`), then SDK 58, then the final test pass and the submission.
-  - **Watch out:** the simulator tooling can be flaky on this machine; the workarounds are in
-    `AGENTS.md` → Known Gotchas and `DEVELOPMENT_WORKFLOW.md` §4.
+- **Where we left off (2026-11-03, evening):**
+  - **Released:** `1.2.1` (Build 15, EAS `a7359849`, from `main` at `4b92dfd`) is with App Store review. It
+    contains:
+    - Sprint #3 + #4;
+    - the UIScene launch-crash fix;
+    - the two Sprint #5 fixes (payer preservation is also live server-side since 2026-10-27);
+    - two `design/`-only Vite bumps.
+
+    `1.2.0` could not be reused (that number was already taken on App Store Connect). Build 14 (`1.2.0`)
+    went to TestFlight only and confirmed the UIScene fix on an iOS 27.2 phone. The v1.2.0 test pass is
+    archived in [`docs/archive/test-plans/v1.2.0-test-plan.md`](docs/archive/test-plans/v1.2.0-test-plan.md).
+  - **On `dev`:** the local-first dev environment is done and verified end to end on the simulator against
+    the local stack. Sign-in, Test grubu and a recorded payment all landed in the local DB, not production.
+    It comprises:
+    - `config.toml` on CLI 3.0;
+    - the `service_role` grants migration;
+    - `supabase/seed.sql` and `.env.development.local`;
+    - docs rewritten.
+  - **Next:** **SDK 58** on `feature/sdk-58` (branched from `dev`), then the next release from it.
+  - **Before `dev` merges to `main`:**
+    - bring `main` into `dev` (the `1.2.1` version bump, #21/#23);
+    - after the merge, push `20261103120000_codify_service_role_grants.sql` to production. It is a
+      verified no-op there.
+  - **Open Renovate:** #24 (non-major, successor of #18). Close it once SDK 58 lands; same reason as #18.
+  - **Tooling:** Xcode and simulators are on **27.2**. The Supabase CLI comes only from Homebrew (3.x). The
+    simulator tooling can be flaky (`AGENTS.md` → Known Gotchas).
   - Do **not** open `docs/changelog/sprint_05_*.md` until Sprint #5 closes.
 
 ---
@@ -256,8 +256,32 @@ migration covers.
   environment, so the full run-through goes against the local stack rather than live data. Do it on a
   feature branch and merge only once `expo install --check`, `tsc`, the SQL suites and the two-simulator
   run are clean.
-  **Renovate around it:** close #18 (this upgrade replaces it); afterwards Renovate opens fresh PRs
+  **Renovate around it:** close #24 (successor of #18; this upgrade replaces it); afterwards Renovate opens fresh PRs
   against the SDK 58 baseline, which get triaged normally.
+  **In progress on `feature/sdk-58` (2026-11-03):**
+  - **Upgrade.** `expo install expo@^58` then `--fix` moved the whole SDK-pinned set: `react-native` 0.86 → 0.88.1,
+    `react` 19.3, gesture-handler 2.32 → 3.3, reanimated 4.7.1, worklets 0.13, screens 4.30, every `expo-*`
+    to 58. `expo install --check` is clean; `expo-doctor` passes 20/20.
+  - **Types.** `tsc` raised 6 errors, all RN 0.88 type changes, all fixed:
+    - `ScrollView` refs are now `ScrollViewInstance` (`groups/[groupId]/index.tsx`);
+    - `AppState.currentState` is now `string | null | undefined` (`expenses-sync.ts`, `groups-sync.ts`).
+
+    `tsc` and lint are clean.
+  - **Scene support.** `expo-build-properties` → `ios.enableSceneSupport` was removed together with the
+    package, which nothing else used. The SDK 58 template now generates `SceneDelegate.swift` (an
+    `ExpoAppSceneDelegate` subclass) and the Info.plist scene manifest on its own; verified after
+    `prebuild --clean`.
+  - **API scan.**
+    - No `expo-router/unstable-native-tabs` or `expo-router/react-navigation` imports.
+    - No RN APIs removed in 0.87/0.88 are in use (`InteractionManager`, `Touchable` root, `Modal animated`, …).
+    - gesture-handler 3 **deprecates** the `Gesture.*` builders we use (bottom sheet, bottom bar, image
+      viewer). They still ship and type-check; the migration is noted under Card-stack UI.
+  - **Not verified by tooling.**
+    - Tamagui 2.5.1 has no release against RN 0.88. It installs and type-checks; the native build and a
+      UI pass decide. Its removal is Sprint #8 anyway.
+    - expo-router 58 makes stack headers transparent Liquid Glass by default on iOS 26+. That needs a
+      visual check.
+  - **Left:** native build, then the two-simulator UI pass on the local stack, then merge into `dev`.
   `needs: local-first dev environment · blocks: the 1.2.0 App Store submission`
 - **[🧹 Done · 2026-07-31] Build toolchain: Node resolves from `.nvmrc`.** Xcode's script phases held a
   hardcoded Homebrew Node path that died on a revision bump (`node/26.5.0` → `26.5.0_1`), so no build
@@ -562,6 +586,11 @@ either. Sheet appearance follows sheet behaviour.
 - **[🎨 Medium] Card-stack UI for payer/split selection.** Fine-tune swipe/gesture animations on the
   custom bottom sheets for smooth card-stack sliding. `needs: ExpenseForm extraction (#8) · blocks:
   Liquid Glass`
+  **Also migrate off the deprecated gesture builders** (gesture-handler 3, since SDK 58): `Gesture.Pan()` /
+  `Pinch()` / `Tap()` / `Exclusive` / `Simultaneous` → `usePanGesture` etc. in `ui/bottom-sheet.tsx`,
+  `app-bottom-bar.tsx`, `ui/image-viewer-modal.tsx`. They still work in 3.3 but "will be removed in a future
+  version"; doing it while retuning the sheets avoids touching them twice.
+
 - **[🎨 Low] Liquid Glass progressive enhancement (iOS 26+).** `expo-glass-effect` refraction/blur
   with a glassmorphism fallback. Candidate surfaces: floating island bottom bar (`app-bottom-bar`),
   bottom sheets (`ui/bottom-sheet` + everything on it), sticky headers. **Not** on content cards
