@@ -67,6 +67,12 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
 - **Where we left off (2026-11-03):**
   - **Sprint #5 is closed** and archived in [`docs/changelog/sprint_05_release_local_dev_sdk_58.md`](docs/changelog/sprint_05_release_local_dev_sdk_58.md).
   - All UI checks on Expo SDK 58 (including the receipt image viewer pinch/double-tap gestures) passed against the local Supabase stack, `dev` was merged to `main` (`PR #25`), Renovate `#24` was closed, and `20261103120000_codify_service_role_grants.sql` is applied on production (13/13 migrations).
+  - **Correction to verify in the next chat:** Build 14 (`1.2.0`) was **rejected at upload**. Around
+    17:00–18:00 App Store Connect's upload validation refused it because `1.2.0` was a closed train, so
+    it never reached TestFlight. Build 15 (`1.2.1`) arrived at 19:55. Any line here or in
+    `docs/changelog/sprint_05_*.md` saying "Build 14 confirmed UIScene on the phone via TestFlight" is
+    therefore wrong. The first on-device UIScene check is **Build 16 via TestFlight**, done by the
+    developer before submitting for review.
   - **Build 16 (`1.2.1`, SDK 58, from `main` at `dfe3d75`) started on EAS on 2026-11-03** with
     `--auto-submit`, so it uploads to App Store Connect when done. **Next human step:** in App Store
     Connect, pick **Build 16** on the `1.2.1` version (Build 15, SDK 57, sits on the same version) and
