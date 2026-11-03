@@ -281,7 +281,19 @@ migration covers.
       UI pass decide. Its removal is Sprint #8 anyway.
     - expo-router 58 makes stack headers transparent Liquid Glass by default on iOS 26+. That needs a
       visual check.
-  - **Left:** native build, then the two-simulator UI pass on the local stack, then merge into `dev`.
+  - **Native build:** succeeded (1277 files, 0 errors). MMKV/Nitro and Tamagui 2.5.1 compile on RN 0.88.
+  - **UI pass on the local stack (2026-11-03): passed.** Checked:
+    - launch (SDK 58 `SceneDelegate`), sign-in and Test grubu;
+    - settlement numbers and a recorded payment;
+    - add expense with the payer sheet's drag-to-dismiss, the date picker, the bottom bar and its
+      gesture;
+    - background/foreground, and both themes.
+
+    Stack headers show no problem; no Liquid Glass look is visible either. One gotcha: right after the
+    upgrade Metro served a stale file map ("Unable to resolve module ./errors/ExpoErrorManager");
+    `--clear` fixed it (`AGENTS.md`). **Not yet exercised:** the receipt image viewer (pinch / double tap
+    still uses the deprecated gesture builders). Check it once before the release build.
+  - **Left:** merge into `dev`, then `dev` → `main`, then the release build.
   `needs: local-first dev environment · blocks: the 1.2.0 App Store submission`
 - **[🧹 Done · 2026-07-31] Build toolchain: Node resolves from `.nvmrc`.** Xcode's script phases held a
   hardcoded Homebrew Node path that died on a revision bump (`node/26.5.0` → `26.5.0_1`), so no build
@@ -596,6 +608,12 @@ either. Sheet appearance follows sheet behaviour.
   bottom sheets (`ui/bottom-sheet` + everything on it), sticky headers. **Not** on content cards
   (legibility). `needs: Card-stack UI (tuning glass against animation about to change is wasted) ·
   blocks: nothing`
+  **SDK 58 option for the bottom bar (noted 2026-11-03, no rush):** `app-bottom-bar.tsx` draws its glass
+  look in JS. expo-router 58 ships native tabs at a stable path, `expo-router/native-tabs`, which render the
+  system tab bar, including Liquid Glass on iOS 26+. Evaluate switching, but check first that native tabs
+  can host what the custom bar does today: the center "+" action and the swipe gesture. If they cannot,
+  keep the custom bar and give it `expo-glass-effect`.
+
 - **[🎨 Low] Biometric app lock (FaceID / TouchID).** Optional privacy shield via
   `expo-local-authentication` on open / before sensitive actions — not for login (session persists).
   `needs: nothing · blocks: nothing`
