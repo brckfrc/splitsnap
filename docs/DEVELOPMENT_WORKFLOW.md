@@ -113,7 +113,7 @@ timeout 30  xcrun simctl openurl $B "exp+splitsnap://expo-development-client/?ur
 
 - **The dev client opens on its server picker.** The `openurl` line connects it straight to Metro on 8081, so nothing needs typing.
 - **If `expo run:ios` died but the app is installed,** start Metro on its own with `npx expo start --dev-client --port 8081` and use the same `openurl`.
-- **Receipt photos for OCR tests:** `timeout 120 xcrun simctl addmedia $A <file.jpg>…` (and again for `$B`). The images land in Photos for "Galeriden Seç". Sample receipts live outside the repo in `~/Desktop/splitsnap için/`.
+- **Receipt photos for OCR tests:** `timeout 120 xcrun simctl addmedia $A <file.jpg>…` (and again for `$B`). The images land in Photos for "Galeriden Seç". Sample receipt photos are not in the repo; any receipt photo works, or drag one onto the simulator window.
 - **Screenshots without the MCP tool:** `timeout 60 xcrun simctl io $A screenshot shot.png && sips -Z 700 shot.png`.
 - **Everything hangs:** `killall -9 com.apple.CoreSimulator.CoreSimulatorService`, reboot the simulators with `bootstatus -b`, then restart Metro as above.
 

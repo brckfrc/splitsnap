@@ -67,7 +67,11 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
 - **Where we left off (2026-11-03):**
   - **Sprint #5 is closed** and archived in [`docs/changelog/sprint_05_release_local_dev_sdk_58.md`](docs/changelog/sprint_05_release_local_dev_sdk_58.md).
   - All UI checks on Expo SDK 58 (including the receipt image viewer pinch/double-tap gestures) passed against the local Supabase stack, `dev` was merged to `main` (`PR #25`), Renovate `#24` was closed, and `20261103120000_codify_service_role_grants.sql` is applied on production (13/13 migrations).
-  - **Next:** build and submit **`v1.2.1` (Build 16)** from `main` (`npx eas-cli build --platform ios --profile production --auto-submit`), then submit `1.2.1` for App Store Review in App Store Connect. After that, continue with **Sprint #6** (Backend hardening — deploy-only) or **Sprint #13** (Test harness & CI).
+  - **Build 16 (`1.2.1`, SDK 58, from `main` at `dfe3d75`) started on EAS on 2026-11-03** with
+    `--auto-submit`, so it uploads to App Store Connect when done. **Next human step:** in App Store
+    Connect, pick **Build 16** on the `1.2.1` version (Build 15, SDK 57, sits on the same version) and
+    submit it for review. Then sync `dev` with `main`, close Renovate #24, and start **Sprint #6** in a new
+    chat, from this section.
 
 ---
 
@@ -175,10 +179,6 @@ Card Stack UI (which retunes the sheets these screens embed).
   from `theme/tokens.ts` off `useColorScheme` directly (also removes the `as never` casts), drop the
   provider, then remove the packages and the dead themed components below. `needs: nothing · blocks:
   dead-file cleanup`
-  **More urgent since SDK 58:** Tamagui stays on 2.5.1. It has no release tested against RN 0.88 / React
-  19.3: the 2.x line ended at 2.7.7 (August), and 3.x is a separate migration. It compiled and passed the
-  2026-11-03 UI check, but every RN bump from here on is a gamble while it remains load-bearing.
-
 - **[🧹 Low] Delete dead files and unused dependencies.** Never imported (closed cluster —
   `themed-text`/`themed-view` only serve the other dead ones): `components/external-link.tsx`,
   `hint-row.tsx`, `ui/collapsible.tsx`, `ui/separator.tsx`, `themed-text.tsx`, `themed-view.tsx`,
