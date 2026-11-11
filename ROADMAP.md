@@ -99,6 +99,15 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
 Server-side only, so it ships without waiting on the App Store queue, and it finishes the same
 class of RLS work as Sprint #3 while that context is still loaded.
 
+- **[Done · 2026-11-11] `parse-receipt` moved from `gpt-4o-mini` to `gpt-6-luna`.** OpenAI shuts
+  `gpt-4o-mini` down on 2027-01-14. The model is now the optional secret `OPENAI_RECEIPT_MODEL`
+  (default `gpt-6-luna`), so a later swap or rollback needs no code change (rollback recipe in
+  `docs/AGENTS.md`). `gpt-6-luna` is a reasoning model and rejects `max_tokens`, so the function
+  now sends `max_completion_tokens` with `reasoning_effort: none`. A smoke test replaying the
+  function's request on 4 OCR texts matched `gpt-4o-mini` field for field; it costs ~25% less
+  per receipt, and latency went from ~1.0 s to ~1.9 s. New OpenAI key set as the production secret,
+  old key revoked, function deployed (v5) and checked with an in-app scan. Privacy page names the
+  new model.
 - **[🔐 Low] Edge-function pass (same two files).**
   - `delete-account`: `user_metadata: {}` does **not** erase the name — GoTrue *merges* metadata, so
     `full_name` written at signup stays in `raw_user_meta_data` (visible in the Auth dashboard; the
