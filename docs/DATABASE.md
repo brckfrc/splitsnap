@@ -729,7 +729,7 @@ Supabase Realtime, RLS politikalarını kullandığı için ayrı yetkilendirme 
 
 **OCR akışı:**
 1. Cihaz içi OCR (`expo-text-extractor` / Apple Vision) → ham metin
-2. Supabase Edge Function `parse-receipt` → `gpt-4o-mini` → `{ merchantName, date, total, currency }` (JSON schema strict; `currency` ISO 4217: TRY/EUR/USD/GBP)
+2. Supabase Edge Function `parse-receipt` → `gpt-6-luna` (secret `OPENAI_RECEIPT_MODEL`) → `{ merchantName, date, total, currency }` (JSON schema strict; `currency` ISO 4217: TRY/EUR/USD/GBP)
 3. Hata / anahtar yok → yerel heuristik (`src/services/receipt-parse.ts`) devreye girer
 4. OCR sonucu `expenses.ocr_suggestions` JSONB alanına kaydedilir
 

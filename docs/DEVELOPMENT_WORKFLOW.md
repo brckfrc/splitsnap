@@ -44,7 +44,7 @@ E-mails the local stack would send (sign-up confirmation, password reset) show u
 ## 2. Production configuration
 
 - **App build:** `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` live in the EAS `production` environment (`eas env:list --environment production`). Change them there, never in a file.
-- **Secrets** for Edge Functions: `supabase secrets set OPENAI_API_KEY=...` against the linked project.
+- **Secrets** for Edge Functions: `supabase secrets set OPENAI_API_KEY=...` against the linked project. `parse-receipt` also reads optional `OPENAI_RECEIPT_MODEL` (default `gpt-6-luna`) and `OPENAI_RECEIPT_REASONING_EFFORT` (default `none`; `omit` for a non-reasoning model).
 - **`supabase/.temp/*-version`**, written by `supabase link`, pins the local stack's service versions to production's. See §4 → *Supabase CLI*.
 
 ## 3. Migration lifecycle

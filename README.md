@@ -113,6 +113,7 @@
    ```bash
    supabase secrets set OPENAI_API_KEY=your_api_key_here
    ```
+   *The model defaults to `gpt-6-luna`; set the optional `OPENAI_RECEIPT_MODEL` secret to use another one.*
 
    Migrations live under [`supabase/migrations/`](supabase/migrations/). See [`supabase/README.md`](supabase/README.md) for archive/`pg_cron` notes and RPC summary. Schema reference: [`docs/DATABASE.md`](docs/DATABASE.md).
 

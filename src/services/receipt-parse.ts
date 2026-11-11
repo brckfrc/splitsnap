@@ -3,7 +3,7 @@
  *
  * Two-layer strategy:
  *   1. parseReceiptText()   → calls Supabase Edge Function "parse-receipt"
- *                             (gpt-4o-mini, structured JSON output).
+ *                             (gpt-6-luna, structured JSON output).
  *                             Falls back to local heuristic if the function
  *                             is unavailable (key not yet set, offline, error).
  *   2. parseReceiptTextLocal() → deterministic regex heuristic for Turkish
@@ -159,7 +159,7 @@ function clampText(text: string): string {
 
 /**
  * Sends OCR text to the "parse-receipt" Supabase Edge Function which calls
- * gpt-4o-mini for structured JSON output. Falls back to the local heuristic
+ * an OpenAI model (gpt-6-luna) for structured JSON output. Falls back to the local heuristic
  * transparently on any failure: function not deployed, offline, provider error,
  * or the caller's daily AI quota being spent (429).
  */

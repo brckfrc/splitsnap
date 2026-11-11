@@ -2,7 +2,7 @@
  * parse-receipt — Supabase Edge Function (Deno)
  *
  * Receives raw OCR text from the client and returns structured receipt data
- * via gpt-4o-mini (JSON schema output). The OPENAI_API_KEY is stored as a
+ * via gpt-6-luna (JSON schema output). The OPENAI_API_KEY is stored as a
  * Supabase secret (never in the client bundle).
  *
  * Deploy:
@@ -32,6 +32,19 @@ const MAX_TEXT_CHARS = 6_000;
 const MAX_BODY_BYTES = 64 * 1024;
 
 const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
+
+/**
+ * Model and reasoning effort are secrets rather than constants so the model can
+ * be swapped (or rolled back) with `supabase secrets set`, without a code change.
+ * gpt-6-luna replaced gpt-4o-mini, which OpenAI shuts down on 2027-01-14.
+ *
+ * gpt-6-luna is a reasoning model. Field extraction doesn't need reasoning, and
+ * reasoning tokens are billed as output, so the effort defaults to 'none'. For a
+ * non-reasoning model (e.g. a rollback to gpt-4o-mini) set
+ * OPENAI_RECEIPT_REASONING_EFFORT=omit so the parameter isn't sent at all.
+ */
+const MODEL = Deno.env.get('OPENAI_RECEIPT_MODEL') || 'gpt-6-luna';
+const REASONING_EFFORT = Deno.env.get('OPENAI_RECEIPT_REASONING_EFFORT') || 'none';
 
 function json(body: unknown, status: number) {
   return new Response(JSON.stringify(body), {
@@ -117,7 +130,12 @@ Deno.serve(async (req: Request) => {
   let content: string;
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: MODEL,
+      ...(REASONING_EFFORT === 'omit'
+        ? {}
+        // openai@4 types only know 'low' | 'medium' | 'high'; the API also takes
+        // 'none', and the SDK passes the value through unchanged.
+        : { reasoning_effort: REASONING_EFFORT as 'low' }),
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: text },
@@ -140,7 +158,8 @@ Deno.serve(async (req: Request) => {
           },
         },
       },
-      max_tokens: 160,
+      // Reasoning models reject max_tokens; max_completion_tokens works for both.
+      max_completion_tokens: 160,
     });
 
     content = completion.choices[0]?.message?.content
