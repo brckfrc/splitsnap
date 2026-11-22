@@ -147,4 +147,7 @@ If you have any questions, feedback, or need support, feel free to reach out via
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+SplitSnap is **source-available** under the [PolyForm Noncommercial License 1.0.0](LICENSE): you may read, run, study and modify it for any noncommercial purpose, but not use it in a commercial product or service.
+
+- Commits up to and including `e9a77f2` (2026-11-22) were published under the MIT License; copies obtained from those commits keep that license. Everything after is PolyForm Noncommercial.
+- **Contributions are welcome.** By opening a pull request you agree that your contribution is licensed to the project owner under these same terms and may also be used by the owner commercially, including in the App Store version of SplitSnap.
