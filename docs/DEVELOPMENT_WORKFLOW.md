@@ -52,7 +52,7 @@ E-mails the local stack would send (sign-up confirmation, password reset) show u
 
 Rule: a migration is proven locally before it reaches production, and production history follows `main`.
 
-1. **Branch.** Work on `dev` or a feature branch. `main` stays releasable.
+1. **Branch.** Cut a feature branch from `main`. `main` stays releasable.
 2. **Write.** `supabase migration new <name>`. Every `CREATE TABLE` in `public` grants `authenticated` exactly what its RLS policies allow (`AGENTS.md` → grants rule). `service_role` is covered by default privileges.
 3. **Prove locally.** `supabase db reset` replays the whole chain from scratch. Then `npm run test:db` (`supabase/README.md` → *Testler*); it exits non-zero on any failing case. A fix for a bug gets a test that FAILS before it and PASSES after it.
 4. **Run the app against it.** Simulator plus local stack, two simulators for multi-user flows (§4).
@@ -104,7 +104,7 @@ The flow clears app state on launch, so on iOS 27 it meets three system screens 
 
 ### Staging and the release workflow
 
-Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` reads from it every Monday so it does not pause.
+Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` reads from it every Monday so it does not pause. The Maestro job runs on GitHub's `xcode-27` image (preview label): the default macOS images only carry iOS 26 simulators, and the first test run on 2026-11-22 went green there on iOS 26.5, which is not the iOS 27 line the app ships for.
 
 GitHub configuration (Settings → Secrets and variables → Actions):
 
