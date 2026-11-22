@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
  */
 export function DatePickerModal({ visible, value, maximumDate, minimumDate, onConfirm, onCancel }: Props) {
   const t = useTheme();
+  const scheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const draft = useDraft(value, visible);
 
@@ -59,6 +61,10 @@ export function DatePickerModal({ visible, value, maximumDate, minimumDate, onCo
               mode="date"
               display="spinner"
               locale="tr-TR"
+              // The native spinner does not follow the in-app theme override on its own;
+              // without this its text stays black on the dark sheet.
+              themeVariant={scheme === 'dark' ? 'dark' : 'light'}
+              textColor={t.foreground}
               maximumDate={maximumDate}
               minimumDate={minimumDate}
               onChange={(_e, d) => { if (d) draft.set(d); }}
