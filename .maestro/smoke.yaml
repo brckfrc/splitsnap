@@ -1,0 +1,60 @@
+# Smoke flow: sign in → add an expense → record a payment → balances follow.
+# Runs as Deniz against the freshly seeded local stack (`npm run test:e2e`
+# resets it first): Test grubu starts at Deniz +₺3.000, Mert and Sude −₺1.500.
+appId: dev.borak.splitsnap
+name: Smoke — expense and payment
+---
+- runFlow: subflows/launch.yaml
+- runFlow: subflows/login.yaml
+
+- tapOn: "Grup Test grubu"
+- extendedWaitUntil:
+    visible: "Üyeler"
+    timeout: 15000
+
+# ₺300 split equally, paid by Deniz (the defaults): +₺200 for Deniz, −₺100 each.
+- tapOn: "Yeni harcama"
+- tapOn: "örn. Akşam Yemeği"
+- inputText: "Maestro testi"
+- tapOn: "0"
+- inputText: "300"
+- tapOn: "Done"
+- scrollUntilVisible:
+    element: "Kaydet"
+    direction: DOWN
+- tapOn: "Kaydet"
+- extendedWaitUntil:
+    visible: "Harcama Maestro testi"
+    timeout: 15000
+
+- tapOn: "Ödeme özetine git"
+- extendedWaitUntil:
+    visible: "Önerilen Ödemeler"
+    timeout: 15000
+- assertVisible: "Toplam: ₺4.800"
+- assertVisible: "₺3.200"
+- assertVisible: "Henüz ödeme kaydı bulunmuyor."
+- assertVisible:
+    text: "Ödendi"
+    index: 1
+
+# Record the first suggested payment (₺1.600 to Deniz).
+- tapOn:
+    text: "Ödendi"
+    index: 0
+- extendedWaitUntil:
+    visible: "Ödemeyi Onayla"
+    timeout: 5000
+- tapOn: "Kaydet"
+
+# One debtor left, Deniz's net halves, and the payment shows in the history.
+- extendedWaitUntil:
+    notVisible: "₺3.200"
+    timeout: 15000
+- assertNotVisible: "Henüz ödeme kaydı bulunmuyor."
+- assertVisible:
+    text: "Ödendi"
+    index: 0
+- assertNotVisible:
+    text: "Ödendi"
+    index: 1

@@ -11,6 +11,31 @@ describe('parseAmount', () => {
   it('returns NaN for input that is not a number', () => {
     expect(parseAmount('')).toBeNaN();
     expect(parseAmount(',')).toBeNaN();
+    expect(parseAmount('abc')).toBeNaN();
+  });
+
+  // A pasted "1.234,56" used to save as ₺1,23 with no error.
+  it('reads thousands separators in Turkish and English notation', () => {
+    expect(parseAmount('1.234,56')).toBe(1234.56);
+    expect(parseAmount('1,234.56')).toBe(1234.56);
+    expect(parseAmount('1.234.567,8')).toBe(1234567.8);
+    expect(parseAmount('1.234')).toBe(1234);
+    expect(parseAmount('1,234,567')).toBe(1234567);
+  });
+
+  it('keeps what the screens prefill and what typing passes through', () => {
+    expect(parseAmount(String(1234.5))).toBe(1234.5); // receipt scan / edit prefill
+    expect(parseAmount('12,')).toBe(12);
+    expect(parseAmount(',5')).toBe(0.5);
+    expect(parseAmount('0')).toBe(0);
+  });
+
+  it('rejects ambiguous input instead of guessing', () => {
+    expect(parseAmount('1.234.56')).toBeNaN();
+    expect(parseAmount('1,23,45')).toBeNaN();
+    expect(parseAmount('12.3456')).toBeNaN();
+    expect(parseAmount('1.2.3')).toBeNaN();
+    expect(parseAmount('12a')).toBeNaN();
   });
 });
 
