@@ -65,7 +65,7 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   fixes (old-client payer preservation, sub-kuruş equal split, `UIScene` lifecycle, local-first stack,
   Expo SDK 58 upgrade) are all merged to `main` and verified.
 - **Where we left off (2026-11-22, end of day):**
-  - **Sprint #13 is closed** (pulled ahead of #6) and archived in [`docs/changelog/sprint_13_test_harness_ci.md`](docs/changelog/sprint_13_test_harness_ci.md). Merged: `PR #28` (SDK 58.0.26 alignment), `PR #29` (test:db, Jest, CI, Renovate rules). Renovate `#27` rebased itself to supabase-js 2.119.2 (lockfile only) and was CI's first green Renovate run; **merge pending**. Last piece on branch `chore/sprint13-finish` → `PR #30`: `parseAmount` fix, third SQL suite (51/51), CI actions on current majors, local Maestro smoke flow (`npm run test:e2e`). Merge #30 to finish.
+  - **Sprint #13 is closed** (pulled ahead of #6) and archived in [`docs/changelog/sprint_13_test_harness_ci.md`](docs/changelog/sprint_13_test_harness_ci.md); all of it is on `main` (`PR #28`, `#29`, `#30`, Renovate `#27`). The `main` push CI after #30 covered #27 + #30 together and was green. Both CI jobs are now required status checks on `main` (admins included, branch must be up to date), so the #27/#30 gap — each PR tested against a `main` without the other — cannot recur.
   - **[Done · 2026-11-11]** `parse-receipt` switched to `gpt-6-luna` (see Continuous Lane).
   - **Unrecorded:** Build 16's TestFlight check and review submission (`1.2.1`, SDK 58).
   - **Next: Sprint #6** (backend hardening), local stack first, then a controlled production push. Every change now goes through CI; settlement changes will intentionally update `groups_settlements_receipts_test.sql`.

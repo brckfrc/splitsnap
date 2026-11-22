@@ -69,7 +69,7 @@ These are standing agreements from real sessions — follow them even when a pro
 - **`npm test`** — Jest unit tests (`src/**/*.test.ts`, `jest-expo` preset); import `describe`/`it`/`expect` from `@jest/globals`. Money logic changes need a test that fails before the fix and passes after.
 - **`npm run test:db`** — SQL suites against the local stack (`supabase start` first); required when `supabase/` changed.
 - **`npm run test:e2e`** — Maestro smoke flow on the simulator (local only; setup in `DEVELOPMENT_WORKFLOW.md` §4 → *Maestro*).
-- **CI** (`.github/workflows/ci.yml`) runs `expo install --check`, `check`, `npm test` and `test:db` on every PR, Renovate's included. A red CI blocks the merge.
+- **CI** (`.github/workflows/ci.yml`) runs `expo install --check`, `check`, `npm test` and `test:db` on every PR, Renovate's included. Both jobs are **required status checks** on `main` (since 2026-11-22, admins included, branch must be up to date with `main`), so a red or stale PR cannot be merged.
 - `npx expo-doctor` — after any dependency, SDK or config-plugin change (20/20 checks on SDK 58); together with `npx expo install --check` it is the gate for Expo-pinned packages
 - `npx expo run:ios` — app must launch without crashes in iOS Simulator
 - Supabase RLS (Row Level Security) policies must be reviewed after every table change
