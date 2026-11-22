@@ -6,6 +6,7 @@
 # Each step needs the previous ones green. Builds and the App Store upload run
 # on EAS; the Maestro run uses a GitHub macOS runner (free for this public repo)
 # against the hosted staging Supabase project, never production.
+# A successful production run tags the commit (v<version>-build.<n>).
 # What stays manual: the TestFlight check on the phone and "Add for Review".
 # Details: docs/APP-STORE.md → Release.
 name: Release
@@ -125,6 +126,8 @@ jobs:
     if: inputs.production_build && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      contents: write # the release tag
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -139,4 +142,16 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
       # autoIncrement assigns the build number; app.json's version must be a
       # train App Store Connect still accepts (see docs/APP-STORE.md).
-      - run: eas build --platform ios --profile production --auto-submit --non-interactive --wait
+      - id: build
+        run: |
+          eas build --platform ios --profile production --auto-submit --non-interactive --wait --json > build.json
+          echo "tag=v$(jq -r '.[0].appVersion' build.json)-build.$(jq -r '.[0].appBuildVersion' build.json)" >> "$GITHUB_OUTPUT"
+      # Marks the exact commit each App Store build came from, e.g. v1.2.1-build.17.
+      - name: Tag the release commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "iOS $TAG (EAS production build, uploaded to TestFlight)" "$GITHUB_SHA"
+          git push origin "$TAG"
+        env:
+          TAG: ${{ steps.build.outputs.tag }}

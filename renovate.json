@@ -1,6 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>brckfrc/renovate-config"],
+  "extends": [
+    "github>brckfrc/renovate-config"
+  ],
   "packageRules": [
     {
       "description": "Expo SDK'nin sabitledigi paketler (bundledNativeModules.json). Renovate bunlari SDK'nin disindaki surumlere tasiyordu (#15, #18, #26, #27). Bunlar yalniz 'npx expo install --fix' ya da SDK yukseltmesiyle degisir. expo ve expo-* paketleri acik kalir: patch'leri ayni SDK icindedir.",
@@ -25,15 +27,44 @@
     },
     {
       "description": "MMKV, Nitro'ya karsi derlenen native kod tasir; ikisi birlikte ve simulator testiyle guncellenir. Dependency Dashboard onayinda bekler.",
-      "matchPackageNames": ["react-native-mmkv", "react-native-nitro-modules"],
+      "matchPackageNames": [
+        "react-native-mmkv",
+        "react-native-nitro-modules"
+      ],
       "groupName": "mmkv + nitro",
       "dependencyDashboardApproval": true
     },
     {
+      "description": "Patch/pin/digest guncellemeleri ayri grupta ve CI yesilse kendiliginden merge olur (main zorunlu CI ister). Minor guncellemeler non-major grubunda elle bakilmaya devam eder. Release workflowundaki Maestro, App Storea gitmeden once ikinci emniyet.",
+      "matchUpdateTypes": [
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "groupName": "patch updates",
+      "automerge": true
+    },
+    {
+      "description": "Tamagui UI cizer; CI ekrani gormedigi icin otomatik merge edilmez, kendi grubunda simulatorde bakilir.",
+      "matchPackageNames": [
+        "tamagui",
+        "@tamagui/**"
+      ],
+      "groupName": "tamagui",
+      "automerge": false
+    },
+    {
       "description": "design/figma_template uygulamaya girmeyen Vite prototipi: uygulama PR'ina karismasin diye ayri grupta, ayda bir.",
-      "matchFileNames": ["design/figma_template/package.json"],
+      "matchFileNames": [
+        "design/figma_template/package.json"
+      ],
       "groupName": "design prototype",
-      "schedule": ["on the first day of the month"]
+      "schedule": [
+        "on the first day of the month"
+      ]
     }
-  ]
+  ],
+  "lockFileMaintenance": {
+    "automerge": true
+  }
 }
