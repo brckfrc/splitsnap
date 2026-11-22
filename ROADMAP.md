@@ -64,11 +64,12 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   reconciles with its own headline; stale suggestions can't book silent overpayments), and the Sprint #5
   fixes (old-client payer preservation, sub-kuruş equal split, `UIScene` lifecycle, local-first stack,
   Expo SDK 58 upgrade) are all merged to `main` and verified.
-- **Where we left off (2026-11-22):**
+- **Where we left off (2026-11-22, end of day):**
   - **Sprint #5 is closed** and archived in [`docs/changelog/sprint_05_release_local_dev_sdk_58.md`](docs/changelog/sprint_05_release_local_dev_sdk_58.md). Build 16 (`1.2.1`, SDK 58) is on App Store Connect; whether its TestFlight check and review submission happened is not recorded yet.
   - **[Done · 2026-11-11]** `parse-receipt` switched to `gpt-6-luna` (on `main`; see Continuous Lane). `dev` is 2 commits behind `main` and must be synced before Sprint work resumes there.
   - **[Done · 2026-11-22] SDK 58 alignment merged (`PR #28`)**, replacing Renovate #26: expo 58.0.26 + `expo install --fix`, supabase-js 2.119.1, zustand 5.1.0, tamagui 2.7.7, Node 26.13.1. Full gate passed, including the simulator checklist; it also fixed the date spinner's unreadable dark-mode text. Majors and `react-native-nitro-modules` 0.37 deliberately left out.
-  - **In progress · 2026-11-22: Sprint #13 on branch `chore/test-harness-ci`** (from `main`, ahead of Sprint #6). Done on the branch: `npm run test:db` (`scripts/test-db.sh`, fails on any FAIL/ERROR, proven against a failing, an empty and an erroring suite), Jest via `jest-expo` with 30 unit tests over `settlement`, `numeric`, `validation`, `invite`, GitHub Actions CI (`expo install --check`, `check`, `npm test`, `test:db` on a CI Supabase), and a repo `renovate.json` that stops Renovate from bumping SDK-pinned packages (#27 should shrink to supabase-js once this merges). A unit test caught a real bug: `amountsMatch` rejected a one-kuruş gap at ₺100 but accepted it at ₺10 (float compare); now compared in whole kuruş like the server. **Pending:** first CI run on the PR, then merge. Renovate #27 is left open on purpose: after the merge it rebases onto the new rules and becomes CI's first Renovate run.
+  - **[Done · 2026-11-22] Sprint #13 core merged (`PR #29`)**, ahead of Sprint #6: `npm run test:db` (`scripts/test-db.sh`, fails on any FAIL/ERROR, proven against a failing, an empty and an erroring suite), Jest via `jest-expo` with 30 unit tests over `settlement`, `numeric`, `validation`, `invite`, GitHub Actions CI (`expo install --check`, `check`, `npm test`, `test:db` on a CI Supabase), and a repo `renovate.json` that stops Renovate from bumping SDK-pinned packages (#27 should shrink to supabase-js once this merges). A unit test caught a real bug: `amountsMatch` rejected a one-kuruş gap at ₺100 but accepted it at ₺10 (float compare); now compared in whole kuruş like the server. First CI run on #29 was green (Jest 30/30, SQL 27/27). `dev` fast-forwarded to `main`.
+  - **Next:** Renovate #27 is left open on purpose: once Renovate rebases it onto the new rules (expected: supabase-js 2.119.2 plus the `design/` group split off) it is CI's first Renovate run; merge if green. Then either finish Sprint #13 (Maestro smoke flow, more DB suites, the `parseAmount` paste bug) or start **Sprint #6** (backend hardening). Build 16's TestFlight check and review submission are still unrecorded.
   - **Standing rule:** every production build passes the full pre-release test gate first (`docs/APP-STORE.md` → *Yayın öncesi test kapısı*).
 
 ---
@@ -380,8 +381,8 @@ either. Sheet appearance follows sheet behaviour.
 > below is done (local-first stack, Sprint #5). Added scope: JS unit tests for the money paths, and
 > the same checks as a required gate before every production build (`docs/APP-STORE.md`).
 >
-> **Status 2026-11-22 (branch `chore/test-harness-ci`):** `test:db`, Jest unit tests and the
-> GitHub Actions CI are written and pass locally. Still open: the Maestro smoke flow and extending
+> **Status 2026-11-22 (merged in `PR #29`):** `test:db`, Jest unit tests and the GitHub Actions
+> CI are live; CI runs on every PR. Still open: the Maestro smoke flow and extending
 > the DB suites. The problem statement below is kept as the record of why.
 
 The highest-value work on this board that is not a release blocker, and the answer to a specific
