@@ -24,20 +24,16 @@ supabase db reset
 
 ## Testler
 
-`tests/` altındaki SQL dosyaları elle çalıştırılır; henüz bir test koşucusu yok. Her kontrol `PASS` / `FAIL` basar ve dosya sonunda `rollback` ile hiçbir iz bırakmaz.
-
-> **Dikkat:** sonuçlar `NOTICE` olarak basılır ve **çıkış kodu her durumda 0'dır**. Yani testin geçip geçmediğini çıkış kodundan anlayamazsın, çıktıda `FAIL` aramalısın. Bunu düzeltmek ROADMAP Sprint #13'ün ilk maddesi.
+`tests/` altındaki her SQL dosyası kontrol başına `PASS` / `FAIL` basar ve sonunda `rollback` ile iz bırakmaz. psql `FAIL` basılsa bile 0 ile çıktığı için dosyaları doğrudan değil, [`scripts/test-db.sh`](../scripts/test-db.sh) ile çalıştır: herhangi bir `FAIL`/`ERROR` satırında, psql hatasında ya da hiç `PASS` basmayan bir dosyada **sıfırdan farklı kodla çıkar**. CI (`.github/workflows/ci.yml`) aynı betiği her PR'da çalıştırır.
 
 ```bash
-supabase start            # Docker açık olmalı
+supabase start            # Docker açık olmalı (yalnız veritabanı için: supabase db start)
 supabase db reset         # YALNIZCA yerel; tüm migration zincirini sıfırdan uygular. Asla --linked ile değil.
-for f in supabase/tests/*.sql; do
-  echo "== $f"
-  docker exec -i supabase_db_splitsnap psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < "$f" 2>&1 \
-    | grep -E "PASS|FAIL|ERROR" | sed 's/^psql:<stdin>:[0-9]*: NOTICE:  //'
-done
+npm run test:db           # tüm suite'ler; tek dosya için: ./scripts/test-db.sh supabase/tests/<dosya>.sql
 supabase stop             # bitince
 ```
+
+Yeni bir suite eklerken aynı biçimi koru: her kontrol `raise notice 'PASS  …'` ya da `'FAIL  …'` bassın; betik bu satırları sayar.
 
 | Dosya | Kapsam |
 |-------|--------|
