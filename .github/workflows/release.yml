@@ -132,27 +132,30 @@ jobs:
           SMOKE_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
           MAESTRO_CLI_NO_ANALYTICS: "1"
           MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
-      # On a failure, capture what the simulator shows at that moment: Maestro's
-      # own failure screenshot is not enough on its own when the flow times out
-      # waiting for a screen that never comes.
+      # On a failure, capture what the simulator shows at that moment as text: the
+      # view hierarchy (every label and field value) and the app's log.
+      # No screenshots: they cannot be redacted, and on 2026-11-22 one showed the
+      # staging password typed into the e-mail field (artifact deleted, secret
+      # rotated). This is a public repository.
       - name: Capture the simulator state
         if: failure()
         run: |
           mkdir -p maestro-debug/capture
-          xcrun simctl io booted screenshot maestro-debug/capture/screen.png || true
           maestro hierarchy > maestro-debug/capture/hierarchy.json 2>&1 || true
           xcrun simctl spawn booted log show --last 10m --style compact \
             --predicate 'process == "SplitSnap" OR subsystem CONTAINS "splitsnap"' \
             > maestro-debug/capture/app.log 2>&1 || true
           # Maestro keeps its per-run logs and screenshots under ~/.maestro/tests.
           cp -R "$HOME/.maestro/tests" maestro-debug/maestro-tests 2>/dev/null || true
-      # This is a public repository, so artifacts are readable by anyone. Maestro
-      # logs each inputText command verbatim, the staging password included:
-      # mask it in every text file before anything is uploaded.
+      # This is a public repository, so artifacts are readable by anyone. Text
+      # (logs, hierarchies) can hold the staging password, e.g. a field value:
+      # mask it in every text file, and drop every image, since an image of a
+      # field cannot be masked.
       - name: Redact the test password
         if: always()
         run: |
           [ -d maestro-debug ] || exit 0
+          find maestro-debug -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.mp4' -o -iname '*.mov' \) -delete
           grep -rlIF -- "$SMOKE_PASSWORD" maestro-debug maestro-report.xml 2>/dev/null \
             | while IFS= read -r f; do
                 SMOKE_PASSWORD="$SMOKE_PASSWORD" perl -pi -e 's/\Q$ENV{SMOKE_PASSWORD}\E/***/g' "$f"
@@ -170,6 +173,11 @@ jobs:
           path: |
             maestro-report.xml
             maestro-debug
+            !**/*.png
+            !**/*.jpg
+            !**/*.jpeg
+            !**/*.mp4
+            !**/*.mov
           if-no-files-found: ignore
           # ~/.maestro/tests is copied in as a plain folder, but Maestro may also
           # write dot-folders inside --debug-output; without this they are dropped.

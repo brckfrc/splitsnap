@@ -5,6 +5,11 @@ appId: dev.borak.splitsnap
 - tapOn:
     id: "login-email"
 - inputText: ${SMOKE_EMAIL}
+# Dismiss the keyboard before moving to the password field. On iOS 27.2 (CI,
+# 2026-11-22) a tap on the password field right after typing left the focus in
+# the e-mail field, so the password was appended to the e-mail and the form
+# answered "Şifre gerekli." Tapping static text first ends the e-mail edit.
+- tapOn: "Ortak harcamalarınızı kolayca takip edin"
 - tapOn:
     id: "login-password"
 - inputText: ${SMOKE_PASSWORD}
@@ -12,6 +17,11 @@ appId: dev.borak.splitsnap
 # outside the fields dismisses the keyboard instead.
 - tapOn: "Ortak harcamalarınızı kolayca takip edin"
 - tapOn: "Giriş yap"
+# Fail here, with the reason, if the form rejected the input instead of
+# signing in (otherwise the flow only times out waiting for "Gruplarım").
+# The messages come from src/utils/validation.ts and show right after the tap.
+- assertNotVisible: "Şifre gerekli."
+- assertNotVisible: "Geçerli bir e-posta adresi girin."
 # iOS offers to save the password after a successful sign-in.
 - extendedWaitUntil:
     visible: "Not Now"
