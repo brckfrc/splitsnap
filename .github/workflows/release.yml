@@ -34,6 +34,23 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
 
+  # Lists what changed since the last release tag in the run summary, as the
+  # checklist for docs/RELEASE_NOTES.md.
+  changes:
+    name: Changes since the last release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - run: |
+          last="$(git tag --list 'v*-build.*' --sort=-creatordate | head -1)"
+          {
+            echo "## Changes since ${last:-the first commit (no release tag yet)}"
+            echo
+            git log --no-merges --format='- %h %s' ${last:+"$last"..}HEAD | head -200
+          } >> "$GITHUB_STEP_SUMMARY"
+
   staging:
     name: Reset staging database
     needs: ci

@@ -77,7 +77,8 @@ Kapı geçtikten sonra build gönderilene kadar bağımlılık PR'ı merge edilm
 2. GitHub → **Actions → Release → Run workflow**, dal `main`. "production_build" açık kalsın (kapalıysa yalnızca test eder, App Store'a bir şey gitmez).
 3. Workflow bulutta sırayla: CI → staging sıfırlama + EAS simülatör build'i → Maestro (staging'e karşı) → EAS production build → App Store Connect / TestFlight. Biri kırmızıysa zincir durur; Maestro hatasında `maestro-results` artifact'ında ekran görüntüleri var. Ücretsiz EAS kuyruğunda toplam 40–60 dk sürebilir; beklemen gerekmez.
 4. Build TestFlight'a düşünce telefonda kısa smoke testi (test kapısı 6. adım).
-5. ASC'de sürüme build'i ata → **Add for Review**.
+5. [`RELEASE_NOTES.md`](RELEASE_NOTES.md) → *Unreleased* metnini son haline getir (run özetindeki "son release'ten beri" commit listesiyle karşılaştır), ASC'de "What's New"e yapıştır, dosyada bölümü sürüm ve build numarasıyla arşivle.
+6. ASC'de sürüme build'i ata → **Add for Review**.
 
 Her release aylık 15 iOS build'inden 2'sini kullanır (simülatör + production). Workflow'un neyi neden yaptığı: `DEVELOPMENT_WORKFLOW.md` §4 → *Staging and the release workflow*.
 
