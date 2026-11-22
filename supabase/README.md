@@ -38,6 +38,7 @@ Yeni bir suite eklerken aynı biçimi koru: her kontrol `raise notice 'PASS  …
 | Dosya | Kapsam |
 |-------|--------|
 | [`tests/expense_write_integrity_test.sql`](tests/expense_write_integrity_test.sql) | 19 vaka: `expense_payers` RLS'i, harcama RPC'lerinin pay/ödeyen doğrulaması, gruplar arası harcama ele geçirme senaryosu |
+| [`tests/groups_settlements_receipts_test.sql`](tests/groups_settlements_receipts_test.sql) | 24 vaka, bugünkü davranışın kaydı: davet kodu (büyük/küçük harf, geçersiz/boş/silinmiş grup, ayrılan üyenin geri dönmesi, tekrar katılmanın kopya üretmemesi), `settlements` RLS'i (kim kaydedebilir/görebilir/silebilir, eski üye yalnız okur), fiş deposunda grup yolu kapsamı. Sprint #6 settlement kurallarını sıkılaştırınca ilgili vakalar bilerek değişecek |
 | [`tests/expense_payer_preservation_test.sql`](tests/expense_payer_preservation_test.sql) | 8 vaka: `p_payers` gönderilmeyen düzenlemede ödeyenin korunması (korunur, tutar değiştiyse oranlanır, hiç yoksa `paid_by`'a düşer; açık `p_payers` hâlâ kazanır) |
 
 ## Canlıya migration push (kontrollü)
