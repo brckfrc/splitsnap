@@ -127,3 +127,19 @@ select e.id, e.group_id, e.title, e.amount, e.paid_by
 from public.expenses e
 where e.deleted_at is null
   and not exists (select 1 from public.expense_payers p where p.expense_id = e.id);
+
+-- -----------------------------------------------------------------------------
+-- 5. Settlements Sprint #6 would reject (run before pushing 20261122200000)
+-- -----------------------------------------------------------------------------
+-- `self_payment` rows make the new settlements_distinct_users check fail at
+-- push time (it validates existing rows), so this must be empty first; soft-
+-- deleted rows count too. `counterparty_outside_group` rows are only reported:
+-- the new INSERT policy blocks new ones, existing ones are left as they are.
+select 'self_payment' as issue, s.id, s.group_id, s.from_user_id, s.to_user_id, s.amount, s.deleted_at
+from public.settlements s
+where s.from_user_id = s.to_user_id
+union all
+select 'counterparty_outside_group', s.id, s.group_id, s.from_user_id, s.to_user_id, s.amount, s.deleted_at
+from public.settlements s
+where not exists (select 1 from public.group_members m where m.group_id = s.group_id and m.user_id = s.from_user_id)
+   or not exists (select 1 from public.group_members m where m.group_id = s.group_id and m.user_id = s.to_user_id);

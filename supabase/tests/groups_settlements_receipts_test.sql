@@ -1,6 +1,8 @@
--- Characterisation tests for invite codes, settlement RLS and receipt storage
--- scoping, as they behave today (Sprint #13). Sprint #6 tightens settlements
--- (immutability, self-payment); change the affected cases there on purpose.
+-- Tests for invite codes, settlement RLS and receipt storage scoping. Written as
+-- characterisation tests in Sprint #13; Sprint #6
+-- (20261122200000_sprint6_backend_hardening.sql) made settlements immutable
+-- except for the soft delete, rejects self-payments and requires the
+-- counterparty to belong to the group.
 --
 -- Run against a local stack (supabase start): `npm run test:db`.
 --
@@ -184,6 +186,45 @@ select pg_temp.act_as('alice');
 select pg_temp.check_true('settlement: the recipient can soft-delete it',
   pg_temp.rows_affected($$update public.settlements set deleted_at = now()
                           where id = 'bbbbbbbb-0000-0000-0000-000000000001'$$) = 1);
+
+-- Sprint #6: a recorded payment is frozen apart from deleted_at, and both
+-- parties must be real, distinct group participants.
+select pg_temp.act_as('bob');
+select pg_temp.check_raises('settlement: a party cannot rewrite the amount',
+  $$update public.settlements set amount = 1
+    where id = 'bbbbbbbb-0000-0000-0000-000000000001'$$,
+  'permission denied for table settlements');
+select pg_temp.check_raises('settlement: a party cannot redirect the payment',
+  $$update public.settlements set to_user_id = (select id from ids where name = 'newbie')
+    where id = 'bbbbbbbb-0000-0000-0000-000000000001'$$,
+  'permission denied for table settlements');
+select pg_temp.check_raises('settlement: a party cannot swap the payer',
+  $$update public.settlements set from_user_id = (select id from ids where name = 'alice'),
+                                  to_user_id = (select id from ids where name = 'bob')
+    where id = 'bbbbbbbb-0000-0000-0000-000000000001'$$,
+  'permission denied for table settlements');
+select pg_temp.check_true('settlement: the frozen row is unchanged',
+  (select amount = 50 and from_user_id = (select id from ids where name = 'bob')
+   from public.settlements where id = 'bbbbbbbb-0000-0000-0000-000000000001'));
+select pg_temp.check_raises('settlement: a payment to yourself is rejected',
+  $$insert into public.settlements (group_id, from_user_id, to_user_id, amount)
+    values ('aaaaaaaa-0000-0000-0000-000000000001',
+            (select id from ids where name = 'bob'), (select id from ids where name = 'bob'), 10)$$,
+  'new row for relation "settlements" violates check constraint "settlements_distinct_users"');
+select pg_temp.check_raises('settlement: a payment to someone outside the group is rejected',
+  $$insert into public.settlements (group_id, from_user_id, to_user_id, amount)
+    values ('aaaaaaaa-0000-0000-0000-000000000001',
+            (select id from ids where name = 'bob'), (select id from ids where name = 'mallory'), 10)$$,
+  'new row violates row-level security policy for table "settlements"');
+select pg_temp.check_raises('settlement: a payment from someone outside the group is rejected',
+  $$insert into public.settlements (group_id, from_user_id, to_user_id, amount)
+    values ('aaaaaaaa-0000-0000-0000-000000000001',
+            (select id from ids where name = 'mallory'), (select id from ids where name = 'bob'), 10)$$,
+  'new row violates row-level security policy for table "settlements"');
+select pg_temp.check_ok('settlement: settling up with a former member still works',
+  $$insert into public.settlements (group_id, from_user_id, to_user_id, amount)
+    values ('aaaaaaaa-0000-0000-0000-000000000001',
+            (select id from ids where name = 'bob'), (select id from ids where name = 'carol'), 10)$$);
 
 -- -----------------------------------------------------------------------------
 -- Receipt storage: the first path segment is the group id

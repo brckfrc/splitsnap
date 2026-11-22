@@ -56,7 +56,7 @@ export async function fetchMyGroupsPayload(): Promise<{ groups: Group[]; groupMe
   const { data: memberRows, error: mErr } = await supabase
     .from('group_members')
     .select(
-      'group_id, user_id, role, joined_at, left_at, profiles:user_id (display_name, email, avatar_url)',
+      'group_id, user_id, role, joined_at, left_at, profiles:user_id (display_name, avatar_url)',
     )
     .in('group_id', ids);
 
