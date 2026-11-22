@@ -69,20 +69,19 @@ Bağımlılık PR'ı olsun olmasın, her `eas build --profile production` bu kap
 5. Simülatörde, yerel stack'e karşı önce `SMOKE_PASSWORD=… npm run test:e2e` (Maestro: giriş, harcama, ödeme, bakiye) geçer, sonra tam UI checklist'i: soğuk açılış, giriş, grup listesi/detay, harcama ekleme + düzenleme + silme, ödeme kaydı ve bakiyelerin tutması, fiş tarama + görüntüleyici, profil/çıkış. Ajan checklist'i verir, geliştirici dokunur.
 6. Build TestFlight'a düşünce iOS 27 telefonda kısa smoke testi (açılış, arka plan/ön plan, salt okuma gezinti). Geçmeden incelemeye gönderilmez.
 
-Kapı geçtikten sonra build gönderilene kadar bağımlılık PR'ı merge edilmez (release freeze, `AGENTS.md`). 1–3 CI'da (`.github/workflows/ci.yml`) her PR'da zaten koşar; build'i alacağın commit'te CI yeşil olmalı. 4–6 elle kalır.
+Kapı geçtikten sonra build gönderilene kadar bağımlılık PR'ı merge edilmez (release freeze, `AGENTS.md`). 1–3 CI'da (`.github/workflows/ci.yml`) her PR'da koşar. Release workflow'u 1–3'ü tekrar çalıştırır, 4–5'in yerini Maestro'nun staging'e karşı gerçek build'le koşması alır (açılış çökmesi varsa Maestro düşer). 5'teki tam elle checklist büyük UI değişikliklerinde hâlâ önerilir; 6 her zaman elle.
 
-### App Store release (her yeni sürümde)
+### App Store release (her yeni sürümde): tek buton
 
-```bash
-# 1. Production build al — EAS bulutunda derlenir (~10-15 dk)
-#    autoIncrement: true → build number otomatik artar
-eas build --platform ios --profile production
+1. `app.json` → `version` App Store Connect'in hâlâ kabul ettiği bir tren mi? (Aşağıdaki *Sürüm treni*.) Değilse artır, PR ile `main`'e al.
+2. GitHub → **Actions → Release → Run workflow**, dal `main`. "production_build" açık kalsın (kapalıysa yalnızca test eder, App Store'a bir şey gitmez).
+3. Workflow bulutta sırayla: CI → staging sıfırlama + EAS simülatör build'i → Maestro (staging'e karşı) → EAS production build → App Store Connect / TestFlight. Biri kırmızıysa zincir durur; Maestro hatasında `maestro-results` artifact'ında ekran görüntüleri var. Ücretsiz EAS kuyruğunda toplam 40–60 dk sürebilir; beklemen gerekmez.
+4. Build TestFlight'a düşünce telefonda kısa smoke testi (test kapısı 6. adım).
+5. ASC'de sürüme build'i ata → **Add for Review**.
 
-# 2. Build bitti → App Store Connect'e gönder
-eas submit --platform ios --profile production
+Her release aylık 15 iOS build'inden 2'sini kullanır (simülatör + production). Workflow'un neyi neden yaptığı: `DEVELOPMENT_WORKFLOW.md` §4 → *Staging and the release workflow*.
 
-# 3. ASC'de: Hazırladığın versiyona build'i ata → Add for Review
-```
+Elle yedek (workflow çalışmazsa): `npx eas-cli@latest build --platform ios --profile production --auto-submit`, ama önce test kapısının tamamı elle.
 
 ### Versiyon yönetimi
 

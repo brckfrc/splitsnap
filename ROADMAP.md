@@ -68,6 +68,7 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   - **Sprint #13 is closed** (pulled ahead of #6) and archived in [`docs/changelog/sprint_13_test_harness_ci.md`](docs/changelog/sprint_13_test_harness_ci.md); all of it is on `main` (`PR #28`, `#29`, `#30`, Renovate `#27`). The `main` push CI after #30 covered #27 + #30 together and was green. Both CI jobs are now required status checks on `main` (admins included, branch must be up to date), so the #27/#30 gap — each PR tested against a `main` without the other — cannot recur.
   - **[Done · 2026-11-11]** `parse-receipt` switched to `gpt-6-luna` (see Continuous Lane).
   - **Unrecorded:** Build 16's TestFlight check and review submission (`1.2.1`, SDK 58).
+  - **In progress · 2026-11-22: one-button release on branch `chore/release-pipeline`.** GitHub Actions `release.yml` (manual, on `main`): CI → `scripts/staging-reset.sh` on the hosted `splitsnap-staging` project + EAS `e2e` simulator build (EAS `preview` env = staging) → Maestro smoke flow on a GitHub macOS runner → EAS production build + TestFlight. Chosen over EAS Workflows because Expo's Free plan has no Maestro jobs ("—" in the pricing table); GitHub's macOS runners are free for this public repo. Weekly `staging-keepalive.yml`. Maestro launch split into `launch-dev.yaml`/`launch-release.yaml` (`APP_TARGET`). **Pending:** developer creates the staging project, the Expo and Supabase tokens and the GitHub secrets; then a test-only run (`production_build` off). Staging created (`ztonsynmnatardrwjlhe`, `splitsnap-staging`); EAS `preview` env and the GitHub variables point at it. `1.2.1` is still "Ready to Submit" in App Store Connect with Builds 15 and 16 (neither submitted), so the train is open and the first workflow release becomes Build 17 on `1.2.1`.
   - **Next: Sprint #6** (backend hardening), local stack first, then a controlled production push. Every change now goes through CI; settlement changes will intentionally update `groups_settlements_receipts_test.sql`.
   - **Standing rule:** every production build passes the full pre-release test gate first (`docs/APP-STORE.md` → *Yayın öncesi test kapısı*).
 
@@ -421,16 +422,18 @@ Large, no dependency yet. Pulled up when they become a dependency or you choose 
   In CI it needs a macOS runner, an iOS simulator build of the dev client per PR (~20–30 min) and
   the local Supabase stack, plus the seed password as a repo secret. Worth it once UI regressions
   start slipping past the manual checklist. `needs: nothing · blocks: nothing`
-- **[🧹 Low] Hosted `splitsnap-dev` Supabase project.** Deferred on 2026-11-03 in favour of the
-  local-first dev environment (Sprint #5). Pull it up when any of these becomes true:
-  - Builds go to **other people** (TestFlight/preview testers) and must not write to production. Their
-    devices cannot reach a laptop's `localhost`.
-  - Sprint #7's OAuth (Apple/Google) callbacks or real e-mail confirmation flows turn out to need a
-    hosted Auth setup that the local stack cannot stand in for.
-  - Agents or CI need a **hosted** environment while the developer's machine is off.
-
-  When created: leave "Automatically expose new tables" **unchecked**, then apply the migration chain,
-  which includes the `service_role` grants. `needs: one of the triggers above · blocks: nothing`
+- **[🧹 In progress · 2026-11-22] Hosted non-production Supabase project → `splitsnap-staging`.**
+  *Why it was deferred (2026-11-03):* the local stack had already proved itself as the place a
+  migration fails first (the payer fix was reproduced, fixed and covered there before the production
+  push), and the iOS simulator reaches `localhost`, so a dev build gets local auth, storage, realtime,
+  edge functions and Mailpit without the upkeep of a second hosted project (pausing on inactivity,
+  schema sync, secrets, test accounts). *Why now:* one of the recorded triggers came true — the
+  release workflow needs a hosted backend while the developer's machine is off. Scope stays narrow:
+  staging serves only `.github/workflows/release.yml`, the release workflow rebuilds it from
+  migrations + seed on every run (so there is no schema to keep in sync by hand), a weekly
+  keep-alive stops the free-plan pause, and development stays local-first. Still open triggers for a
+  wider dev project: builds for other testers, Sprint #7's hosted OAuth callbacks.
+  `needs: nothing · blocks: one-button release`
 - **[🚀 Low] Bank/card transaction auto-import.** SMS-notification parsing or Open Banking to
   suggest draft expenses. *Shared abstraction:* this and Itemized Splitting both produce "here is a
   suggested expense, confirm or edit it" — whichever is built first should introduce the shared

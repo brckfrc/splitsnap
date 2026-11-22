@@ -12,6 +12,7 @@ This document covers environments, the database migration lifecycle, iOS toolcha
 | | Backend | Where the app's URL/key come from |
 |---|---|---|
 | **Development** (`expo start`, `expo run:ios`, `npm run ios:*`) | **Local Supabase stack** in Docker (`http://127.0.0.1:54321`) | `.env.development.local` (gitignored) |
+| **Staging** (release workflow only: `eas build --profile e2e`) | Hosted project `splitsnap-staging` (ref in the GitHub variable `STAGING_PROJECT_REF`), rebuilt from migrations + seed on every release run | **EAS environment variables**, `preview` environment |
 | **Production** (`eas build --profile production`) | Hosted project `splitsnap` (`vlrbkplylwoejnkwnaab`) | **EAS environment variables**, `production` environment |
 
 **Why this is safe.** `.env*` files are in both `.gitignore` and `.easignore`, so none of them is uploaded to EAS. A production build cannot pick up a local URL. Expo's loader confirms the split: `.env.development.local` is read in development mode only. In production mode only `.env` would apply, and EAS never sees it either.
@@ -99,7 +100,22 @@ There is **one** toolchain: stable **Xcode 27.2** (iOS 27.2 SDK), the `xcode-sel
 
 `npm run test:e2e` runs `.maestro/smoke.yaml` on the booted simulator through [`scripts/test-e2e.sh`](../scripts/test-e2e.sh). One-time setup: `brew install openjdk@21` and `brew tap mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro` (the formula also pulls a newer `openjdk`; Maestro prints reflection warnings on it, so the script points `JAVA_HOME` at 21). Each run needs the dev build installed, Metro on 8081 (`npm start`) and the local stack; the script resets the local database first, so the flow always starts from `seed.sql`. Pass the seed password as `SMOKE_PASSWORD` — it is not stored in the repo.
 
-The flow clears app state on launch, so on iOS 27 it meets three system screens before the app: the "Open in “SplitSnap”?" prompt for the dev-client deep link, the Expo dev menu's intro sheet and the dev menu itself, and the Save Password sheet after sign-in. `subflows/launch.yaml` and `subflows/login.yaml` dismiss them; if a flow fails at launch, check those first. `hideKeyboard` is unreliable with React Native on iOS, so the flows tap static text or the keyboard's **Done** instead.
+The flow clears app state on launch, so on iOS 27 it meets three system screens before the app: the "Open in “SplitSnap”?" prompt for the dev-client deep link, the Expo dev menu's intro sheet and the dev menu itself, and the Save Password sheet after sign-in. `subflows/launch-dev.yaml` and `subflows/login.yaml` dismiss them (the release workflow's standalone build uses `subflows/launch-release.yaml`, selected by `APP_TARGET=release`); if a flow fails at launch, check those first. `hideKeyboard` is unreliable with React Native on iOS, so the flows tap static text or the keyboard's **Done** instead.
+
+### Staging and the release workflow
+
+Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` reads from it every Monday so it does not pause.
+
+GitHub configuration (Settings → Secrets and variables → Actions):
+
+| Name | Kind | What |
+|---|---|---|
+| `EXPO_TOKEN` | secret | Expo access token for `eas build` |
+| `SUPABASE_ACCESS_TOKEN` | secret | Supabase personal access token (Management API + CLI) |
+| `STAGING_DB_PASSWORD` | secret | Staging's database password |
+| `STAGING_TEST_PASSWORD` | secret | Password the reset gives Deniz/Mert/Sude on staging (Maestro signs in with it) |
+| `STAGING_PROJECT_REF` | variable | Staging's project ref |
+| `STAGING_PUBLISHABLE_KEY` | variable | Staging's publishable key (public; keep-alive only) |
 
 ### Two simulators, two accounts (multi-user tests)
 
