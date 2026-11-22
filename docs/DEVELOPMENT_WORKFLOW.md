@@ -106,6 +106,8 @@ The flow clears app state on launch, so on iOS 27 it meets three system screens 
 
 Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` reads from it every Monday so it does not pause. The Maestro job runs on GitHub's `xcode-27` image (preview label): the default macOS images only carry iOS 26 simulators, and the first test run on 2026-11-22 went green there on iOS 26.5, which is not the iOS 27 line the app ships for.
 
+**Why everything here is free, and what would change it:** the repo is public, so GitHub's macOS runners (including `xcode-27`) and the required status checks on `main` cost nothing; on a private repo under a personal account the macOS minutes are billed and branch protection needs GitHub Pro. Expo's Free plan gives 15 iOS builds a month and has no Maestro jobs, which is why GitHub runs Maestro and a release uses two builds. Supabase Free allows two active projects: production and staging.
+
 GitHub configuration (Settings → Secrets and variables → Actions):
 
 | Name | Kind | What |
