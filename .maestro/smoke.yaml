@@ -3,11 +3,17 @@
 # +₺3.000, Mert and Sude −₺1.500. Locally `npm run test:e2e` resets the local
 # stack and drives the dev build; the release workflow resets staging and
 # passes APP_TARGET=release for the standalone e2e build.
+#
+# APP_TARGET has no default here on purpose: a flow-level `env` value wins over
+# `maestro test -e`, so a `dev` default silently ran the dev-client launch in CI
+# too (2026-11-22). On iOS 27 its deep link raises a late "Open in SplitSnap?"
+# prompt that covered the login form of the release build.
 appId: dev.borak.splitsnap
 name: Smoke — expense and payment
-env:
-  APP_TARGET: dev
 ---
+# Fail at once if APP_TARGET is missing or misspelled; otherwise both launch
+# subflows below are skipped and the flow fails later, far from the cause.
+- assertTrue: ${APP_TARGET == 'dev' || APP_TARGET == 'release'}
 - runFlow:
     when:
       true: ${APP_TARGET == 'dev'}
