@@ -1,10 +1,21 @@
 # Smoke flow: sign in → add an expense → record a payment → balances follow.
-# Runs as Deniz against the freshly seeded local stack (`npm run test:e2e`
-# resets it first): Test grubu starts at Deniz +₺3.000, Mert and Sude −₺1.500.
+# Runs as Deniz against a freshly seeded backend: Test grubu starts at Deniz
+# +₺3.000, Mert and Sude −₺1.500. Locally `npm run test:e2e` resets the local
+# stack and drives the dev build; the release workflow resets staging and
+# passes APP_TARGET=release for the standalone e2e build.
 appId: dev.borak.splitsnap
 name: Smoke — expense and payment
+env:
+  APP_TARGET: dev
 ---
-- runFlow: subflows/launch.yaml
+- runFlow:
+    when:
+      true: ${APP_TARGET == 'dev'}
+    file: subflows/launch-dev.yaml
+- runFlow:
+    when:
+      true: ${APP_TARGET == 'release'}
+    file: subflows/launch-release.yaml
 - runFlow: subflows/login.yaml
 
 - tapOn: "Grup Test grubu"

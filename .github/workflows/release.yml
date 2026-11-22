@@ -1,0 +1,142 @@
+# One-button iOS release: Actions → Release → Run workflow (on main).
+#
+#   CI checks → reset staging ┐
+#             → e2e build    ─┴→ Maestro on staging → production build + TestFlight
+#
+# Each step needs the previous ones green. Builds and the App Store upload run
+# on EAS; the Maestro run uses a GitHub macOS runner (free for this public repo)
+# against the hosted staging Supabase project, never production.
+# What stays manual: the TestFlight check on the phone and "Add for Review".
+# Details: docs/APP-STORE.md → Release.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_build:
+        description: "Build for production and upload to TestFlight (off = test only)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  EAS_CLI_VERSION: 27.11.0
+  MAESTRO_VERSION: 2.12.1
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  staging:
+    name: Reset staging database
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 3.2.0
+      - run: ./scripts/staging-reset.sh
+        env:
+          STAGING_PROJECT_REF: ${{ vars.STAGING_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          STAGING_TEST_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
+
+  e2e_build:
+    name: EAS simulator build (staging)
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      artifact_url: ${{ steps.build.outputs.artifact_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: ${{ env.EAS_CLI_VERSION }}
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+      # The e2e profile builds an unsigned simulator .app against the EAS
+      # `preview` environment, which holds staging's URL and key.
+      - id: build
+        run: |
+          eas build --platform ios --profile e2e --non-interactive --wait --json > build.json
+          echo "artifact_url=$(jq -r '.[0].artifacts.buildUrl' build.json)" >> "$GITHUB_OUTPUT"
+
+  maestro:
+    name: Maestro smoke flow
+    needs: [staging, e2e_build]
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+      - name: Boot a simulator and install the e2e build
+        run: |
+          xcrun simctl list runtimes
+          udid="$(xcrun simctl list devices available -j \
+            | jq -r '[.devices | to_entries[] | select(.key | test("iOS")) | .value[] | select(.name | test("^iPhone"))] | last | .udid')"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid"
+          curl -fsSL "${{ needs.e2e_build.outputs.artifact_url }}" -o app.tar.gz
+          mkdir app && tar -xzf app.tar.gz -C app
+          xcrun simctl install "$udid" "$(find app -maxdepth 2 -name '*.app' | head -1)"
+      - name: Run the smoke flow
+        run: |
+          maestro test \
+            -e APP_TARGET=release \
+            -e SMOKE_EMAIL=deniz@borak.dev \
+            -e SMOKE_PASSWORD="$SMOKE_PASSWORD" \
+            --format junit --output maestro-report.xml \
+            --debug-output maestro-debug \
+            .maestro/smoke.yaml
+        env:
+          SMOKE_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
+          MAESTRO_CLI_NO_ANALYTICS: "1"
+          MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: maestro-results
+          path: |
+            maestro-report.xml
+            maestro-debug
+          if-no-files-found: ignore
+
+  production:
+    name: EAS production build → TestFlight
+    needs: maestro
+    if: inputs.production_build && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: ${{ env.EAS_CLI_VERSION }}
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+      # autoIncrement assigns the build number; app.json's version must be a
+      # train App Store Connect still accepts (see docs/APP-STORE.md).
+      - run: eas build --platform ios --profile production --auto-submit --non-interactive --wait

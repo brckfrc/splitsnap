@@ -7,9 +7,11 @@ on:
   pull_request:
   push:
     branches: [main, dev]
+  # The release workflow runs the same checks first.
+  workflow_call:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
