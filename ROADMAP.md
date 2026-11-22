@@ -64,17 +64,12 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   reconciles with its own headline; stale suggestions can't book silent overpayments), and the Sprint #5
   fixes (old-client payer preservation, sub-kuruş equal split, `UIScene` lifecycle, local-first stack,
   Expo SDK 58 upgrade) are all merged to `main` and verified.
-- **Where we left off (2026-11-03):**
-  - **Sprint #5 is closed** and archived in [`docs/changelog/sprint_05_release_local_dev_sdk_58.md`](docs/changelog/sprint_05_release_local_dev_sdk_58.md).
-  - All UI checks on Expo SDK 58 (including the receipt image viewer pinch/double-tap gestures) passed against the local Supabase stack, `dev` was merged to `main` (`PR #25`), Renovate `#24` was closed, and `20261103120000_codify_service_role_grants.sql` is applied on production (13/13 migrations).
-  - **Build 14 never reached TestFlight.** App Store Connect's upload validation refused it because
-    `1.2.0` was a closed train. Build 15 (`1.2.1`, SDK 57) arrived at 19:55 but was not tested on the
-    phone, so the first on-device `UIScene` check is **Build 16 via TestFlight**.
-  - **Build 16 (`1.2.1`, SDK 58, from `main` at `dfe3d75`)** was built on EAS with `--auto-submit` and
-    uploaded to App Store Connect on 2026-11-03. `main` and `dev` are in sync. **Next human step:**
-    install Build 16 from TestFlight on the iOS 27.2 phone and smoke-test it; if it passes, pick
-    **Build 16** on the `1.2.1` version in App Store Connect (Build 15 sits on the same version) and
-    submit it for review. Then start **Sprint #6** (local stack first, then a controlled production push).
+- **Where we left off (2026-11-22):**
+  - **Sprint #5 is closed** and archived in [`docs/changelog/sprint_05_release_local_dev_sdk_58.md`](docs/changelog/sprint_05_release_local_dev_sdk_58.md). Build 16 (`1.2.1`, SDK 58) is on App Store Connect; whether its TestFlight check and review submission happened is not recorded yet.
+  - **[Done · 2026-11-11]** `parse-receipt` switched to `gpt-6-luna` (on `main`; see Continuous Lane). `dev` is 2 commits behind `main` and must be synced before Sprint work resumes there.
+  - **In progress · 2026-11-22: SDK 58 alignment on branch `chore/sdk58-align`** (from `main`), replacing Renovate #26, which was closed because it moved SDK-pinned packages (react 19.3.1, reanimated 4.7.2, worklets 0.13.1, gesture-handler 3.5, datetimepicker 9.3.0) off SDK 58's set. The branch has expo 58.0.26 + `expo install --fix` (expo-* patches, safe-area-context 5.11.1, expo-web-browser 58.1), supabase-js 2.119.1, zustand 5.1.0, tamagui 2.7.7 (single `@tamagui/portal` copy confirmed) and Node 26.13.1 (`.nvmrc` + `engines`; EAS reads `.nvmrc`). Passed: `npm run check`, `expo install --check`, `expo-doctor` 20/20, SQL suites 27/27, clean prebuild with `SceneDelegate.swift`. Simulator UI checklist on the local stack passed on 2026-11-22 (equal split leaves the extra kuruş with the payer: ₺100 → Deniz 33.34, Mert/Sude 33.33; edit, delete, two settlements, receipt viewer, background/relaunch, sign-out). It surfaced one pre-existing bug, fixed on the same branch: the date spinner's text stayed black on the dark sheet because `DatePickerModal` did not pass the app's theme (`themeVariant`/`textColor`). Date picker re-checked in dark mode, readable. **Pending:** PR into `main`. Deliberately left out: majors (tamagui 3, TypeScript 7, ESLint 10, lucide 1, async-storage 3, url-polyfill 4) and `react-native-nitro-modules` 0.37 (tied to MMKV's native build).
+  - **Next: Sprint #13 (Test harness & CI) is pulled forward**, ahead of Sprint #6, at the developer's request. Goal: the same gate runs on every PR (Renovate's included) and before every production build.
+  - **Standing rule:** every production build passes the full pre-release test gate first (`docs/APP-STORE.md` → *Yayın öncesi test kapısı*).
 
 ---
 
@@ -381,6 +376,10 @@ either. Sheet appearance follows sheet behaviour.
 
 ### Sprint #13 · Test harness & CI — *the gate every later change goes through* · internal
 
+> **Pulled forward on 2026-11-22: next after the SDK 58 alignment, ahead of #6.** Prerequisite 2
+> below is done (local-first stack, Sprint #5). Added scope: JS unit tests for the money paths, and
+> the same checks as a required gate before every production build (`docs/APP-STORE.md`).
+
 The highest-value work on this board that is not a release blocker, and the answer to a specific
 problem: **a Renovate PR gets zero automated verification today.** Even a non-major bump can break
 the app, and the two that were caught (#15 in September, #18 in October — both pushed `react-native`
@@ -407,6 +406,10 @@ Suggested order, each step useful on its own:
 - **[🧹 High] GitHub Actions: `npm ci` → `expo install --check` → `tsc` → `lint` → `test:db`**
   against a Supabase stack in the runner. This alone closes the Renovate hole, with no agent and no
   tokens. `needs: test:db · blocks: trustworthy Renovate merges`
+- **[🧹 High] JS unit tests (Jest via `jest-expo`) for the money logic** — `parseNumeric`,
+  `parseAmount`, equal split with sub-kuruş remainders, settlement suggestions reconciling with the
+  headline balance. Pure functions, no simulator needed, so they run in the same CI job.
+  `needs: nothing · blocks: trustworthy refactors in #8`
 - **[🧹 Medium] One Maestro smoke flow** (sign in → create group → add expense → record a payment →
   the ledger net equals the headline balance). Maestro suits React Native and runs in CI; a fixed
   flow, deliberately not an open-ended "navigate and judge". Needs a non-production backend first, because a

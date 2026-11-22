@@ -58,6 +58,19 @@ eas build --profile preview --platform ios
 #    → EAS Dashboard'dan .ipa linkini paylaş
 ```
 
+### Yayın öncesi test kapısı (her production build'den önce, istisnasız)
+
+Bağımlılık PR'ı olsun olmasın, her `eas build --profile production` bu kapıdan geçer. Build'in derlenmesi yeterli değildir: derleme yalnızca derleme/bağlama hatalarını yakalar, çalışma anı çökmelerini yakalamaz (iOS 27.1 `UIScene` çökmesi sorunsuz derlenen bir build'deydi).
+
+1. `nvm use` → `npm ci` → `npm run check` (tsc + lint) temiz.
+2. `npx expo install --check` "up to date" ve `npx expo-doctor` 20/20.
+3. `supabase db reset` → SQL suite'leri (`supabase/README.md` → *Testler*): hepsi PASS, FAIL/ERROR yok.
+4. Native paketler değiştiyse `npx expo prebuild --clean --platform ios`; `ios/SplitSnap/SceneDelegate.swift` ve `Info.plist` → `UIApplicationSceneManifest` mevcut.
+5. Simülatörde, yerel stack'e karşı tam UI checklist'i: soğuk açılış, giriş, grup listesi/detay, harcama ekleme + düzenleme + silme, ödeme kaydı ve bakiyelerin tutması, fiş tarama + görüntüleyici, profil/çıkış. Ajan checklist'i verir, geliştirici dokunur.
+6. Build TestFlight'a düşünce iOS 27 telefonda kısa smoke testi (açılış, arka plan/ön plan, salt okuma gezinti). Geçmeden incelemeye gönderilmez.
+
+Kapı geçtikten sonra build gönderilene kadar bağımlılık PR'ı merge edilmez (release freeze, `AGENTS.md`). Otomatik CI geldiğinde 1–3 PR'larda zaten koşar; 5–6 elle kalır.
+
 ### App Store release (her yeni sürümde)
 
 ```bash

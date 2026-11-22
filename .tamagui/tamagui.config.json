@@ -17279,8 +17279,7 @@
                   "width": "33%",
                   "height": "33%",
                   "borderRadius": 1000,
-                  "backgroundColor": "$color",
-                  "pressTheme": true
+                  "backgroundColor": "$color"
                 }
               }
             },
