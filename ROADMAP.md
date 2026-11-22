@@ -69,6 +69,7 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   - **[Done · 2026-11-11]** `parse-receipt` switched to `gpt-6-luna` (see Continuous Lane).
   - **Unrecorded:** Build 16's TestFlight check and review submission (`1.2.1`, SDK 58).
   - **In progress · 2026-11-22: one-button release on branch `chore/release-pipeline`.** GitHub Actions `release.yml` (manual, on `main`): CI → `scripts/staging-reset.sh` on the hosted `splitsnap-staging` project + EAS `e2e` simulator build (EAS `preview` env = staging) → Maestro smoke flow on a GitHub macOS runner → EAS production build + TestFlight. Chosen over EAS Workflows because Expo's Free plan has no Maestro jobs ("—" in the pricing table); GitHub's macOS runners are free for this public repo. Weekly `staging-keepalive.yml`. Maestro launch split into `launch-dev.yaml`/`launch-release.yaml` (`APP_TARGET`). **Pending:** developer creates the staging project, the Expo and Supabase tokens and the GitHub secrets; then a test-only run (`production_build` off). Staging created (`ztonsynmnatardrwjlhe`, `splitsnap-staging`); EAS `preview` env and the GitHub variables point at it. `1.2.1` is still "Ready to Submit" in App Store Connect with Builds 15 and 16 (neither submitted), so the train is open and the first workflow release becomes Build 17 on `1.2.1`.
+  - **[Done · 2026-11-22] Sprint #13 follow-ups (branch `chore/sprint13-followups`):** the `dev` branch is retired (feature branch from `main` → PR → `main`); Renovate auto-merges lockfile maintenance and patch/pin/digest updates once the required CI is green (minor updates and Tamagui stay manual; repo auto-merge, delete-branch-on-merge and update-branch enabled); a successful production release tags its commit `v<version>-build.<n>`. Crash reporting documented in Backlog.
   - **Next: Sprint #6** (backend hardening), local stack first, then a controlled production push. Every change now goes through CI; settlement changes will intentionally update `groups_settlements_receipts_test.sql`.
   - **Standing rule:** every production build passes the full pre-release test gate first (`docs/APP-STORE.md` → *Yayın öncesi test kapısı*).
 
@@ -418,6 +419,16 @@ Touch nothing else and nobody waits on them — pick up between Sprints, ordered
 
 Large, no dependency yet. Pulled up when they become a dependency or you choose to.
 
+- **[🐛 Medium] Crash and error reporting for the shipped app.** Today nothing reports what breaks on
+  users' phones. Apple does collect crashes (Xcode → Organizer → Crashes, TestFlight and App Store
+  alike), but only from users who opted in to share analytics with developers, usually a day late, and
+  for a React Native app it shows the native frames of a JS crash, not the JS line. Errors that do not
+  crash (a failed Supabase call, a "Ödeme kaydedilemedi" alert) never reach anyone. Options to compare
+  when this is pulled up: Sentry (`@sentry/react-native` with its Expo config plugin; JS stack traces
+  via source maps uploaded from the EAS build, free tier), Bugsnag, or Firebase Crashlytics (native SDK
+  plus a Firebase project; weakest on JS errors). Whichever is chosen needs: no personal data in events
+  (user id only, never e-mail or amounts), a privacy-policy line and the App Store privacy label "Crash
+  Data / Diagnostics", and source-map upload wired into `release.yml`. `independent · blocks: nothing`
 - **[🧹 Low] Maestro smoke flow in CI.** `.maestro/smoke.yaml` runs locally (`npm run test:e2e`).
   In CI it needs a macOS runner, an iOS simulator build of the dev client per PR (~20–30 min) and
   the local Supabase stack, plus the seed password as a repo secret. Worth it once UI regressions
