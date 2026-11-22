@@ -20,31 +20,38 @@ How it is kept:
 
 ## Unreleased (planned as 1.2.1: Builds 15 and 16 were uploaded but never submitted)
 
-Covers everything since 1.2.0, the version on the App Store. Before the first workflow release
-(no tag existed yet) the reference points were 1.2.0's changelog, Sprint #5, and `dfe3d75` (Build 16).
+Covers everything since 1.2.0, the version on the App Store (submission prep `43d839e`, 2026-07-27): checked against `git log 43d839e..main` on 2026-11-22, which added Sprint #4's settle-up fixes (`3bcbcf7`) to the first draft.
 
 **TR**
 
 ```text
 İyileştirmeler:
-• Uygulamanın altyapısı güncellendi; daha kararlı ve güncel bir deneyim.
+• Ödeme özetindeki döküm artık kaydedilen ödemeleri de gösteriyor ve en üstteki net bakiyeyle birebir tutuyor.
+• Kaydedilen bir ödeme, gruptaki diğer kişilerin ekranına anında yansıyor.
+• Uygulamanın altyapısı güncellendi; daha kararlı bir deneyim.
 
 Hata Düzeltmeleri:
-• Koyu modda tarih seçicideki tarihler artık rahatça okunuyor.
-• Binlik ayraçlı tutarlar ("1.234,56" gibi) artık doğru okunuyor; belirsiz bir tutarda uygulama yanlış kaydetmek yerine uyarı gösteriyor.
-• Manuel bölüşümde 1 kuruşluk yuvarlama farkı artık her tutarda kabul ediliyor.
-• Çok küçük bir tutarı eşit bölüştürürken oluşan kayıt hatası giderildi.
+• Bir borç bu arada değiştiyse ya da kapandıysa, önerilen ödeme artık sessizce kaydedilmiyor; uygulama önce uyarıyor.
+• Ödemeyi onaylarken art arda dokununca açılan çift onay penceresi giderildi.
+• Koyu modda tarih seçicideki tarihler artık okunaklı.
+• "1.234,56" gibi binlik ayraçlı tutarlar doğru okunuyor; belirsiz bir tutarda uygulama uyarı gösteriyor.
+• Manuel bölüşümde 1 kuruşluk yuvarlama farkı her tutarda kabul ediliyor.
+• Çok küçük bir tutarı eşit bölüştürürken oluşan hata giderildi.
 ```
 
 **EN**
 
 ```text
 Improvements:
-• Updated the app's foundations for a more stable, up-to-date experience.
+• The breakdown on the settle-up screen now includes recorded payments and always adds up to the net balance at the top.
+• A recorded payment now shows up on the other group members' screens right away.
+• Updated the app's foundations for a more stable experience.
 
 Bug Fixes:
+• If a debt changed or was already settled in the meantime, a suggested payment is no longer recorded silently; the app warns you first.
+• Fixed a double confirmation dialog when tapping repeatedly to confirm a payment.
 • Dates in the date picker are now easy to read in dark mode.
-• Amounts with thousands separators (such as "1,234.56") are read correctly; an ambiguous amount now shows a warning instead of being saved wrong.
+• Amounts with thousands separators (such as "1,234.56") are read correctly; an ambiguous amount now shows a warning.
 • A one-cent rounding difference in a manual split is now accepted at any amount.
 • Fixed an error when splitting a very small amount equally.
 ```

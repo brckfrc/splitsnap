@@ -17,6 +17,9 @@
 These are standing agreements from real sessions — follow them even when a prompt is short.
 
 - **Ask before starting large work.** Scan / report / propose first when the ask is open-ended ("roadmap'ten devam", "öner"). Do **not** begin implementing migrations, refactors, or multi-file fixes until the developer confirms the next step. Exception: a clear, scoped instruction ("şunu düzelt", "önerdiğin gibi yap").
+- **Chat in Turkish; repo text stays English** (ROADMAP, AGENTS, code comments, commit messages), except files already written in Turkish (`docs/APP-STORE.md`, `supabase/README.md`).
+- **"Sadece soruyorum" means answer, not act.** Give the answer with a recommendation; no edits, no multiple-choice prompts. When a real decision is needed during planning, offer explicit options with the recommended one first and say why, backed by checked facts (pricing, limits, versions), not memory.
+- **Hand over commands in one batch.** Give the full, ordered list of commands once. While the developer runs them one by one, reply to each pasted output in a line or two, and only flag what went wrong or what is still left; do not re-send the list after every step.
 - **"Sadece incele" / inspect-only means zero edits.** Read, diagnose, answer. No file writes, no "quick fixes while we're here."
 - **Prefer short answers in chat.** Lead with the verdict. Expand only when asked ("baştan anlat", "rapor ver") or when the answer would be wrong without one concrete reason.
 - **Document by updating existing files.** Prefer `ROADMAP.md`, `docs/AGENTS.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `supabase/README.md`, etc. Do not invent new markdown docs unless the developer asks for a throwaway file (e.g. a test plan they will delete).
