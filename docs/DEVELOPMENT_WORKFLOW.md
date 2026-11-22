@@ -104,7 +104,7 @@ The flow clears app state on launch, so on iOS 27 it meets three system screens 
 
 ### Staging and the release workflow
 
-Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` reads from it every Monday so it does not pause.
+Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` reads from it every Monday so it does not pause. The Maestro job runs on GitHub's `xcode-27` image (preview label): the default macOS images only carry iOS 26 simulators, and the first test run on 2026-11-22 went green there on iOS 26.5, which is not the iOS 27 line the app ships for.
 
 GitHub configuration (Settings → Secrets and variables → Actions):
 
