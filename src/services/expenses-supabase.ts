@@ -24,7 +24,6 @@ type ExpenseRow = {
 type ProfileIdRow = {
   id: string;
   display_name: string;
-  email: string | null;
   avatar_url: string | null;
 };
 
@@ -126,13 +125,12 @@ async function resolvePayerProfiles(payerIds: string[]): Promise<Map<string, Pro
 
   const { data: profRows, error: pErr } = await supabase
     .from('profiles')
-    .select('id, display_name, email, avatar_url')
+    .select('id, display_name, avatar_url')
     .in('id', payerIds);
   if (pErr) throw new Error(pErr.message);
   for (const p of (profRows ?? []) as ProfileIdRow[]) {
     payerById.set(p.id, {
       display_name: p.display_name,
-      email: p.email,
       avatar_url: p.avatar_url,
     });
   }
@@ -144,7 +142,7 @@ async function resolveShares(expenseIds: string[]): Promise<ExpenseShare[]> {
 
   const { data: shRows, error: sErr } = await supabase
     .from('expense_shares')
-    .select('expense_id, user_id, amount, profiles:user_id(display_name, email, avatar_url)')
+    .select('expense_id, user_id, amount, profiles:user_id(display_name, avatar_url)')
     .in('expense_id', expenseIds);
 
   if (sErr) throw new Error(sErr.message);
@@ -156,7 +154,7 @@ async function resolvePayers(expenseIds: string[]): Promise<ExpensePayer[]> {
 
   const { data: payRows, error: pErr } = await supabase
     .from('expense_payers')
-    .select('expense_id, user_id, amount, profiles:user_id(display_name, email, avatar_url)')
+    .select('expense_id, user_id, amount, profiles:user_id(display_name, avatar_url)')
     .in('expense_id', expenseIds);
 
   if (pErr) throw new Error(pErr.message);

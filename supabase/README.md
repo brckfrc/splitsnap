@@ -59,12 +59,13 @@ Bu dosya aynı zamanda "migration'lar tek başına çalışan bir veritabanı ü
 
 ## Denetim (prod, salt okunur)
 
-[`audit/expense_integrity_audit.sql`](audit/expense_integrity_audit.sql) — Supabase SQL editor'a olduğu gibi yapıştırılabilir; yalnızca okur. Dört sorgu:
+[`audit/expense_integrity_audit.sql`](audit/expense_integrity_audit.sql) — Supabase SQL editor'a olduğu gibi yapıştırılabilir; yalnızca okur. Beş sorgu:
 
 1. Payları veya ödeyenleri toplamı tutmayan harcamalar
 2. Grup başına üye net bakiyeleri — `net_toplam` her grupta `0.00` olmalı, değilse uygulamanın asla kapatamayacağı bir bakiye var demektir
 3. Gruba hiç ait olmamış bir kullanıcıya ait pay/ödeyen satırları (bakiye matematiğinden sessizce düşerler)
 4. Hiç ödeyen satırı olmayan harcamalar
+5. Sprint #6 kısıtlarına takılacak ödemeler: kendine ödeme (`20261122200000` push'undan önce boş olmalı, yoksa push düşer) ve grupta olmayan karşı taraf (yalnızca rapor)
 
 `20260727215500` öncesinde RPC'ler gelen payları doğrulamadığı için 1. sorgunun boş dönmesi garanti değil; migration yeni bozuk satırı engeller, eskisini onarmaz.
 

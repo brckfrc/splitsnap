@@ -320,4 +320,64 @@ select pg_temp.check_ok(
     (select id from victim)));
 
 \echo ''
+\echo '--- direct expense writes (Sprint #6) ------------------------------------'
+
+-- Creation and edits go through the SECURITY DEFINER RPCs above; the client
+-- itself may only soft-delete. mallory is an active member of Trip.
+select pg_temp.act_as('mallory');
+
+select pg_temp.check_raises(
+  'a member cannot INSERT an expense directly with someone else as payer',
+  $$insert into public.expenses (group_id, title, amount, expense_date, paid_by, created_by, split_type)
+    values ('aaaaaaaa-0000-0000-0000-000000000001', 'Forged', 500.00, current_date,
+            '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', 'equal')$$,
+  'permission denied for table expenses');
+
+select pg_temp.act_as('alice');
+
+select pg_temp.check_raises(
+  'the creator cannot rewrite paid_by directly',
+  format($$update public.expenses set paid_by = '22222222-2222-2222-2222-222222222222' where id = %L$$,
+         (select id from victim)),
+  'permission denied for table expenses');
+
+select pg_temp.check_raises(
+  'the creator cannot move an expense to another group directly',
+  format($$update public.expenses set group_id = 'aaaaaaaa-0000-0000-0000-000000000002' where id = %L$$,
+         (select id from victim)),
+  'permission denied for table expenses');
+
+select pg_temp.check_raises(
+  'the creator cannot rewrite created_by directly',
+  format($$update public.expenses set created_by = '22222222-2222-2222-2222-222222222222' where id = %L$$,
+         (select id from victim)),
+  'permission denied for table expenses');
+
+select pg_temp.check_true(
+  'the creator can still soft-delete her expense (the only direct write the app makes)',
+  pg_temp.rows_affected(format(
+    $$update public.expenses set deleted_at = now() where id = %L$$,
+    (select id from victim))) = 1);
+
+\echo ''
+\echo '--- get_emoji_usage_stats lockdown (Sprint #6) ---------------------------'
+
+reset role;
+
+select pg_temp.check_true(
+  'get_emoji_usage_stats pins search_path',
+  (select proconfig @> array['search_path=public']
+   from pg_proc where oid = 'public.get_emoji_usage_stats()'::regprocedure));
+
+select pg_temp.check_true(
+  'anon cannot execute get_emoji_usage_stats',
+  not has_function_privilege('anon', 'public.get_emoji_usage_stats()', 'execute'));
+
+select pg_temp.act_as('alice');
+
+select pg_temp.check_ok(
+  'authenticated can still call get_emoji_usage_stats',
+  $$select * from public.get_emoji_usage_stats()$$);
+
+\echo ''
 rollback;

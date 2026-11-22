@@ -75,7 +75,9 @@ Deno.serve(async (req: Request) => {
     })
     .eq('id', userId);
   if (profileErr) {
-    return json({ error: 'profile_anonymize_failed', detail: profileErr.message }, 500);
+    // Log the cause server-side only; the client gets a generic code.
+    console.error('delete-account: profile anonymize failed', profileErr.message);
+    return json({ error: 'profile_anonymize_failed' }, 500);
   }
 
   // 4. Disable login: ban + scramble email/password → account inaccessible, PII removed.
@@ -83,10 +85,13 @@ Deno.serve(async (req: Request) => {
     email: `deleted-${userId}@deleted.splitsnap.app`,
     password: crypto.randomUUID() + crypto.randomUUID(),
     ban_duration: '876000h', // ~100 years
-    user_metadata: {},
+    // GoTrue MERGES user_metadata, so `{}` would leave the signup name in
+    // raw_user_meta_data. Null each key we (or Apple/Google sign-in) may set.
+    user_metadata: { full_name: null, name: null, avatar_url: null, picture: null },
   });
   if (banErr) {
-    return json({ error: 'auth_disable_failed', detail: banErr.message }, 500);
+    console.error('delete-account: auth disable failed', banErr.message);
+    return json({ error: 'auth_disable_failed' }, 500);
   }
 
   return json({ ok: true }, 200);

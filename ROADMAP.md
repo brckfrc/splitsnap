@@ -70,7 +70,7 @@ App Store text, release notes, website, README) so nothing users or readers see 
   - **In flight: the first real release, `1.2.1` Build 17.** Started from Actions → Release on 2026-11-22 ~19:09 UTC (first run with `production_build` on). Still to confirm from that run: the Maestro job really ran on an iOS 27 simulator (`xcode-27` image), the TestFlight upload worked unattended, and the `v1.2.1-build.17` tag was pushed. Then, by the developer: TestFlight check on the phone → App Store Connect: pick **Build 17** (not 15/16), paste the TR/EN text from `RELEASE_NOTES.md`, fix the "PRIVACY FIRST" paragraph (`listing.md` issue 1) → Add for Review.
   - **After submission (agent):** in a small PR, archive *Unreleased* in `RELEASE_NOTES.md` as `1.2.1 (Build 17)` (the text there is final: it was completed on 2026-11-22 with Sprint #4's settle-up fixes, which the first draft had missed), start an empty *Unreleased*, and sync `listing.md` with whatever went live.
   - **Small open items:** one Dependabot alert (`minimatch`, build tooling only; Renovate's lockfile maintenance should clear it); crash reporting is a Backlog item; `listing.md` issues 2–3.
-  - **Next: Sprint #6** (backend hardening), local stack first, then a controlled production push. Settlement changes will intentionally update `supabase/tests/groups_settlements_receipts_test.sql`; user-visible changes add a line to `RELEASE_NOTES.md` in the same PR.
+  - **Sprint #6** (backend hardening): done on the local stack on 2026-11-22 (see the Sprint #6 block). Left: PR to `main`, then the controlled production push (migration + `delete-account` deploy), then the server-side `profiles.email` revoke once the next App Store build is the only one in use.
   - **Standing rule:** every production build passes the full pre-release test gate first (`docs/APP-STORE.md` → *Yayın öncesi test kapısı*); in practice that is the Release workflow plus the phone check.
 
 ---
@@ -105,30 +105,36 @@ class of RLS work as Sprint #3 while that context is still loaded.
   per receipt, and latency went from ~1.0 s to ~1.9 s. New OpenAI key set as the production secret,
   old key revoked, function deployed (v5) and checked with an in-app scan. Privacy page names the
   new model.
-- **[🔐 Low] Edge-function pass (same two files).**
-  - `delete-account`: `user_metadata: {}` does **not** erase the name — GoTrue *merges* metadata, so
-    `full_name` written at signup stays in `raw_user_meta_data` (visible in the Auth dashboard; the
-    function's "PII removed" comment is currently false). *Fix:* set keys explicitly to null
-    (`{ full_name: null, name: null, avatar_url: null }`).
-  - `delete-account` returns internal `detail: err.message` on 500 (two call sites) — log
-    server-side, return a generic error.
-  - `get_emoji_usage_stats` has no explicit `search_path` / `REVOKE` / `GRANT` — the only function
-    not locked down like the others (SECURITY INVOKER, so RLS still filters it).
-  `needs: nothing · blocks: nothing · independent within the sprint`
-- **[🔐 Medium] `settlements` rows are neither immutable nor sanity-checked.** The soft-delete UPDATE
-  policy (`20260412140000_week4_expenses.sql`) lets a party rewrite the whole row, `amount` included,
-  and there is no `from_user_id <> to_user_id` constraint (unlike `friend_requests`). The client only
-  ever INSERTs settlements (`createSettlementRemote`), never updates `amount`, so freezing it breaks
-  nothing. *Fix:* restrict UPDATE to `deleted_at` only (freeze `amount`, `from_user_id`,
-  `to_user_id`) and add the distinct-users check. `needs: nothing · blocks: nothing`
-- **[🔐 Medium] Direct `expenses` writes allow an arbitrary `paid_by`.** The INSERT policy checks
-  membership + `created_by = auth.uid()` but never constrains `paid_by`; UPDATE pins neither
-  `paid_by`, `created_by` nor `group_id`. The grants migration `grant`s `insert, update` on
-  `expenses`, but the client only uses the soft-delete UPDATE (`deleted_at`). *Cleanest fix:*
-  `revoke insert on expenses` (creation is RPC-only) and add a `WITH CHECK` freezing
-  `paid_by / created_by / group_id` on UPDATE — client-safe. `needs: nothing · blocks: nothing`
-- **[🔐 Low] `profiles.email` projection.** Readable by co-members and selected by the client; drop
-  it from group-scoped projections unless actually needed. `needs: nothing · blocks: nothing`
+- **[Done locally · 2026-11-22 · production push pending] Edge-function + RLS hardening pass.**
+  Migration `20261122200000_sprint6_backend_hardening.sql`, plus `delete-account` and the client's
+  profile projections. Local: `npm run test:db` 67/67 (16 new cases; the 13 security cases were
+  run against the pre-migration schema first and all FAILed there), Jest, `npm run check`.
+  - `delete-account` nulls `full_name` / `name` / `avatar_url` / `picture` in `user_metadata`
+    (checked locally: `raw_user_meta_data` keeps only `email_verified`), and its two 500s log the
+    cause server-side and return a bare error code.
+  - `get_emoji_usage_stats`: `search_path = public`, EXECUTE revoked from `PUBLIC`/`anon`, granted
+    to `authenticated`.
+  - `settlements`: column-level `UPDATE (deleted_at)` only, so `amount` and both parties are frozen;
+    `settlements_distinct_users` check; the INSERT policy now also requires the counterparty to be
+    a group participant (a former member still qualifies). Before, a member could book a payment
+    to any profile id.
+  - `expenses`: direct INSERT revoked (and its policy dropped), direct UPDATE limited to
+    `deleted_at`; creation and edits stay on the SECURITY DEFINER RPCs.
+  - `profiles.email`: dropped from the client's group-scoped projections (members, shares, payers).
+    **Server side not yet closed:** a column-level revoke of `email` would break every build that
+    still selects it (1.2.0 Build 13 → 1.2.1 Build 17), so it waits until the first build without
+    the projection is the only one in use. `needs: next App Store build · blocks: nothing`
+  - No user-visible change, so no `RELEASE_NOTES.md` line.
+  - **Production push** (developer's go-ahead): pre-check that no live settlement has
+    `from_user_id = to_user_id` (the new check validates existing rows), then the usual
+    `migration list` → `db push --dry-run` → `db push`, and `supabase functions deploy delete-account`.
+- **[🔐 Low] Found during Sprint #6, not yet scheduled.**
+  - `anon` and `authenticated` hold `TRUNCATE`, `REFERENCES`, `TRIGGER` on every `public` table
+    (Supabase default privileges, seen locally; production not checked). PostgREST never issues
+    these, so they are not reachable through the API today; revoking them is defence in depth.
+  - `expense_shares` / `expense_payers` still grant direct INSERT/UPDATE/DELETE to the expense's
+    creator (or group owner), which bypasses `validate_expense_allocations`. The client writes them
+    only through the RPCs, so the same revoke pattern as `expenses` would apply.
 
 ### Sprint #7 · Auth overhaul — *one pass* · ships to App Store
 

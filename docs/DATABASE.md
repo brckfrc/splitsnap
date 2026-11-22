@@ -281,6 +281,8 @@ Borç ödemeleri / kapatma kayıtları.
 | `created_at` | `timestamptz` | default `now()` | |
 | `deleted_at` | `timestamptz` | nullable | Soft delete (yanlış giriş düzeltme) |
 
+Kısıtlar: `amount > 0`, `from_user_id <> to_user_id` (`settlements_distinct_users`, Sprint #6).
+
 ### 3.8 `public.activity_log`
 
 Grup bazlı değişiklik geçmişi. UI'da kullanıcı dostu bir "etkinlik akışı" olarak gösterilebilir.
@@ -467,7 +469,7 @@ owner_id = (select auth.uid()) OR public.is_group_participant(groups.id)
 
 | Tablo | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
-| `expenses` | `is_group_participant(group_id)` | Yalnızca **aktif** üye: `is_group_member(group_id)` + `created_by = auth.uid()` (veya politika genişletmesi) | Aktif üye veya grup `owner_id` | Soft delete: `UPDATE` ile `deleted_at`, aynı yetki |
+| `expenses` | `is_group_participant(group_id)` | **Doğrudan yok** (Sprint #6): yalnızca `create_expense_with_shares` RPC'si | Doğrudan yalnızca `deleted_at` sütunu (kolon izni); politika: aktif üye + oluşturan veya grup `owner_id`. Diğer alanlar `update_expense_with_shares` ile | Soft delete: `UPDATE` ile `deleted_at`, aynı yetki |
 | `expense_shares` | İlgili `expense` görünürse (`is_group_participant`) | Aktif üye **ve** (harcamayı oluşturan **veya** grup sahibi) — SEC-01 | Aynı | Aynı (expense silinirse cascade) |
 | `expense_payers` | İlgili `expense` görünürse (`is_group_participant`) | `expense_shares` ile birebir aynı | Aynı | Aynı |
 
@@ -505,10 +507,10 @@ RLS yalnızca *hangi satır* sorusunu yanıtlar; role ait `GRANT` yoksa politika
 | `friend_requests` | SELECT, UPDATE, DELETE | Oluşturma `send_friend_request_by_code()` RPC'si ile |
 | `groups` | SELECT, INSERT, UPDATE | Silme = soft delete (UPDATE) |
 | `group_members` | SELECT, UPDATE | Katılma `join_group_by_invite()` + owner trigger'ı ile |
-| `expenses` | SELECT, INSERT, UPDATE | DELETE yok: soft delete |
+| `expenses` | SELECT, UPDATE (`deleted_at`) | Sprint #6: INSERT kaldırıldı (oluşturma RPC ile), UPDATE yalnızca soft delete sütunu. DELETE yok |
 | `expense_shares` | SELECT, INSERT, UPDATE, DELETE | |
 | `expense_payers` | SELECT, INSERT, UPDATE, DELETE | |
-| `settlements` | SELECT, INSERT, UPDATE | Soft delete; tutar dondurma maddesi backlog'da |
+| `settlements` | SELECT, INSERT, UPDATE (`deleted_at`) | Sprint #6: kayıt `deleted_at` dışında değiştirilemez (tutar, taraflar donduruldu) |
 | `activity_log` | SELECT | INSERT **bilinçli olarak verilmedi**: kayıtlar DB trigger'larıyla yazılacak (ROADMAP kararı), bu da trigger fonksiyonlarının `SECURITY DEFINER` olmasını zorunlu kılar |
 | `activity_log_archive` | SELECT | |
 | `ai_usage`, `app_config` | — | RLS açık, politika yok; yalnızca `consume_ai_quota()` erişir |
@@ -570,8 +572,8 @@ Bu sayede `group_members` tablosuna doğrudan INSERT politikası gerekmez (trigg
 | İşlem | Politika |
 |-------|---------|
 | **SELECT** | `is_group_participant(group_id)` |
-| **INSERT** | Aktif üye + (`from_user_id = auth.uid()` veya `to_user_id = auth.uid()`) — ödemeyi yapan veya alan kaydeder |
-| **UPDATE** | Yok — kayıt değiştirilemez, yanlışsa soft delete + yeni kayıt |
+| **INSERT** | Aktif üye + (`from_user_id = auth.uid()` veya `to_user_id = auth.uid()`) — ödemeyi yapan veya alan kaydeder. Karşı taraf grubun katılımcısı olmalı (`group_members`'ta satırı var; ayrılmış üye de olur). Kendine ödeme check kısıtıyla reddedilir |
+| **UPDATE** | Yalnızca `deleted_at` (kolon izni, Sprint #6) — tutar ve taraflar değiştirilemez, yanlışsa soft delete + yeni kayıt |
 | **DELETE** | Soft delete: `from_user_id = auth.uid()` veya `to_user_id = auth.uid()` veya admin |
 
 ### 5.8 `activity_log`
@@ -805,3 +807,4 @@ Yeni migration veya politika eklendiğinde bu tabloya bir satır ekleyin.
 | 2026-07-27 | AI kota migration'ı: [`supabase/migrations/20260727012000_ai_usage_quota.sql`](../supabase/migrations/20260727012000_ai_usage_quota.sql) — `ai_usage` günlük sayaç tablosu, `app_config` ayarlanabilir limit tablosu (`ai_daily_limit` 50, `ai_global_daily_limit` 500), `consume_ai_quota()` RPC. İkisinde de RLS açık ve politika yok. `parse-receipt` edge function'ı artık `Authorization` başlığı, gövde boyutu tavanı (64 KB) ve metin kırpması (6000 karakter) da uyguluyor. |
 | 2026-07-27 | İzin migration'ı: [`supabase/migrations/20260727223000_codify_role_grants.sql`](../supabase/migrations/20260727223000_codify_role_grants.sql) — `authenticated` rolünün tablo `GRANT`'leri ve `is_group_member` / `is_group_participant` `EXECUTE` izni versiyon kontrolüne alındı (§5.5.2). Yalnızca ekleme yapar; hosted veritabanındaki mevcut izinleri değiştirmez. Öncesinde migration zincirinden kurulan bir veritabanı istemci için tamamen kullanılamazdı. |
 | 2026-07-27 | Yazma bütünlüğü migration'ı: [`supabase/migrations/20260727215500_expense_write_integrity.sql`](../supabase/migrations/20260727215500_expense_write_integrity.sql) — (1) `expense_payers` yazma politikaları SEC-01 kalıbına eşitlendi, (2) `validate_expense_allocations()` ile her iki harcama RPC'sine toplam/üyelik/tekrar doğrulaması ve fiş yolu kontrolü eklendi (§5.5.1), (3) `update_expense_with_shares` harcamayı yeniden `p_group_id` kapsamında arıyor — bu kapsam `20260726172500` ile düşmüştü ve fonksiyon `SECURITY DEFINER` olduğu için herhangi bir grup sahibinin başka bir gruptaki harcamayı yeniden yazmasına izin veriyordu. Doğrulama: [`supabase/tests/expense_write_integrity_test.sql`](../supabase/tests/expense_write_integrity_test.sql). |
+| 2026-11-22 | Sprint #6 sertleştirme: [`supabase/migrations/20261122200000_sprint6_backend_hardening.sql`](../supabase/migrations/20261122200000_sprint6_backend_hardening.sql) — (1) `settlements`: UPDATE yalnızca `deleted_at` sütununda (tutar/taraflar donduruldu), `from_user_id <> to_user_id` kısıtı, INSERT politikası karşı tarafın grup katılımcısı olmasını istiyor; (2) `expenses`: doğrudan INSERT kaldırıldı (politikası da düştü), UPDATE yalnızca `deleted_at` — `paid_by` / `created_by` / `group_id` artık yalnızca RPC'lerle yazılır; (3) `get_emoji_usage_stats()`: `search_path = public`, `PUBLIC`/`anon` `EXECUTE` geri alındı, `authenticated`'a verildi. İstemci uyumlu: bütün yayındaki build'ler yalnızca RPC + soft delete kullanıyor. Doğrulama: `groups_settlements_receipts_test.sql`, `expense_write_integrity_test.sql`. |
