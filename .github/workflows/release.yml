@@ -132,6 +132,37 @@ jobs:
           SMOKE_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
           MAESTRO_CLI_NO_ANALYTICS: "1"
           MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+      # On a failure, capture what the simulator shows at that moment: Maestro's
+      # own failure screenshot is not enough on its own when the flow times out
+      # waiting for a screen that never comes.
+      - name: Capture the simulator state
+        if: failure()
+        run: |
+          mkdir -p maestro-debug/capture
+          xcrun simctl io booted screenshot maestro-debug/capture/screen.png || true
+          maestro hierarchy > maestro-debug/capture/hierarchy.json 2>&1 || true
+          xcrun simctl spawn booted log show --last 10m --style compact \
+            --predicate 'process == "SplitSnap" OR subsystem CONTAINS "splitsnap"' \
+            > maestro-debug/capture/app.log 2>&1 || true
+          # Maestro keeps its per-run logs and screenshots under ~/.maestro/tests.
+          cp -R "$HOME/.maestro/tests" maestro-debug/maestro-tests 2>/dev/null || true
+      # This is a public repository, so artifacts are readable by anyone. Maestro
+      # logs each inputText command verbatim, the staging password included:
+      # mask it in every text file before anything is uploaded.
+      - name: Redact the test password
+        if: always()
+        run: |
+          [ -d maestro-debug ] || exit 0
+          grep -rlIF -- "$SMOKE_PASSWORD" maestro-debug maestro-report.xml 2>/dev/null \
+            | while IFS= read -r f; do
+                SMOKE_PASSWORD="$SMOKE_PASSWORD" perl -pi -e 's/\Q$ENV{SMOKE_PASSWORD}\E/***/g' "$f"
+              done
+          if grep -rqIF -- "$SMOKE_PASSWORD" maestro-debug maestro-report.xml 2>/dev/null; then
+            echo "password still present after redaction; not uploading debug output" >&2
+            rm -rf maestro-debug
+          fi
+        env:
+          SMOKE_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
       - if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -140,6 +171,10 @@ jobs:
             maestro-report.xml
             maestro-debug
           if-no-files-found: ignore
+          # ~/.maestro/tests is copied in as a plain folder, but Maestro may also
+          # write dot-folders inside --debug-output; without this they are dropped.
+          include-hidden-files: true
+          retention-days: 7
 
   production:
     name: EAS production build → TestFlight
