@@ -33,4 +33,4 @@ supabase db reset >/dev/null
 
 if [ "$#" -gt 0 ]; then flows=("$@"); else flows=(.maestro/smoke.yaml); fi
 
-maestro test -e SMOKE_EMAIL="$SMOKE_EMAIL" -e SMOKE_PASSWORD="$SMOKE_PASSWORD" "${flows[@]}"
+maestro test -e APP_TARGET=dev -e SMOKE_EMAIL="$SMOKE_EMAIL" -e SMOKE_PASSWORD="$SMOKE_PASSWORD" "${flows[@]}"
