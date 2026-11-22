@@ -1,0 +1,35 @@
+# Cold-starts the dev build signed out and points it at the local Metro.
+# The dev client opens its launcher on a cold start, so the deep link below
+# loads the bundle directly. Metro must be running (`npm start`, port 8081).
+appId: dev.borak.splitsnap
+---
+- launchApp:
+    clearState: true
+- openLink: splitsnap://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+# iOS asks "Open in “SplitSnap”?" for a custom-scheme link; the prompt can
+# appear a moment after openLink returns, so wait for it before tapping.
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 10000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Giriş Yap"
+    timeout: 60000
+# clearState also resets the dev menu's onboarding, so its intro sheet comes
+# back on every run and covers the screen until dismissed.
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+# Dismissing the intro leaves the dev menu itself open on top of the app; a tap
+# meant for the login form would land on its "Go home" button.
+- tapOn:
+    text: "Close"
+    optional: true
+- assertNotVisible: "Go home"

@@ -18,7 +18,8 @@
     "lint:fix": "expo lint --fix",
     "check": "npm run typecheck && npm run lint",
     "test": "jest",
-    "test:db": "./scripts/test-db.sh"
+    "test:db": "./scripts/test-db.sh",
+    "test:e2e": "./scripts/test-e2e.sh"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

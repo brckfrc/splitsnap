@@ -1,0 +1,25 @@
+# Signs in on the login screen. The credentials come from the environment
+# (`-e SMOKE_EMAIL=… -e SMOKE_PASSWORD=…`), never from the repo.
+appId: dev.borak.splitsnap
+---
+- tapOn:
+    id: "login-email"
+- inputText: ${SMOKE_EMAIL}
+- tapOn:
+    id: "login-password"
+- inputText: ${SMOKE_PASSWORD}
+# hideKeyboard is unreliable on iOS with React Native; tapping static text
+# outside the fields dismisses the keyboard instead.
+- tapOn: "Ortak harcamalarınızı kolayca takip edin"
+- tapOn: "Giriş yap"
+# iOS offers to save the password after a successful sign-in.
+- extendedWaitUntil:
+    visible: "Not Now"
+    timeout: 8000
+    optional: true
+- tapOn:
+    text: "Not Now"
+    optional: true
+- extendedWaitUntil:
+    visible: "Gruplarım"
+    timeout: 30000

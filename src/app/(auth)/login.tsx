@@ -72,6 +72,7 @@ export default function LoginScreen() {
             <View style={styles.form}>
               <Input
                 label="E-posta"
+                testID="login-email"
                 value={email}
                 onChangeText={setEmail}
                 placeholder="ornek@email.com"
@@ -84,6 +85,7 @@ export default function LoginScreen() {
               />
               <Input
                 label="Şifre"
+                testID="login-password"
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
