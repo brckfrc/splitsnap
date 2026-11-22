@@ -1,0 +1,25 @@
+# Free Supabase projects pause after a week without activity. One read a week
+# keeps staging awake so a release does not wait for a restore (the release
+# workflow still restores a paused project if this ever misses).
+name: Staging keep-alive
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query staging through the Data API
+        run: |
+          curl -fsS -o /dev/null \
+            -H "apikey: $STAGING_KEY" \
+            "https://$STAGING_REF.supabase.co/rest/v1/groups?select=id&limit=1"
+        env:
+          STAGING_REF: ${{ vars.STAGING_PROJECT_REF }}
+          STAGING_KEY: ${{ vars.STAGING_PUBLISHABLE_KEY }}

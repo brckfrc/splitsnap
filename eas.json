@@ -17,7 +17,15 @@
         "simulator": true
       }
     },
+    "e2e": {
+      "withoutCredentials": true,
+      "environment": "preview",
+      "ios": {
+        "simulator": true
+      }
+    },
     "production": {
+      "environment": "production",
       "autoIncrement": true
     }
   },

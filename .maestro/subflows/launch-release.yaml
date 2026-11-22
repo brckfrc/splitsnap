@@ -1,0 +1,9 @@
+# Cold-starts a standalone build (the e2e simulator build from the release
+# workflow) signed out. No dev client, Metro or dev menu is involved.
+appId: dev.borak.splitsnap
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Giriş Yap"
+    timeout: 60000
