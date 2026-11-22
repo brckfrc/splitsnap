@@ -1,0 +1,46 @@
+# Runs on every PR (Renovate's included) and on pushes to main and dev.
+# Same checks as steps 1–3 of the pre-release gate in docs/APP-STORE.md; the
+# simulator checklist and the TestFlight smoke test stay manual.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: Expo pins, typecheck, lint, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Fails when a dependency drifts off the versions the Expo SDK pins (the #15/#18/#26 class).
+      - run: npx expo install --check
+      - run: npm run check
+      - run: npm test -- --ci
+
+  db:
+    name: SQL suites (local Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.2.0
+      # Database only: replays every migration plus seed.sql, like `supabase db reset` locally.
+      - run: supabase db start
+      - run: ./scripts/test-db.sh
