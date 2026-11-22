@@ -220,11 +220,11 @@ export default function AddExpenseScreen() {
 
   function handleManualInput(userId: string, raw: string) {
     const sanitized = raw.replace(/[^0-9.,]/g, '');
-    const parsed = parseFloat((sanitized || '0').replace(',', '.'));
+    const parsed = parseAmount(sanitized || '0');
     if (!Number.isNaN(parsed) && validTotal > 0) {
       const othersTotal = Array.from(selected).reduce((sum, id) => {
         if (id === userId) return sum;
-        const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+        const v = parseAmount(manual[id] ?? '0');
         return sum + (Number.isNaN(v) ? 0 : v);
       }, 0);
       const maxForThis = Math.max(0, validTotal - othersTotal);
@@ -278,7 +278,7 @@ export default function AddExpenseScreen() {
     } else {
       let sum = 0;
       for (const m of activeMembers) {
-        const v = parseFloat((payerAmounts[m.userId] ?? '0').replace(',', '.'));
+        const v = parseAmount(payerAmounts[m.userId] ?? '0');
         if (!Number.isNaN(v) && v > 0) {
           finalPayerAmounts[m.userId] = v;
           sum += v;
@@ -298,7 +298,7 @@ export default function AddExpenseScreen() {
       manualAmounts = {};
       let sum = 0;
       for (const id of participantIds) {
-        const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+        const v = parseAmount(manual[id] ?? '0');
         if (!Number.isNaN(v) && v > 0) { manualAmounts[id] = v; sum += v; }
       }
       if (!amountsMatch(sum, num)) {
@@ -355,7 +355,7 @@ export default function AddExpenseScreen() {
   // Derived values
   // -------------------------------------------------------------------------
 
-  const amountNum = parseFloat(amount.replace(',', '.'));
+  const amountNum = parseAmount(amount);
   const validTotal = !Number.isNaN(amountNum) && amountNum > 0 ? amountNum : 0;
   const perEqual =
     splitType === 'equal' && selected.size > 0 && validTotal > 0
@@ -364,7 +364,7 @@ export default function AddExpenseScreen() {
   const manualTotal = useMemo(() => {
     let sum = 0;
     for (const id of selected) {
-      const v = parseFloat((manual[id] ?? '0').replace(',', '.'));
+      const v = parseAmount(manual[id] ?? '0');
       if (!Number.isNaN(v) && v > 0) sum += v;
     }
     return sum;
@@ -571,7 +571,7 @@ export default function AddExpenseScreen() {
                     const activePayers = activeMembers.filter((m) => {
                       const amountStr = payerAmounts[m.userId];
                       if (!amountStr) return false;
-                      const parsed = parseFloat(amountStr.replace(',', '.'));
+                      const parsed = parseAmount(amountStr);
                       return !Number.isNaN(parsed) && parsed > 0;
                     });
                     return activePayers.length > 0 ? (
@@ -679,11 +679,11 @@ export default function AddExpenseScreen() {
                 {/* Horizontal Avatar Picker for multiple payers selection */}
                 <HorizontalAvatarPicker
                   members={activeMembers}
-                  selectedIds={new Set(Object.keys(payerAmounts).filter((id) => parseFloat((payerAmounts[id] ?? '0').replace(',', '.')) > 0))}
+                  selectedIds={new Set(Object.keys(payerAmounts).filter((id) => parseAmount(payerAmounts[id] ?? '0') > 0))}
                   onToggle={(userId) => {
                     setPayerAmounts((prev) => {
                       const copy = { ...prev };
-                      const currentVal = parseFloat((copy[userId] ?? '0').replace(',', '.'));
+                      const currentVal = parseAmount(copy[userId] ?? '0');
                       if (currentVal > 0) {
                         copy[userId] = '';
                       } else {
@@ -718,7 +718,7 @@ export default function AddExpenseScreen() {
                         const raw = payerAmounts[m.userId] ?? '';
                         const totalPaidOthers = Object.entries(payerAmounts).reduce((sum, [id, val]) => {
                           if (id === m.userId) return sum;
-                          const pv = parseFloat(val.replace(',', '.'));
+                          const pv = parseAmount(val);
                           return sum + (Number.isNaN(pv) ? 0 : pv);
                         }, 0);
                         const remaining = validTotal - totalPaidOthers;
@@ -814,7 +814,7 @@ export default function AddExpenseScreen() {
                       .filter((m) => selected.has(m.userId))
                       .map((m) => {
                         const raw = manual[m.userId] ?? '';
-                        const memberVal = parseFloat((raw || '0').replace(',', '.'));
+                        const memberVal = parseAmount(raw || '0');
                         const remaining = validTotal - (manualTotal - (Number.isNaN(memberVal) ? 0 : memberVal));
                         const hasValue = raw.length > 0;
                         const showSuffix = validTotal > 0 && !hasValue;

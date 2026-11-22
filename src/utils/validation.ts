@@ -129,9 +129,32 @@ export function sanitizeAmountInput(raw: string): string {
   return raw.replace(/[^0-9.,]/g, '');
 }
 
-/** Parse a user-entered amount ("1.234,56" / "1234.56") into a number (NaN if invalid). */
+/**
+ * Parse a user-entered amount into a number, NaN when it cannot be read safely.
+ *
+ * Accepts Turkish and English notation ("1.234,56", "1,234.56", "1234.56"). One
+ * or two digits after the last separator make it the decimal point; three make
+ * every separator thousands grouping ("1.234" is 1234, the way a Turkish user
+ * means it). Anything that fits neither reading ("1.234.56", "12.3456") is NaN
+ * rather than a guess, so the form shows an error instead of saving a wrong sum.
+ * A trailing separator ("12,") reads as the integer, so typing stays live.
+ */
 export function parseAmount(raw: string): number {
-  return parseFloat(raw.replace(',', '.'));
+  let text = raw.trim();
+  if (/[.,]$/.test(text)) text = text.slice(0, -1);
+  if (/^[.,]/.test(text)) text = `0${text}`;
+  if (!/^\d[\d.,]*$/.test(text)) return NaN;
+
+  const last = Math.max(text.lastIndexOf('.'), text.lastIndexOf(','));
+  const decimals = last === -1 ? 0 : text.length - last - 1;
+  const [whole, fraction] = decimals > 0 && decimals <= 2 ? [text.slice(0, last), text.slice(last + 1)] : [text, ''];
+
+  const groupSeparators = new Set(whole.match(/[.,]/g) ?? []);
+  if (groupSeparators.size > 1) return NaN;
+  if (fraction && groupSeparators.has(text[last])) return NaN;
+  if (groupSeparators.size === 1 && !/^\d{1,3}([.,]\d{3})+$/.test(whole)) return NaN;
+
+  return Number(`${whole.replace(/[.,]/g, '')}${fraction ? `.${fraction}` : ''}`);
 }
 
 export type AmountResult = { value: number; error: null } | { value: null; error: string };
