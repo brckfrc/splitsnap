@@ -43,7 +43,8 @@ self-maintaining:
 **When a Sprint completes:** write its `docs/changelog/sprint_NN_*.md`, replace the Sprint
 block here with a one-line entry under *Recent Updates & Changelog*, and update
 [`docs/AGENTS.md`](docs/AGENTS.md) if the structure itself changed. Never edit
-`docs/archive/school/*` (frozen).
+`docs/archive/school/*` (frozen). Then run the *outward-facing check* in `docs/AGENTS.md` (README,
+website, privacy policy, App Store text, personal site, CV) so nothing outside the repo goes stale.
 
 ---
 
