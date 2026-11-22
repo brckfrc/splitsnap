@@ -273,20 +273,21 @@ select pg_temp.check_true(
 
 -- mallory is an active member of the Trip group but did not create this
 -- expense and does not own the group, so she must not be able to rewrite who
--- paid for it through PostgREST.
-select pg_temp.check_true(
+-- paid for it through PostgREST. Since 20261122210000 nobody can write these
+-- rows directly (not even the creator, below): the RPCs are the only path.
+select pg_temp.check_raises(
   'a non-creator member cannot UPDATE expense_payers',
-  pg_temp.rows_affected(format(
+  format(
     $$update public.expense_payers
       set user_id = '33333333-3333-3333-3333-333333333333'
       where expense_id = %L$$,
-    (select id from victim))) = 0);
+    (select id from victim)),
+  'permission denied for table expense_payers');
 
-select pg_temp.check_true(
+select pg_temp.check_raises(
   'a non-creator member cannot DELETE expense_payers',
-  pg_temp.rows_affected(format(
-    $$delete from public.expense_payers where expense_id = %L$$,
-    (select id from victim))) = 0);
+  format($$delete from public.expense_payers where expense_id = %L$$, (select id from victim)),
+  'permission denied for table expense_payers');
 
 select pg_temp.check_raises(
   'a non-creator member cannot INSERT expense_payers',
@@ -294,7 +295,7 @@ select pg_temp.check_raises(
     $$insert into public.expense_payers (expense_id, user_id, amount)
       values (%L, '33333333-3333-3333-3333-333333333333', 999.00)$$,
     (select id from victim)),
-  'new row violates row-level security policy for table "expense_payers"');
+  'permission denied for table expense_payers');
 
 select pg_temp.check_true(
   'the original payer row survived',
@@ -306,6 +307,41 @@ select pg_temp.check_true(
 
 -- The creator is still allowed to fix her own expense.
 select pg_temp.act_as('alice');
+
+-- The creator used to be able to write the allocation tables directly too,
+-- which skipped validate_expense_allocations (Sprint #6, 20261122210000).
+select pg_temp.act_as('alice');
+
+select pg_temp.check_raises(
+  'the creator cannot INSERT a share that breaks the total directly',
+  format(
+    $$insert into public.expense_shares (expense_id, user_id, amount)
+      values (%L, '55555555-5555-5555-5555-555555555555', 999.00)$$,
+    (select id from victim)),
+  'permission denied for table expense_shares');
+
+select pg_temp.check_raises(
+  'the creator cannot UPDATE a share amount directly',
+  format($$update public.expense_shares set amount = 1 where expense_id = %L$$, (select id from victim)),
+  'permission denied for table expense_shares');
+
+select pg_temp.check_raises(
+  'the creator cannot DELETE shares directly',
+  format($$delete from public.expense_shares where expense_id = %L$$, (select id from victim)),
+  'permission denied for table expense_shares');
+
+select pg_temp.check_raises(
+  'the creator cannot rewrite the payer directly',
+  format(
+    $$update public.expense_payers set user_id = '44444444-4444-4444-4444-444444444444'
+      where expense_id = %L$$,
+    (select id from victim)),
+  'permission denied for table expense_payers');
+
+select pg_temp.check_true(
+  'members can still read shares and payers',
+  (select count(*) from public.expense_shares where expense_id = (select id from victim)) = 2
+  and (select count(*) from public.expense_payers where expense_id = (select id from victim)) = 1);
 
 select pg_temp.check_ok(
   'the expense creator can still update the payers',

@@ -67,10 +67,10 @@ App Store text, release notes, website, README) so nothing users or readers see 
   Expo SDK 58 upgrade) are all merged to `main` and verified.
 - **Where we left off (2026-11-22, end of day):**
   - **Sprint #13 is closed** (pulled ahead of #6): [`docs/changelog/sprint_13_test_harness_ci.md`](docs/changelog/sprint_13_test_harness_ci.md), including its follow-ups. On `main` since then: required CI on every PR (Jest, SQL suites, Expo pin check), Renovate auto-merge for safe updates, the one-button Release workflow with a hosted `splitsnap-staging` project and cloud Maestro, release tags, PolyForm Noncommercial license, `docs/RELEASE_NOTES.md`, `docs/store-assets/listing.md`. The `dev` branch is gone: feature branch from `main` → PR → `main`.
-  - **In flight: the first real release, `1.2.1` Build 17.** Started from Actions → Release on 2026-11-22 ~19:09 UTC (first run with `production_build` on). Still to confirm from that run: the Maestro job really ran on an iOS 27 simulator (`xcode-27` image), the TestFlight upload worked unattended, and the `v1.2.1-build.17` tag was pushed. Then, by the developer: TestFlight check on the phone → App Store Connect: pick **Build 17** (not 15/16), paste the TR/EN text from `RELEASE_NOTES.md`, fix the "PRIVACY FIRST" paragraph (`listing.md` issue 1) → Add for Review.
+  - **Blocked: the first real release, `1.2.1` Build 17.** Release run 45059113087 failed at the Maestro job twice (attempt 1 and a rerun): on the `xcode-27` runner (iPhone 17, iOS 27.2) the flow reaches the login screen, but "Gruplarım" never appears within 30 s after tapping "Giriş yap". The 18:14 UTC run on `macos-latest` (iOS 26) passed the same step with the same staging data and secret, and the same flow passes locally on iOS 27.2 with the dev build. No screenshots: the artifact holds only the junit report, `maestro-debug` was not uploaded (likely `include-hidden-files: false`, not verified). Next: make the job upload Maestro's debug output and screenshots, then rerun to see the screen. Production build, TestFlight upload and the `v1.2.1-build.17` tag did not happen. Then, by the developer: TestFlight check on the phone → App Store Connect: pick **Build 17** (not 15/16), paste the TR/EN text from `RELEASE_NOTES.md`, fix the "PRIVACY FIRST" paragraph (`listing.md` issue 1) → Add for Review.
   - **After submission (agent):** in a small PR, archive *Unreleased* in `RELEASE_NOTES.md` as `1.2.1 (Build 17)` (the text there is final: it was completed on 2026-11-22 with Sprint #4's settle-up fixes, which the first draft had missed), start an empty *Unreleased*, and sync `listing.md` with whatever went live.
   - **Small open items:** one Dependabot alert (`minimatch`, build tooling only; Renovate's lockfile maintenance should clear it); crash reporting is a Backlog item; `listing.md` issues 2–3.
-  - **Sprint #6** (backend hardening): done on the local stack on 2026-11-22 (see the Sprint #6 block). Left: PR to `main`, then the controlled production push (migration + `delete-account` deploy), then the server-side `profiles.email` revoke once the next App Store build is the only one in use.
+  - **Sprint #6** (backend hardening): the hardening pass is live on production since 2026-11-22 (PR #35). Left: the production push of `20261122210000_tighten_role_grants.sql`, then the server-side `profiles.email` revoke once the next App Store build is the only one in use.
   - **Standing rule:** every production build passes the full pre-release test gate first (`docs/APP-STORE.md` → *Yayın öncesi test kapısı*); in practice that is the Release workflow plus the phone check.
 
 ---
@@ -105,7 +105,8 @@ class of RLS work as Sprint #3 while that context is still loaded.
   per receipt, and latency went from ~1.0 s to ~1.9 s. New OpenAI key set as the production secret,
   old key revoked, function deployed (v5) and checked with an in-app scan. Privacy page names the
   new model.
-- **[Done locally · 2026-11-22 · production push pending] Edge-function + RLS hardening pass.**
+- **[Done · 2026-11-22] Edge-function + RLS hardening pass.** Merged in PR #35, pushed to production
+  the same day (migration applied, `delete-account` v3 deployed, verified with a schema dump).
   Migration `20261122200000_sprint6_backend_hardening.sql`, plus `delete-account` and the client's
   profile projections. Local: `npm run test:db` 67/67 (16 new cases; the 13 security cases were
   run against the pre-migration schema first and all FAILed there), Jest, `npm run check`.
@@ -125,16 +126,20 @@ class of RLS work as Sprint #3 while that context is still loaded.
     still selects it (1.2.0 Build 13 → 1.2.1 Build 17), so it waits until the first build without
     the projection is the only one in use. `needs: next App Store build · blocks: nothing`
   - No user-visible change, so no `RELEASE_NOTES.md` line.
-  - **Production push** (developer's go-ahead): pre-check that no live settlement has
-    `from_user_id = to_user_id` (the new check validates existing rows), then the usual
-    `migration list` → `db push --dry-run` → `db push`, and `supabase functions deploy delete-account`.
-- **[🔐 Low] Found during Sprint #6, not yet scheduled.**
-  - `anon` and `authenticated` hold `TRUNCATE`, `REFERENCES`, `TRIGGER` on every `public` table
-    (Supabase default privileges, seen locally; production not checked). PostgREST never issues
-    these, so they are not reachable through the API today; revoking them is defence in depth.
-  - `expense_shares` / `expense_payers` still grant direct INSERT/UPDATE/DELETE to the expense's
-    creator (or group owner), which bypasses `validate_expense_allocations`. The client writes them
-    only through the RPCs, so the same revoke pattern as `expenses` would apply.
+- **[Done locally · 2026-11-22 · production push pending] Privilege surface tightened.**
+  `20261122210000_tighten_role_grants.sql`. The production dump showed far more than
+  `codify_role_grants` describes: `anon` and `authenticated` held `ALL` on every table (so
+  `authenticated` could INSERT into `activity_log`), `anon` could EXECUTE every SECURITY DEFINER
+  RPC without a session (`lookup_user_by_friend_code` returned a user's id and name for a friend
+  code), and default privileges handed `ALL` on every new table, sequence and function to both.
+  Now: table grants are exactly the codified set, `expense_shares` / `expense_payers` are
+  read-only for the client (direct writes skipped `validate_expense_allocations`; the creator
+  could write shares that do not add up), `anon` executes nothing, and new objects grant the client
+  roles nothing by default. `supabase/tests/role_grants_test.sql` pins the whole surface. Local:
+  `test:db` 81/81 (the new cases FAILed against the old schema first), and the app's own
+  supabase-js calls (selects with profile embeds, both expense RPCs, soft delete, settlement
+  insert, group create, invite join, emoji stats) all pass as Deniz on the local stack.
+  `needs: nothing · blocks: nothing`
 
 ### Sprint #7 · Auth overhaul — *one pass* · ships to App Store
 

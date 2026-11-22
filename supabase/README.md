@@ -46,12 +46,14 @@ Yeni bir suite eklerken aynı biçimi koru: her kontrol `raise notice 'PASS  …
 Tek hosted proje var: canlı. Geliştirme yerelde yapılıyor, hosted dev projesi yok ve `db push` **bekleyen tüm** migration'ları uygular. Bu yüzden sıra şu:
 
 ```bash
-supabase migration list --linked     # yalnızca beklediğini bildiğin dosya(lar) remote="" görünmeli
-supabase db push --dry-run           # neyin uygulanacağını basar, hiçbir şey yazmaz
-supabase db push --linked            # --linked'i açıkça ver; CLI varsayılan hedefi değiştirecek
-supabase migration list --linked     # bekleyen kalmamalı
-supabase db dump --linked -f /tmp/prod-schema.sql   # fonksiyon gövdesini oku ve doğrula; asla "-f -"
+supabase migration list --remote     # yalnızca beklediğini bildiğin dosya(lar) remote="" görünmeli
+supabase db push --dry-run --remote  # neyin uygulanacağını basar, hiçbir şey yazmaz
+supabase db push --remote            # onay isteminde "Target: project splitsnap … production" yazmalı
+supabase migration list --remote     # bekleyen kalmamalı
+supabase db dump --remote -f /tmp/prod-schema.sql   # fonksiyon gövdesini oku ve doğrula; asla "-f -"
 ```
+
+**Hedef bayrağı zorunlu.** CLI'ın varsayılan hedefi artık yerel stack: bayraksız `db push --dry-run` 2026-11-22'de yereli kontrol edip "up to date" dedi. `--linked` hâlâ çalışıyor ama v4'te kalkacak, yerine `--remote` kullan.
 
 Önce migration yerelde `db reset` ile uygulanmalı ve `tests/` temiz geçmeli. Geri dönüş yolu bir sonraki migration'dır: önceki fonksiyon gövdesi git'teki eski migration dosyasında durur. Canlıya push bir dış eylemdir, geliştiricinin açık onayı olmadan yapılmaz.
 
