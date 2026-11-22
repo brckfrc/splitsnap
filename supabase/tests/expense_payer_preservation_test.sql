@@ -8,8 +8,8 @@
 -- pro-rated, and the single-payer fallback. The cases that send no `p_payers`
 -- are what a pre-multi-payer client does on every edit.
 --
--- Every check prints PASS or FAIL. Not wired into CI; there is no test runner
--- in this project yet.
+-- Every check prints PASS or FAIL. `npm run test:db` (scripts/test-db.sh) runs
+-- every suite and fails on any FAIL or ERROR; CI runs it on each PR.
 
 \set ON_ERROR_STOP on
 \set QUIET on

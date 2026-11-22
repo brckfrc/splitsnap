@@ -53,7 +53,7 @@ Rule: a migration is proven locally before it reaches production, and production
 
 1. **Branch.** Work on `dev` or a feature branch. `main` stays releasable.
 2. **Write.** `supabase migration new <name>`. Every `CREATE TABLE` in `public` grants `authenticated` exactly what its RLS policies allow (`AGENTS.md` → grants rule). `service_role` is covered by default privileges.
-3. **Prove locally.** `supabase db reset` replays the whole chain from scratch. Then run the SQL suites (`supabase/README.md` → *Testler*). A fix for a bug gets a test that FAILS before it and PASSES after it.
+3. **Prove locally.** `supabase db reset` replays the whole chain from scratch. Then `npm run test:db` (`supabase/README.md` → *Testler*); it exits non-zero on any failing case. A fix for a bug gets a test that FAILS before it and PASSES after it.
 4. **Run the app against it.** Simulator plus local stack, two simulators for multi-user flows (§4).
 5. **Merge to `main`.**
 6. **Push to production deliberately**, never as a side effect: `migration list --linked` → `db push --dry-run` → `db push --linked` → verify with a dump. The full procedure is in `supabase/README.md` → *Canlıya migration push*. This needs the developer's explicit go-ahead.

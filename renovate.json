@@ -1,3 +1,39 @@
 {
-  "extends": ["github>brckfrc/renovate-config"]
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>brckfrc/renovate-config"],
+  "packageRules": [
+    {
+      "description": "Expo SDK'nin sabitledigi paketler (bundledNativeModules.json). Renovate bunlari SDK'nin disindaki surumlere tasiyordu (#15, #18, #26, #27). Bunlar yalniz 'npx expo install --fix' ya da SDK yukseltmesiyle degisir. expo ve expo-* paketleri acik kalir: patch'leri ayni SDK icindedir.",
+      "matchPackageNames": [
+        "@react-native-async-storage/async-storage",
+        "@react-native-community/datetimepicker",
+        "@react-native/jest-preset",
+        "react",
+        "react-dom",
+        "react-native",
+        "react-native-gesture-handler",
+        "react-native-reanimated",
+        "react-native-safe-area-context",
+        "react-native-screens",
+        "react-native-svg",
+        "react-native-web",
+        "react-native-worklets",
+        "eslint-config-expo",
+        "jest-expo"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "MMKV, Nitro'ya karsi derlenen native kod tasir; ikisi birlikte ve simulator testiyle guncellenir. Dependency Dashboard onayinda bekler.",
+      "matchPackageNames": ["react-native-mmkv", "react-native-nitro-modules"],
+      "groupName": "mmkv + nitro",
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "design/figma_template uygulamaya girmeyen Vite prototipi: uygulama PR'ina karismasin diye ayri grupta, ayda bir.",
+      "matchFileNames": ["design/figma_template/package.json"],
+      "groupName": "design prototype",
+      "schedule": ["on the first day of the month"]
+    }
+  ]
 }

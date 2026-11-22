@@ -32,7 +32,7 @@ These are standing agreements from real sessions — follow them even when a pro
 - **Smoke / multi-user testing:** run against the **local** stack. `supabase db reset` seeds Deniz, Mert and Sude (password `localdev123`, local only) and Test grubu. Testing on production is now the exception: only when a hosted-only behaviour is the thing under test, only with the screenshot accounts in Test grubu, and with the records removed afterwards. Never touch real user groups. Old-client behaviour is verified in SQL (call the RPCs the way an old build does), not with an App Store build on the phone.
 - **Test accounts and the test group:** accounts are `<name>@borak.dev` (`deniz@`, `mert@`, `sude@`, …); the password is **never** written into the repo — ask the developer. Write tests in **Test grubu** (owner Deniz; members Deniz, Mert, Sude). It exists for this, and records added there are cleaned up afterwards. Leave real-looking groups (Bodrum, Ev Arkadaşları, Ofis Öğle Yemeği) read-only. Two-simulator procedure: `DEVELOPMENT_WORKFLOW.md` §4.
 - **Reviewing another agent's work:** the developer hands work to other agents and asks you to check it. Start from `git status` and `git diff HEAD`, run `npm run check`, run the SQL suites when `supabase/` changed (`supabase/README.md`), and compare against `ROADMAP.md` Active Status → *Where we left off*. Report what you could not verify separately from what you did.
-- **Local Supabase is the day-to-day backend** and the place every migration fails first. `supabase db reset` replays all migrations plus `supabase/seed.sql`. Check the SQL suites with the loop in `supabase/README.md`, and remember their exit code is always 0.
+- **Local Supabase is the day-to-day backend** and the place every migration fails first. `supabase db reset` replays all migrations plus `supabase/seed.sql`. Check the SQL suites with `npm run test:db` (exits non-zero on any FAIL/ERROR; raw `psql` on a suite always exits 0, so never trust that alone).
 - **Running on iOS:** one toolchain — stable Xcode 27 (iOS 27 SDK) builds for the simulators and the iOS 27 phone alike, and the project's line is iOS 27 (no iOS 26 targets). The default is `npm run ios:pick` (terminal list of every simulator plus the phone); `ios:27` boots the Pro Max screenshot simulator first via [`scripts/run-ios-simulator.sh`](../scripts/run-ios-simulator.sh). The dev build shares the App Store bundle ID, so picking the phone replaces the store install — never during a dual-client pass (see `DEVELOPMENT_WORKFLOW.md` §4).
 
 ## Environment Variables
@@ -65,6 +65,9 @@ These are standing agreements from real sessions — follow them even when a pro
 - **`npm run check`** — preferred: runs `typecheck` + `lint` in one step (same as `npm run typecheck` then `npm run lint`)
 - `npm run typecheck` — `tsc --noEmit`; root `tsconfig.json` **excludes** `design/` (Vite prototype is reference-only)
 - `npm run lint` / `npm run lint:fix` — ESLint via Expo (`lint:fix` applies safe auto-fixes)
+- **`npm test`** — Jest unit tests (`src/**/*.test.ts`, `jest-expo` preset); import `describe`/`it`/`expect` from `@jest/globals`. Money logic changes need a test that fails before the fix and passes after.
+- **`npm run test:db`** — SQL suites against the local stack (`supabase start` first); required when `supabase/` changed.
+- **CI** (`.github/workflows/ci.yml`) runs `expo install --check`, `check`, `npm test` and `test:db` on every PR, Renovate's included. A red CI blocks the merge.
 - `npx expo-doctor` — after any dependency, SDK or config-plugin change (20/20 checks on SDK 58); together with `npx expo install --check` it is the gate for Expo-pinned packages
 - `npx expo run:ios` — app must launch without crashes in iOS Simulator
 - Supabase RLS (Row Level Security) policies must be reviewed after every table change
@@ -197,6 +200,8 @@ These are standing agreements from real sessions — follow them even when a pro
 | `npm run ios:27` | iOS 27.2 **Pro Max** simulator (screenshot geometry) — boots via `scripts/run-ios-simulator.sh`, then Expo |
 | `npm run ios` | Default simulator, no list (`simctl` path — boots it itself) |
 | `npm run check` | **Typecheck + lint** — run before finishing work / before the developer commits |
+| `npm test` | Jest unit tests (money logic, parsers) |
+| `npm run test:db` | SQL suites against the local Supabase stack; non-zero exit on any FAIL |
 | `npm run typecheck` | `tsc --noEmit` (strict TS) |
 | `npm run lint` | ESLint via Expo |
 | `npm run lint:fix` | ESLint with auto-fix |
