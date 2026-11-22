@@ -95,6 +95,12 @@ There is **one** toolchain: stable **Xcode 27.2** (iOS 27.2 SDK), the `xcode-sel
 > [!NOTE]
 > **If the phone goes back on a beta** (an iOS 28 beta next summer, say), stable Xcode cannot deploy to it. Install Xcode-beta and override the toolchain for that one run rather than switching the global default with `sudo xcode-select -s`: `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer npm run ios:pick`. Simulators keep building on stable Xcode. Alternating compilers is when DerivedData needs clearing (see below).
 
+### Maestro (UI smoke flow)
+
+`npm run test:e2e` runs `.maestro/smoke.yaml` on the booted simulator through [`scripts/test-e2e.sh`](../scripts/test-e2e.sh). One-time setup: `brew install openjdk@21` and `brew tap mobile-dev-inc/tap && brew install mobile-dev-inc/tap/maestro` (the formula also pulls a newer `openjdk`; Maestro prints reflection warnings on it, so the script points `JAVA_HOME` at 21). Each run needs the dev build installed, Metro on 8081 (`npm start`) and the local stack; the script resets the local database first, so the flow always starts from `seed.sql`. Pass the seed password as `SMOKE_PASSWORD` — it is not stored in the repo.
+
+The flow clears app state on launch, so on iOS 27 it meets three system screens before the app: the "Open in “SplitSnap”?" prompt for the dev-client deep link, the Expo dev menu's intro sheet and the dev menu itself, and the Save Password sheet after sign-in. `subflows/launch.yaml` and `subflows/login.yaml` dismiss them; if a flow fails at launch, check those first. `hideKeyboard` is unreliable with React Native on iOS, so the flows tap static text or the keyboard's **Done** instead.
+
 ### Two simulators, two accounts (multi-user tests)
 
 Realtime and stale-suggestion checks need two signed-in users at once. Build once, then put the same binary on a second simulator. Every `simctl` call is wrapped in `timeout`, because CoreSimulator can hang (see `AGENTS.md` → Known Gotchas).

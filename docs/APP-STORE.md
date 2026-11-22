@@ -66,7 +66,7 @@ Bağımlılık PR'ı olsun olmasın, her `eas build --profile production` bu kap
 2. `npx expo install --check` "up to date" ve `npx expo-doctor` 20/20.
 3. `supabase db reset` → `npm run test:db` 0 ile çıkar (`supabase/README.md` → *Testler*).
 4. Native paketler değiştiyse `npx expo prebuild --clean --platform ios`; `ios/SplitSnap/SceneDelegate.swift` ve `Info.plist` → `UIApplicationSceneManifest` mevcut.
-5. Simülatörde, yerel stack'e karşı tam UI checklist'i: soğuk açılış, giriş, grup listesi/detay, harcama ekleme + düzenleme + silme, ödeme kaydı ve bakiyelerin tutması, fiş tarama + görüntüleyici, profil/çıkış. Ajan checklist'i verir, geliştirici dokunur.
+5. Simülatörde, yerel stack'e karşı önce `SMOKE_PASSWORD=… npm run test:e2e` (Maestro: giriş, harcama, ödeme, bakiye) geçer, sonra tam UI checklist'i: soğuk açılış, giriş, grup listesi/detay, harcama ekleme + düzenleme + silme, ödeme kaydı ve bakiyelerin tutması, fiş tarama + görüntüleyici, profil/çıkış. Ajan checklist'i verir, geliştirici dokunur.
 6. Build TestFlight'a düşünce iOS 27 telefonda kısa smoke testi (açılış, arka plan/ön plan, salt okuma gezinti). Geçmeden incelemeye gönderilmez.
 
 Kapı geçtikten sonra build gönderilene kadar bağımlılık PR'ı merge edilmez (release freeze, `AGENTS.md`). 1–3 CI'da (`.github/workflows/ci.yml`) her PR'da zaten koşar; build'i alacağın commit'te CI yeşil olmalı. 4–6 elle kalır.

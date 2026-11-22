@@ -22,6 +22,7 @@ These are standing agreements from real sessions — follow them even when a pro
 - **Document by updating existing files.** Prefer `ROADMAP.md`, `docs/AGENTS.md`, `docs/DEVELOPMENT_WORKFLOW.md`, `supabase/README.md`, etc. Do not invent new markdown docs unless the developer asks for a throwaway file (e.g. a test plan they will delete).
 - **Development is local-first (since 2026-11-03).** Simulator runs use the local Supabase stack via `.env.development.local`. Production builds take their URL and key from EAS environment variables, and no `.env*` file is uploaded to EAS. Production is touched only by releases and by deliberate migration pushes. A hosted `splitsnap-dev` project does not exist and is deferred (ROADMAP Backlog). Setup: `DEVELOPMENT_WORKFLOW.md` §1. Never assume a write target without checking which env file Metro loaded.
 - **Branches:** non-trivial work (SDK upgrades, migrations, features) goes on a feature branch; `main` stays releasable and is force-push protected on GitHub, so never plan on rewriting pushed history.
+- **Maestro smoke flow first, then the checklist.** `npm run test:e2e` (`SMOKE_PASSWORD` from the developer; Metro on 8081; resets the local DB) drives `.maestro/smoke.yaml` — sign in, add an expense, record a payment, balances — on the booted simulator; you may run it yourself. It covers one path, so the manual checklist below still covers the rest. When a flow breaks after a UI change, update the selector (prefer a `testID` over visible text for inputs) rather than loosening the assertion.
 - **Simulator UI tests: the developer taps, you write the checklist.** The simulator MCP tool's input is unreliable on this machine, and the developer prefers to drive the simulator. Give a numbered checklist in chat. Each step names the action and the **expected** result (e.g. "Net bakiye ₺1.500, Mert ₺0 grey"). Ask for screenshots only when a step fails. Verify the data side yourself (e.g. query the local DB to confirm a write landed locally, not in production).
 - **Session handoff:** this repo is worked on by several agents and several chats. Before a session ends, anything learned that is not yet in the docs goes into `ROADMAP.md` (status, decisions), `docs/AGENTS.md` (rules, gotchas) or `docs/DEVELOPMENT_WORKFLOW.md` (procedures). A new chat starts from `ROADMAP.md` → Active Status → *Where we left off*.
 - **One agent per checkout, and commit `ROADMAP.md` promptly.** On 2026-11-03 a whole ROADMAP section was lost because two agents (Claude and Antigravity) edited the same working tree at once: the last writer saved its stale copy over the other's edits, and the lost text had never been committed, so nothing could recover it. If two agents must run in parallel, give each its own git worktree/branch, so edits collide visibly at merge instead of silently. Only one agent edits `ROADMAP.md` at a time; the others put proposed roadmap changes in their final report. Commit roadmap edits soon after making them, because a committed version can always be recovered with `git log -p ROADMAP.md`.
@@ -67,6 +68,7 @@ These are standing agreements from real sessions — follow them even when a pro
 - `npm run lint` / `npm run lint:fix` — ESLint via Expo (`lint:fix` applies safe auto-fixes)
 - **`npm test`** — Jest unit tests (`src/**/*.test.ts`, `jest-expo` preset); import `describe`/`it`/`expect` from `@jest/globals`. Money logic changes need a test that fails before the fix and passes after.
 - **`npm run test:db`** — SQL suites against the local stack (`supabase start` first); required when `supabase/` changed.
+- **`npm run test:e2e`** — Maestro smoke flow on the simulator (local only; setup in `DEVELOPMENT_WORKFLOW.md` §4 → *Maestro*).
 - **CI** (`.github/workflows/ci.yml`) runs `expo install --check`, `check`, `npm test` and `test:db` on every PR, Renovate's included. A red CI blocks the merge.
 - `npx expo-doctor` — after any dependency, SDK or config-plugin change (20/20 checks on SDK 58); together with `npx expo install --check` it is the gate for Expo-pinned packages
 - `npx expo run:ios` — app must launch without crashes in iOS Simulator
@@ -202,6 +204,7 @@ These are standing agreements from real sessions — follow them even when a pro
 | `npm run check` | **Typecheck + lint** — run before finishing work / before the developer commits |
 | `npm test` | Jest unit tests (money logic, parsers) |
 | `npm run test:db` | SQL suites against the local Supabase stack; non-zero exit on any FAIL |
+| `npm run test:e2e` | Maestro smoke flow on the booted simulator (`SMOKE_PASSWORD=… npm run test:e2e`; resets the local DB) |
 | `npm run typecheck` | `tsc --noEmit` (strict TS) |
 | `npm run lint` | ESLint via Expo |
 | `npm run lint:fix` | ESLint with auto-fix |

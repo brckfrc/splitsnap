@@ -65,12 +65,10 @@ block here with a one-line entry under *Recent Updates & Changelog*, and update
   fixes (old-client payer preservation, sub-kuruş equal split, `UIScene` lifecycle, local-first stack,
   Expo SDK 58 upgrade) are all merged to `main` and verified.
 - **Where we left off (2026-11-22, end of day):**
-  - **Sprint #5 is closed** and archived in [`docs/changelog/sprint_05_release_local_dev_sdk_58.md`](docs/changelog/sprint_05_release_local_dev_sdk_58.md). Build 16 (`1.2.1`, SDK 58) is on App Store Connect; whether its TestFlight check and review submission happened is not recorded yet.
-  - **[Done · 2026-11-11]** `parse-receipt` switched to `gpt-6-luna` (on `main`; see Continuous Lane). `dev` is 2 commits behind `main` and must be synced before Sprint work resumes there.
-  - **[Done · 2026-11-22] SDK 58 alignment merged (`PR #28`)**, replacing Renovate #26: expo 58.0.26 + `expo install --fix`, supabase-js 2.119.1, zustand 5.1.0, tamagui 2.7.7, Node 26.13.1. Full gate passed, including the simulator checklist; it also fixed the date spinner's unreadable dark-mode text. Majors and `react-native-nitro-modules` 0.37 deliberately left out.
-  - **[Done · 2026-11-22] Sprint #13 core merged (`PR #29`)**, ahead of Sprint #6: `npm run test:db` (`scripts/test-db.sh`, fails on any FAIL/ERROR, proven against a failing, an empty and an erroring suite), Jest via `jest-expo` with 30 unit tests over `settlement`, `numeric`, `validation`, `invite`, GitHub Actions CI (`expo install --check`, `check`, `npm test`, `test:db` on a CI Supabase), and a repo `renovate.json` that stops Renovate from bumping SDK-pinned packages (#27 should shrink to supabase-js once this merges). A unit test caught a real bug: `amountsMatch` rejected a one-kuruş gap at ₺100 but accepted it at ₺10 (float compare); now compared in whole kuruş like the server. First CI run on #29 was green (Jest 30/30, SQL 27/27). `dev` fast-forwarded to `main`.
-  - **Next:** Renovate #27 is left open on purpose: once Renovate rebases it onto the new rules (expected: supabase-js 2.119.2 plus the `design/` group split off) it is CI's first Renovate run; merge if green. Then start **Sprint #6** (backend hardening).
-  - **In progress · 2026-11-22: rest of Sprint #13 on branch `chore/sprint13-finish`.** Done: `parseAmount` reads Turkish and English thousands separators ("1.234,56", "1,234.56") and returns NaN for ambiguous input instead of guessing (a pasted "1.234,56" used to save ₺1,23); the ~20 inline `parseFloat(x.replace(',', '.'))` copies in `add-expense.tsx`/`edit.tsx` now call it, so totals, shares and payer amounts parse alike. New SQL suite `groups_settlements_receipts_test.sql` (24 cases: invite codes, settlement RLS, receipt storage paths); `test:db` is now 51/51. CI actions moved to current majors (checkout v7, setup-node v7, setup-cli v3; v1 ran on deprecated Node 20). Jest 33/33. **Open:** Maestro smoke flow (decision pending: local-only first or CI on macOS runners). Build 16's TestFlight check and review submission are still unrecorded.
+  - **Sprint #13 is closed** (pulled ahead of #6) and archived in [`docs/changelog/sprint_13_test_harness_ci.md`](docs/changelog/sprint_13_test_harness_ci.md). Merged: `PR #28` (SDK 58.0.26 alignment), `PR #29` (test:db, Jest, CI, Renovate rules). Renovate `#27` rebased itself to supabase-js 2.119.2 (lockfile only) and was CI's first green Renovate run; **merge pending**. Last piece on branch `chore/sprint13-finish` → `PR #30`: `parseAmount` fix, third SQL suite (51/51), CI actions on current majors, local Maestro smoke flow (`npm run test:e2e`). Merge #30 to finish.
+  - **[Done · 2026-11-11]** `parse-receipt` switched to `gpt-6-luna` (see Continuous Lane).
+  - **Unrecorded:** Build 16's TestFlight check and review submission (`1.2.1`, SDK 58).
+  - **Next: Sprint #6** (backend hardening), local stack first, then a controlled production push. Every change now goes through CI; settlement changes will intentionally update `groups_settlements_receipts_test.sql`.
   - **Standing rule:** every production build passes the full pre-release test gate first (`docs/APP-STORE.md` → *Yayın öncesi test kapısı*).
 
 ---
@@ -376,63 +374,6 @@ either. Sheet appearance follows sheet behaviour.
 
 ---
 
-### Sprint #13 · Test harness & CI — *the gate every later change goes through* · internal
-
-> **Pulled forward on 2026-11-22: next after the SDK 58 alignment, ahead of #6.** Prerequisite 2
-> below is done (local-first stack, Sprint #5). Added scope: JS unit tests for the money paths, and
-> the same checks as a required gate before every production build (`docs/APP-STORE.md`).
->
-> **Status 2026-11-22 (merged in `PR #29`):** `test:db`, Jest unit tests and the GitHub Actions
-> CI are live; CI runs on every PR. Since then (branch `chore/sprint13-finish`): DB suites extended to
-> invites, settlement RLS and receipt storage. Still open: the Maestro smoke flow. The problem statement below is kept as the record of why.
-
-The highest-value work on this board that is not a release blocker, and the answer to a specific
-problem: **a Renovate PR gets zero automated verification today.** Even a non-major bump can break
-the app, and the two that were caught (#15 in September, #18 in October — both pushed `react-native`
-and `react` past what the installed Expo SDK pins) were caught only because someone ran
-`expo install --check` and `tsc` by hand. Those are two deterministic commands. In CI they would
-have failed the PR unattended.
-
-Three things are missing, all verified on 2026-10-27:
-
-1. **No test runner.** No jest, no vitest, no `npm test`. The SQL suites under `supabase/tests/`
-   are run by hand through `docker exec … psql`, and — the part that matters — they print PASS/FAIL
-   as `NOTICE` and **exit 0 either way**. A test that cannot fail a command is not a gate; today you
-   have to read the output and count. First job: make the suites set a non-zero exit on any FAIL and
-   wrap them in `npm run test:db`.
-2. **One Supabase project.** Local `.env` points at production, so every simulator run, smoke test
-   and seed writes live data. This is the hard prerequisite for anything unattended, and it is
-   already the dev-database item in Sprint #5.
-3. **No CI.** `.github/workflows/` does not exist. Nothing runs on push or on a PR.
-
-Suggested order, each step useful on its own:
-
-- **[🧹 High] Make the SQL suites fail properly, add `npm run test:db`.** Smallest piece, unblocks
-  everything below. `needs: nothing · blocks: CI`
-- **[🧹 High] GitHub Actions: `npm ci` → `expo install --check` → `tsc` → `lint` → `test:db`**
-  against a Supabase stack in the runner. This alone closes the Renovate hole, with no agent and no
-  tokens. `needs: test:db · blocks: trustworthy Renovate merges`
-- **[🧹 High] JS unit tests (Jest via `jest-expo`) for the money logic** — `parseNumeric`,
-  `parseAmount`, equal split with sub-kuruş remainders, settlement suggestions reconciling with the
-  headline balance. Pure functions, no simulator needed, so they run in the same CI job.
-  `needs: nothing · blocks: trustworthy refactors in #8`
-- **[🧹 Medium] One Maestro smoke flow** (sign in → create group → add expense → record a payment →
-  the ledger net equals the headline balance). Maestro suits React Native and runs in CI; a fixed
-  flow, deliberately not an open-ended "navigate and judge". Needs a non-production backend first, because a
-  flow that runs on every PR cannot be writing to production. In CI that is the Supabase stack started inside
-  the runner, the same local-first setup as Sprint #5. `needs: local-first dev environment (#5) · blocks: nothing`
-- **[🧹 Low] Extend the DB suites to the rest of the money paths** — invite codes, account deletion,
-  receipt-path scoping, the settlement RLS policies. These are cheap to write and never flaky,
-  unlike UI tests. `needs: test:db · blocks: nothing`
-
-Why this is its own Sprint rather than folded into another: it changes how every later Sprint is
-verified, and the numbering is identity, not priority — pull it forward as soon as Sprint #5's dev
-database lands, ahead of #7 if you want Renovate quiet. **Deliberately excluded:** anything that
-depends on an agent's own judgement of its own work. The pass criterion is an exit code. The payer
-fix above is the model: it was trustworthy because the bug FAILED a test first and PASSED after,
-not because the code looked right.
-
----
 
 ## Continuous Lane · Independent Chores (grab-bag)
 
@@ -476,6 +417,10 @@ Touch nothing else and nobody waits on them — pick up between Sprints, ordered
 
 Large, no dependency yet. Pulled up when they become a dependency or you choose to.
 
+- **[🧹 Low] Maestro smoke flow in CI.** `.maestro/smoke.yaml` runs locally (`npm run test:e2e`).
+  In CI it needs a macOS runner, an iOS simulator build of the dev client per PR (~20–30 min) and
+  the local Supabase stack, plus the seed password as a repo secret. Worth it once UI regressions
+  start slipping past the manual checklist. `needs: nothing · blocks: nothing`
 - **[🧹 Low] Hosted `splitsnap-dev` Supabase project.** Deferred on 2026-11-03 in favour of the
   local-first dev environment (Sprint #5). Pull it up when any of these becomes true:
   - Builds go to **other people** (TestFlight/preview testers) and must not write to production. Their
@@ -506,7 +451,7 @@ Large, no dependency yet. Pulled up when they become a dependency or you choose 
   cross-vendor orchestrator. Driving simulators unattended is the least reliable part and should be
   last: in the 2026-10-27 session `simctl` calls hung for minutes, the simulator tool crashed once,
   and a cold build ran long — fine with someone watching, expensive at 03:00.
-  `needs: Sprint #13 · blocks: nothing`
+  `needs: Sprint #13 (done 2026-11-22) · blocks: nothing`
 
 ---
 
@@ -514,6 +459,11 @@ Large, no dependency yet. Pulled up when they become a dependency or you choose 
 
 Completed Sprints are archived under [`docs/changelog/`](docs/changelog/):
 
+- **Sprint #13 — Test Harness & CI (November 2026, pulled ahead of #6):** SQL suites that fail
+  (`test:db`), Jest unit tests for the money paths, GitHub Actions CI on every PR, Renovate kept off
+  SDK-pinned packages, a local Maestro smoke flow, SDK 58.0.26 alignment, and fixes the tests found
+  (`amountsMatch` one-kuruş boundary, `parseAmount` thousands separators, dark-mode date spinner).
+  [sprint_13_test_harness_ci.md](docs/changelog/sprint_13_test_harness_ci.md)
 - **Sprint #5 — Release Closeout, Local-First Dev & Expo SDK 58 (November 2026):** old-client payer
   preservation, sub-kuruş equal-split math, iOS 27 `UIScene` adoption, local-first Supabase CLI 3.0
   workflow + `service_role` grants migration, and Expo SDK 58 (RN 0.88.1 / React 19.3) upgrade.
