@@ -35,9 +35,15 @@ export const MAX_TITLE_LENGTH = 100;
  */
 export const MONEY_EPSILON = 0.01;
 
-/** True when two money amounts are equal within `MONEY_EPSILON`. */
+/**
+ * True when two money amounts are equal within `MONEY_EPSILON`.
+ *
+ * Compared in whole kuruş: as floats, `100.01 - 100` is 0.010000000000005, so a
+ * one-kuruş gap passed at ₺10 but failed at ₺100, while the server (exact
+ * `numeric`) accepts it at every magnitude.
+ */
 export function amountsMatch(a: number, b: number): boolean {
-  return Math.abs(a - b) <= MONEY_EPSILON;
+  return Math.abs(Math.round(a * 100) - Math.round(b * 100)) <= Math.round(MONEY_EPSILON * 100);
 }
 
 export function validateEmail(email: string): string | null {
