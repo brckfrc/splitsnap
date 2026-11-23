@@ -75,14 +75,14 @@ Kapı geçtikten sonra build gönderilene kadar bağımlılık PR'ı merge edilm
 
 1. `app.json` → `version` App Store Connect'in hâlâ kabul ettiği bir tren mi? (Aşağıdaki *Sürüm treni*.) Değilse artır, PR ile `main`'e al.
 2. GitHub → **Actions → Release → Run workflow**, dal `main`. "production_build" açık kalsın (kapalıysa yalnızca test eder, App Store'a bir şey gitmez).
-3. Workflow bulutta sırayla: CI → staging sıfırlama + EAS simülatör build'i → Maestro (staging'e karşı) → EAS production build → App Store Connect / TestFlight. Biri kırmızıysa zincir durur; Maestro hatasında `maestro-results` artifact'ında ekran görüntüleri var. Ücretsiz EAS kuyruğunda toplam 40–60 dk sürebilir; beklemen gerekmez.
+3. Workflow bulutta sırayla: CI → staging sıfırlama + EAS simülatör build'i → Maestro (staging'e karşı) → EAS production build → App Store Connect / TestFlight. Biri kırmızıysa zincir durur; Maestro hatasında `maestro-results` artifact'ında view hierarchy, uygulama logu ve (giriş tamamlandıysa) tek bir ekran görüntüsü var. Yalnızca Maestro ya da yükleme düştüyse yeni run başlatma: `gh run rerun <run-id> --failed`, build harcamaz. Ücretsiz EAS kuyruğunda toplam 40–60 dk sürebilir; beklemen gerekmez.
 4. Build TestFlight'a düşünce telefonda kısa smoke testi (test kapısı 6. adım).
 5. [`RELEASE_NOTES.md`](RELEASE_NOTES.md) → *Unreleased* metnini son haline getir (run özetindeki "son release'ten beri" commit listesiyle karşılaştır), ASC'de "What's New"e yapıştır, dosyada bölümü sürüm ve build numarasıyla arşivle.
 6. ASC'de sürüme build'i ata → **Add for Review**.
 
-Her release aylık 15 iOS build'inden 2'sini kullanır (simülatör + production). Workflow'un neyi neden yaptığı: `DEVELOPMENT_WORKFLOW.md` §4 → *Staging and the release workflow*.
+Uygulama kodu değiştiyse bir release aylık 15 iOS build'inden 2'sini kullanır (simülatör + production); değişmediyse son build'ler tekrar kullanılır, yüklenmemiş bir production build'i de yeniden build alınmadan yüklenir. Yeni build'e zorlamak için "new_builds" seçeneği var. Workflow'un neyi neden yaptığı: `DEVELOPMENT_WORKFLOW.md` §4 → *Staging and the release workflow*.
 
-Elle yedek (workflow çalışmazsa): `npx eas-cli@latest build --platform ios --profile production --auto-submit`, ama önce test kapısının tamamı elle.
+Elle yedek (workflow çalışmazsa ya da ayın build hakkı bittiyse): önce test kapısının tamamı elle, sonra bu Mac'te `npx eas-cli@latest build --platform ios --profile production --local --output build.ipa` → `npx eas-cli@latest submit --platform ios --profile production --path build.ipa` (yerel build EAS hakkından düşmez) ve commit'e `v<version>-build.<n>` tag'i. Ayrıntı: `DEVELOPMENT_WORKFLOW.md` §4.
 
 ### Versiyon yönetimi
 
