@@ -98,7 +98,7 @@ Elle yedek (workflow çalışmazsa ya da ayın build hakkı bittiyse): önce tes
 - **Sürüm numarası** (`app.json` → `version`) App Store Connect'te bir kez kullanıldıktan sonra tekrar kullanılamaz. `1.2.0` zaten kullanılmış olduğu için yüklemesi reddedildi ve `1.2.1`'e geçildi. Yeni bir yükleme reddedilirse ilk bakılacak yer burası.
 - **Build numarası** EAS'ta otomatik artar (`appVersionSource: remote`, `autoIncrement`). Aynı sürüme birden çok build yüklenebilir: `1.2.1` için Build 15 ve Build 16 yüklendi.
 - O sürüm **onaylanıp yayınlanana kadar** tren açıktır. İncelemeye gönderirken sürüm sayfasında **doğru build'i seç**: aynı sürümde eski bir build de durabilir.
-- `--auto-submit` build'i App Store Connect'e ve TestFlight'a **yükler**. İncelemeye gönderme işini yapmaz; o adım elle yapılır.
+- `eas submit` (workflow'daki yükleme adımı; elle build'de `--auto-submit` aynısı) build'i App Store Connect'e ve TestFlight'a **yükler**. İncelemeye gönderme işini yapmaz; o adım elle yapılır.
 - EAS CLI'yi `npx eas-cli@latest …` olarak çalıştır (`AGENTS.md`).
 
 ### Supabase

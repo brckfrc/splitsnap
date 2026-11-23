@@ -176,6 +176,13 @@ unified auth screen, so do them together and leave the visual consolidation for 
   (logo/wordmark, typography, card/gradient), keeping shared validation, strength meter and
   eye-toggles. First-time OAuth/email completion routes into the Onboarding Wizard.
   `needs: the auth items above · blocks: nothing`
+- **[🎨 Low] Group expense order: newest added first by default.** *(fold-in, not auth: squeezed
+  into the next shipping sprint on the developer's request, 2026-11-23)* The group's expense list
+  sorts by `expense_date` desc, then `created_at` (`fetchExpensesForGroup` /
+  `fetchExpensesForGroupsPayload` in `src/services/expenses-supabase.ts`), so an expense entered
+  today for last week lands mid-list and looks missing. Default to `created_at` desc, with a toggle
+  to sort by expense date; remember the choice per device. One `RELEASE_NOTES.md` line.
+  `needs: nothing · blocks: nothing`
 - **[🚀 Medium] Profile avatars.** *(optional tail — may slip to Backlog)* `profiles.avatar_url`
   exists and `mapProfileToUser` reads it, but nothing writes it and every surface renders initials.
   Needs an image picker, a Storage bucket with its own RLS, resize-on-upload, and a display
