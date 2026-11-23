@@ -1,24 +1,66 @@
-# App Store listing (EN)
+# App Store listing (TR, EN)
 
 The store text as it stands in App Store Connect, copied from the developer's notes on
 2026-11-22 so agents can check it against the app at every Sprint close (`docs/AGENTS.md` →
 *Outward-facing check*). App Store Connect is the source of truth; when it changes there, change it
-here in the same breath. The Turkish listing is not copied yet.
+here in the same breath. The Turkish text was copied from App Store Connect on 2026-11-24 (version 1.2.1), after
+issues 1–3 below were fixed there.
 
-## Name and subtitle
+## Turkish (primary, 1.2.1)
+
+### Promotional text
+
+```text
+Arkadaşlarınızla veya ev arkadaşlarınızla ortak harcamaları saniyeler içinde kaydedin, fişleri tarayın ve hesabı en adil şekilde bölün!
+```
+
+### Description
+
+```text
+SplitSnap ile ev arkadaşlarınızla, tatil grubunuzla veya arkadaş çevrenizle yaptığınız ortak harcamaları saniyeler içinde kaydedin ve adil şekilde bölün.
+
+Fişin fotoğrafını çekin, gerisini SplitSnap halletsin: Yapay zekâ destekli fiş okuma özelliği sayesinde işletme adı, tarih ve tutar otomatik olarak doldurulsun.
+
+ÖZELLİKLER
+• Grup oluşturun, davet koduyla arkadaşlarınızı kolayca ekleyin.
+• Harcamaları eşit veya kişiye özel olarak manuel bölüştürün.
+• Fiş fotoğrafından otomatik doldurma yapın (Cihaz üzerinde yerel OCR ve akıllı ayrıştırma).
+• Kimin kime ne kadar borcu olduğunu görün ve birkaç ödemeyle hesaplaşın.
+• Ayrıntılı harcama geçmişini ve kişisel harcama dökümünüzü inceleyin.
+• Açık ve koyu tema desteğiyle hızlı ve akıcı arayüzün keyfini çıkarın.
+• Çevrimdışı önbellek desteği sayesinde uygulamayı anında açın.
+• Bir harcamayı birden fazla kişi ödediyse her birinin payını girin.
+• Ana sayfada tüm gruplardaki bakiyenizi tek bakışta görün.
+• Fiş fotoğrafını tam ekranda açıp inceleyin.
+
+GİZLİLİK ODAKLI
+Fişteki metin cihazınızda okunur; alanları doldurmak için yapay zekâ servisimize fotoğraf değil, yalnızca bu metin gönderilir. Fiş fotoğrafları yalnızca grubunuzun üyeleriyle paylaşılır.
+
+Ev kirası, market, tatil, akşam yemeği... Ne olursa olsun, hesabı SplitSnap tutsun.
+```
+
+### Keywords
+
+```text
+harcama,bölüşme,grup,fiş,hesap,ortak,borç,arkadaş,tatil,masraf,ödeme,ev,para,fatura,pay,bakiye
+```
+
+## English
+
+### Name and subtitle
 
 ```text
 SplitSnap
 Split Bills & Shared Expenses
 ```
 
-## Promotional text
+### Promotional text
 
 ```text
 Easily manage shared expenses with roommates or on trips. Snap a photo of your receipt to auto-fill details and settle up instantly!
 ```
 
-## Description
+### Description
 
 ```text
 Easily track and split shared expenses with roommates, travel groups, or friends in seconds using SplitSnap.
@@ -40,7 +82,9 @@ Your receipt images are kept private. Text extraction is performed entirely on y
 Rent, groceries, trips, dinners... No matter the expense, let SplitSnap handle the math.
 ```
 
-## Open issues (checked 2026-11-22, not yet changed in App Store Connect)
+## Open issues in the English text (checked 2026-11-22)
+
+Fixed in the Turkish text on 2026-11-24 (see above); the English listing still has all three.
 
 1. **"PRIVACY FIRST" overstates.** Text extraction does run on the device, but the extracted text is
    then sent to OpenAI to fill in the fields, and receipt photos are uploaded and visible to the
