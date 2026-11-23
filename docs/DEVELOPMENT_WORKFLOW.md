@@ -104,7 +104,7 @@ The flow clears app state on launch, so on iOS 27 it meets three system screens 
 
 ### Staging and the release workflow
 
-Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` reads from it every Monday so it does not pause. The Maestro job runs on GitHub's `xcode-27` image (preview label): the default macOS images only carry iOS 26 simulators, and the first test run on 2026-11-22 went green there on iOS 26.5, which is not the iOS 27 line the app ships for.
+Staging exists for one consumer: `.github/workflows/release.yml`, which needs a backend while this machine is off. Nobody develops against it and the app never points at it in development. [`scripts/staging-reset.sh`](../scripts/staging-reset.sh) wakes it if the free plan paused it, runs `supabase db reset --remote=<ref> --yes` (every migration plus `seed.sql`, through the pooler; the repo's local link to production is not touched) and replaces the seed's throwaway password with `STAGING_TEST_PASSWORD`. It refuses to run against production's ref or any project not named `splitsnap-staging`. `staging-keepalive.yml` signs in as Deniz and reads one row every Monday so it does not pause (an anonymous read gets a 401 since the grants were tightened, by design). The Maestro job runs on GitHub's `xcode-27` image (preview label): the default macOS images only carry iOS 26 simulators, and the first test run on 2026-11-22 went green there on iOS 26.5, which is not the iOS 27 line the app ships for.
 
 **Why everything here is free, and what would change it:** the repo is public, so GitHub's macOS runners (including `xcode-27`) and the required status checks on `main` cost nothing; on a private repo under a personal account the macOS minutes are billed and branch protection needs GitHub Pro. Expo's Free plan gives 15 iOS builds a month and has no Maestro jobs, which is why GitHub runs Maestro and a release uses two builds. Supabase Free allows two active projects: production and staging.
 
@@ -123,7 +123,7 @@ GitHub configuration (Settings → Secrets and variables → Actions):
 | `EXPO_TOKEN` | secret | Expo access token for `eas build` |
 | `SUPABASE_ACCESS_TOKEN` | secret | Supabase personal access token (Management API + CLI) |
 | `STAGING_DB_PASSWORD` | secret | Staging's database password |
-| `STAGING_TEST_PASSWORD` | secret | Password the reset gives Deniz/Mert/Sude on staging (Maestro signs in with it) |
+| `STAGING_TEST_PASSWORD` | secret | Password the reset gives Deniz/Mert/Sude on staging (Maestro and the keep-alive sign in with it) |
 | `STAGING_PROJECT_REF` | variable | Staging's project ref |
 | `STAGING_PUBLISHABLE_KEY` | variable | Staging's publishable key (public; keep-alive only) |
 

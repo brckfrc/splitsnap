@@ -15,11 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Signs in as a seeded test account and reads one row, the same path the
+      # app takes. The anonymous read this did before stopped working on
+      # 2026-11-23: since 20261122210000_tighten_role_grants.sql `anon` has no
+      # table access at all (401), which is intended.
       - name: Query staging through the Data API
         run: |
+          token="$(jq -n --arg e "$STAGING_EMAIL" --arg p "$STAGING_PASSWORD" '{email: $e, password: $p}' \
+            | curl -fsS -X POST "https://$STAGING_REF.supabase.co/auth/v1/token?grant_type=password" \
+                -H "apikey: $STAGING_KEY" -H "Content-Type: application/json" --data @- \
+            | jq -r '.access_token')"
+          echo "::add-mask::$token"
           curl -fsS -o /dev/null \
             -H "apikey: $STAGING_KEY" \
+            -H "Authorization: Bearer $token" \
             "https://$STAGING_REF.supabase.co/rest/v1/groups?select=id&limit=1"
         env:
           STAGING_REF: ${{ vars.STAGING_PROJECT_REF }}
           STAGING_KEY: ${{ vars.STAGING_PUBLISHABLE_KEY }}
+          STAGING_EMAIL: deniz@borak.dev
+          STAGING_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}

@@ -18,7 +18,21 @@ How it is kept:
 
 ---
 
-## Unreleased (planned as 1.2.1: Builds 15 and 16 were uploaded but never submitted)
+## Unreleased
+
+Nothing yet. Covers changes since 1.2.1 (Build 17, tag `v1.2.1-build.17`).
+
+---
+
+## Shipped
+
+1.2.1 onwards: archived from this file with both languages, as pasted into App Store Connect.
+1.2.0 and earlier: archived from the developer's notes on 2026-11-22, English only (App Store
+Connect has the Turkish under each version). 1.0.0's notes were not kept.
+
+### 1.2.1 (Build 17)
+
+Saved in App Store Connect on 2026-11-24. Builds 15 and 16 of the same version were uploaded but never submitted.
 
 Covers everything since 1.2.0, the version on the App Store (submission prep `43d839e`, 2026-07-27): checked against `git log 43d839e..main` on 2026-11-22, which added Sprint #4's settle-up fixes (`3bcbcf7`) to the first draft.
 
@@ -55,13 +69,6 @@ Bug Fixes:
 • A one-cent rounding difference in a manual split is now accepted at any amount.
 • Fixed an error when splitting a very small amount equally.
 ```
-
----
-
-## Shipped
-
-Archived from the developer's notes on 2026-11-22. Only the English text was kept for these;
-App Store Connect has the Turkish under each version. 1.0.0's notes were not kept.
 
 ### 1.2.0 (Build 13)
 
