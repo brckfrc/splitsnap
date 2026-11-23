@@ -108,6 +108,14 @@ Staging exists for one consumer: `.github/workflows/release.yml`, which needs a 
 
 **Why everything here is free, and what would change it:** the repo is public, so GitHub's macOS runners (including `xcode-27`) and the required status checks on `main` cost nothing; on a private repo under a personal account the macOS minutes are billed and branch protection needs GitHub Pro. Expo's Free plan gives 15 iOS builds a month and has no Maestro jobs, which is why GitHub runs Maestro and a release uses two builds. Supabase Free allows two active projects: production and staging.
 
+**Builds are reused when they can be** ([`scripts/reusable-eas-build.sh`](../scripts/reusable-eas-build.sh)), so a full release costs two builds only when the app itself changed:
+
+- **e2e:** the newest finished e2e build is used again when no app file changed since its commit. App files are everything except `docs/`, `design/`, `website/`, `supabase/`, `scripts/`, `.maestro/`, `.github/`, Markdown and unit tests; anything new counts as an app file. A server-only release (migrations, Edge Functions) therefore tests on the previous binary against a freshly reset staging.
+- **production:** the newest finished production build is uploaded as it is when no app file changed and it has no `v<version>-build.<n>` tag yet, meaning it never reached App Store Connect (on 2026-11-23 Build 17 was built but its upload failed over an unsigned Apple agreement). Build and upload are separate steps for this reason. A build that was already released is never sent twice: App Store Connect rejects a build number it has seen.
+- **Forcing a new build:** run the workflow with "new_builds" on, for example after changing EAS environment variables, which the check cannot see.
+- **When only Maestro fails** (or only the upload), re-run just the failed jobs instead of starting a new run: `gh run rerun <run-id> --failed`, or **Re-run failed jobs** on the run page. The successful jobs and the e2e build URL are kept.
+- **When the month's builds run out,** build on this Mac instead; local builds do not count. Run the test gate first (`APP-STORE.md`), then `npx eas-cli@latest build --platform ios --profile production --local --output build.ipa` and `npx eas-cli@latest submit --platform ios --profile production --path build.ipa`, and tag the commit as the workflow would (`v<version>-build.<n>`). The Free plan's count resets on the 1st of each month (UTC).
+
 GitHub configuration (Settings → Secrets and variables → Actions):
 
 | Name | Kind | What |

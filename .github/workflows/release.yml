@@ -7,6 +7,8 @@
 # on EAS; the Maestro run uses a GitHub macOS runner (free for this public repo)
 # against the hosted staging Supabase project, never production.
 # A successful production run tags the commit (v<version>-build.<n>).
+# Builds are reused when no app file changed since the last one
+# (scripts/reusable-eas-build.sh): the Free plan has 15 iOS builds a month.
 # What stays manual: the TestFlight check on the phone and "Add for Review".
 # Details: docs/APP-STORE.md → Release.
 name: Release
@@ -18,6 +20,10 @@ on:
         description: "Build for production and upload to TestFlight (off = test only)"
         type: boolean
         default: true
+      new_builds:
+        description: "Build again even if no app file changed (e.g. after changing EAS environment variables)"
+        type: boolean
+        default: false
 
 concurrency:
   group: release
@@ -74,22 +80,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     outputs:
-      artifact_url: ${{ steps.build.outputs.artifact_url }}
+      artifact_url: ${{ steps.reuse.outputs.reuse == 'true' && steps.reuse.outputs.url || steps.build.outputs.artifact_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the reuse check diffs against the last build's commit
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
       - uses: expo/expo-github-action@v9
         with:
           eas-version: ${{ env.EAS_CLI_VERSION }}
           packager: npm
           token: ${{ secrets.EXPO_TOKEN }}
+      - id: reuse
+        run: |
+          scripts/reusable-eas-build.sh e2e | tee reuse.txt
+          echo "**e2e build:** $(grep '^reason=' reuse.txt | cut -d= -f2-)" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FORCE_NEW_BUILD: ${{ inputs.new_builds }}
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: npm ci
       # The e2e profile builds an unsigned simulator .app against the EAS
       # `preview` environment, which holds staging's URL and key.
       - id: build
+        if: steps.reuse.outputs.reuse != 'true'
         run: |
           eas build --platform ios --profile e2e --non-interactive --wait --json > build.json
           echo "artifact_url=$(jq -r '.[0].artifacts.buildUrl' build.json)" >> "$GITHUB_OUTPUT"
@@ -209,28 +225,52 @@ jobs:
       contents: write # the release tag
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the reuse check needs the history and the release tags
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
       - uses: expo/expo-github-action@v9
         with:
           eas-version: ${{ env.EAS_CLI_VERSION }}
           packager: npm
           token: ${{ secrets.EXPO_TOKEN }}
+      # A production build that never reached App Store Connect (e.g. the
+      # upload failed on 2026-11-23 over an unsigned Apple agreement) is
+      # uploaded as it is, without a new build.
+      - id: reuse
+        run: |
+          scripts/reusable-eas-build.sh production | tee reuse.txt
+          echo "**production build:** $(grep '^reason=' reuse.txt | cut -d= -f2-)" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          FORCE_NEW_BUILD: ${{ inputs.new_builds }}
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: npm ci
       # autoIncrement assigns the build number; app.json's version must be a
       # train App Store Connect still accepts (see docs/APP-STORE.md).
       - id: build
+        if: steps.reuse.outputs.reuse != 'true'
         run: |
-          eas build --platform ios --profile production --auto-submit --non-interactive --wait --json > build.json
-          echo "tag=v$(jq -r '.[0].appVersion' build.json)-build.$(jq -r '.[0].appBuildVersion' build.json)" >> "$GITHUB_OUTPUT"
+          eas build --platform ios --profile production --non-interactive --wait --json > build.json
+          {
+            echo "id=$(jq -r '.[0].id' build.json)"
+            echo "version=$(jq -r '.[0].appVersion' build.json)"
+            echo "build_number=$(jq -r '.[0].appBuildVersion' build.json)"
+          } >> "$GITHUB_OUTPUT"
+      # Upload separately from the build, so a failed upload leaves a build the
+      # next run picks up instead of building again.
+      - name: Upload to App Store Connect / TestFlight
+        run: eas submit --platform ios --profile production --id "$BUILD_ID" --non-interactive
+        env:
+          BUILD_ID: ${{ steps.reuse.outputs.id || steps.build.outputs.id }}
       # Marks the exact commit each App Store build came from, e.g. v1.2.1-build.17.
       - name: Tag the release commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$TAG" -m "iOS $TAG (EAS production build, uploaded to TestFlight)" "$GITHUB_SHA"
+          git tag -a "$TAG" -m "iOS $TAG (EAS production build, uploaded to TestFlight)" "$COMMIT"
           git push origin "$TAG"
         env:
-          TAG: ${{ steps.build.outputs.tag }}
+          TAG: v${{ steps.reuse.outputs.version || steps.build.outputs.version }}-build.${{ steps.reuse.outputs.build_number || steps.build.outputs.build_number }}
+          COMMIT: ${{ steps.reuse.outputs.commit || github.sha }}
