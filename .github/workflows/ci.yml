@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: supabase/setup-cli@v3
         with:
-          version: 3.2.0
+          version: 3.4.0
       # Database only: replays every migration plus seed.sql, like `supabase db reset` locally.
       - run: supabase db start
       - run: ./scripts/test-db.sh
